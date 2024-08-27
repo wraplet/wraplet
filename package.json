@@ -4,6 +4,7 @@
   "description": "",
   "main": "dist/index.js",
   "license": "MIT",
+  "author": "Łukasz Zaroda",
   "repository": {
     "type": "git",
     "url": "https://github.com/lukasz-zaroda/wraplet.git"
