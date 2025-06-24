@@ -22,7 +22,10 @@ const childrenMap = {
   },
 } as const satisfies WrapletChildrenMap;
 
-class TestWraplet extends BaseTestWraplet<typeof childrenMap> {
+class TestWraplet<E extends Element = Element> extends BaseTestWraplet<
+  typeof childrenMap,
+  E
+> {
   protected defineChildrenMap(): typeof childrenMap {
     return childrenMap;
   }
@@ -33,7 +36,7 @@ class TestWraplet extends BaseTestWraplet<typeof childrenMap> {
 test("Test that `required` and missing selector are mutually exclusive", () => {
   document.body.innerHTML = `<div ${testWrapletSelectorAttribute}></div>`;
   const createWraplet = () => {
-    TestWraplet.create<TestWraplet>(testWrapletSelectorAttribute);
+    TestWraplet.create(testWrapletSelectorAttribute);
   };
   expect(createWraplet).toThrowError(MapError);
 });

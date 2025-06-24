@@ -11,6 +11,11 @@ export abstract class AbstractWraplet<
 {
   public isWraplet: true = true;
 
+  /**
+   * This is the log of all element accessors, available for easier debugging.
+   */
+  private __debugElementAccessors: ((element: E) => void)[] = [];
+
   protected children: WrapletChildren<T>;
   protected static debug: boolean = false;
 
@@ -18,6 +23,9 @@ export abstract class AbstractWraplet<
     protected element: E,
     mapAlterCallback: ((map: DeepWriteable<T>) => void) | null = null,
   ) {
+    if (!element) {
+      throw new Error("Element is required to create a wraplet.");
+    }
     const map = this.defineChildrenMap();
     if (mapAlterCallback) {
       mapAlterCallback(map);
@@ -27,6 +35,11 @@ export abstract class AbstractWraplet<
       this.element.wraplets = [];
     }
     this.element.wraplets.push(this);
+  }
+
+  public accessElement(callback: (element: E) => void) {
+    this.__debugElementAccessors.push(callback);
+    callback(this.element);
   }
 
   protected abstract defineChildrenMap(): T;

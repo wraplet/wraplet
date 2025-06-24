@@ -23,7 +23,10 @@ const childrenMap = {
   },
 } as const satisfies WrapletChildrenMap;
 
-class TestWraplet extends BaseTestWraplet<typeof childrenMap> {
+class TestWraplet<E extends Element = Element> extends BaseTestWraplet<
+  typeof childrenMap,
+  E
+> {
   protected defineChildrenMap(): typeof childrenMap {
     return childrenMap;
   }
@@ -37,7 +40,7 @@ class TestWraplet extends BaseTestWraplet<typeof childrenMap> {
 
 test("Test wraplet initialization", () => {
   document.body.innerHTML = `<div ${testWrapletSelectorAttribute}><div ${testWrapletChildSelectorAttribute}></div></div>`;
-  const wraplet = TestWraplet.create<TestWraplet>(testWrapletSelectorAttribute);
+  const wraplet = TestWraplet.create<HTMLElement>(testWrapletSelectorAttribute);
   expect(wraplet).toBeTruthy();
 });
 
@@ -51,9 +54,28 @@ test("Test multiple wraplets initialization", () => {
 
 test("Test wraplet has element", () => {
   document.body.innerHTML = `<div ${testWrapletSelectorAttribute}></div>`;
-  const wraplet = TestWraplet.create<TestWraplet>(testWrapletSelectorAttribute);
+  const wraplet = TestWraplet.create<HTMLElement, TestWraplet<HTMLElement>>(
+    testWrapletSelectorAttribute,
+  );
   if (!wraplet) {
     throw Error("Wraplet not initialized.");
   }
   expect(wraplet.hasElement()).toBeTruthy();
+});
+
+test("Test wraplet's element is accessible", () => {
+  document.body.innerHTML = `<div ${testWrapletSelectorAttribute}></div>`;
+  const wraplet = TestWraplet.create<HTMLElement, TestWraplet<HTMLElement>>(
+    testWrapletSelectorAttribute,
+  );
+  if (!wraplet) {
+    throw Error("Wraplet not initialized.");
+  }
+  const callback = jest.fn((element: HTMLElement) => element);
+
+  wraplet.accessElement((element) => {
+    callback(element);
+  });
+
+  expect(callback).toBeCalledTimes(1);
 });

@@ -33,9 +33,12 @@ const childrenMap = {
   },
 } as const satisfies WrapletChildrenMap;
 
-class TestWraplet extends BaseTestWraplet<typeof childrenMap> {
+class TestWraplet<E extends Element = Element> extends BaseTestWraplet<
+  typeof childrenMap,
+  E
+> {
   private readonly someString: string;
-  constructor(element: Element, stringArgument: string) {
+  constructor(element: E, stringArgument: string) {
     const mapAlter = function (map: DeepWriteable<typeof childrenMap>) {
       map["child"]["args"] = [stringArgument];
     };

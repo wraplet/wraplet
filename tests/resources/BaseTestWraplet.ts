@@ -3,7 +3,8 @@ import { WrapletChildren } from "../../src/types/WrapletChildren";
 
 export abstract class BaseTestWraplet<
   T extends WrapletChildrenMap,
-> extends AbstractWraplet<T> {
+  E extends Element = Element,
+> extends AbstractWraplet<T, E> {
   public addAttribute(name: string, value: string) {
     this.element.setAttribute(name, value);
   }
@@ -16,9 +17,13 @@ export abstract class BaseTestWraplet<
     return !!this.children[name];
   }
 
-  public static create<C extends BaseTestWraplet<WrapletChildrenMap>>(
-    selectorAttribute: string,
-  ): C | null {
+  public static create<
+    E extends Element = Element,
+    C extends BaseTestWraplet<WrapletChildrenMap, E> = BaseTestWraplet<
+      WrapletChildrenMap,
+      E
+    >,
+  >(selectorAttribute: string): C | null {
     const wraplets = this.createWraplets(
       document,
       [],
