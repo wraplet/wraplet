@@ -159,7 +159,7 @@ export abstract class AbstractWraplet<
   // callers don't need to know what map is the current wraplet using, as it's its internal
   // matter.
   protected static createWraplets<T extends AbstractWraplet<any> = never>(
-    document: Document,
+    node: ParentNode,
     additional_args: unknown[] = [],
     selector: string,
   ): T[] {
@@ -168,7 +168,7 @@ export abstract class AbstractWraplet<
     }
 
     const result: T[] = [];
-    const foundElements = document.querySelectorAll(selector);
+    const foundElements = node.querySelectorAll(selector);
     for (const element of foundElements) {
       result.push(new (this as any)(element, ...additional_args));
     }
