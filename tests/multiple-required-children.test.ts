@@ -40,7 +40,7 @@ test("Test wraplet required children initialization empty children", () => {
   const getWraplet = () => {
     TestWraplet.create(testWrapletSelectorAttribute);
   };
-  expect(getWraplet).toThrowError(MissingRequiredChildError);
+  expect(getWraplet).toThrow(MissingRequiredChildError);
 });
 
 test("Test wraplet required children initialization", () => {

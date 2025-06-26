@@ -77,5 +77,5 @@ test("Test wraplet's element is accessible", () => {
     callback(element);
   });
 
-  expect(callback).toBeCalledTimes(1);
+  expect(callback).toHaveBeenCalledTimes(1);
 });

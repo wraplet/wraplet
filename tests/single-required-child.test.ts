@@ -49,5 +49,5 @@ test("Test wraplet single child required failed", () => {
   const createWraplet = () => {
     TestWraplet.create(testWrapletSelectorAttribute);
   };
-  expect(createWraplet).toThrowError(MissingRequiredChildError);
+  expect(createWraplet).toThrow(MissingRequiredChildError);
 });
