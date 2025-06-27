@@ -1,10 +1,6 @@
-/**
- * @jest-environment jsdom
- */
-
 import "./setup";
 import { AbstractWraplet, WrapletChildrenMap } from "../src";
-import { BaseTestWraplet } from "./resources/BaseTestWraplet";
+import { BaseElementTestWraplet } from "./resources/BaseElementTestWraplet";
 
 const testWrapletSelectorAttribute = "data-test-selector";
 const testWrapletChildSelectorAttribute = `${testWrapletSelectorAttribute}-child`;
@@ -15,7 +11,7 @@ class TestWrapletChild extends AbstractWraplet<any> {
   }
 
   public hasElement(): boolean {
-    return !!this.element;
+    return !!this.node;
   }
 }
 
@@ -28,10 +24,7 @@ const childrenMap = {
   },
 } as const satisfies WrapletChildrenMap;
 
-class TestWraplet<E extends Element = Element> extends BaseTestWraplet<
-  typeof childrenMap,
-  E
-> {
+class TestWraplet extends BaseElementTestWraplet<typeof childrenMap> {
   protected defineChildrenMap(): typeof childrenMap {
     return childrenMap;
   }
@@ -50,9 +43,7 @@ test("Test wraplet optional single child initialization", () => {
 
 test("Test wraplet child has element", () => {
   document.body.innerHTML = `<div ${testWrapletSelectorAttribute}><div ${testWrapletChildSelectorAttribute}></div></div>`;
-  const wraplet = TestWraplet.create<HTMLElement, TestWraplet<HTMLElement>>(
-    testWrapletSelectorAttribute,
-  );
+  const wraplet = TestWraplet.create<TestWraplet>(testWrapletSelectorAttribute);
   if (!wraplet) {
     throw Error("Wraplet not initialized.");
   }

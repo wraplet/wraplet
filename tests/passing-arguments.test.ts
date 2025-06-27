@@ -1,9 +1,6 @@
-/**
- * @jest-environment jsdom
- */
 import "./setup";
 import { AbstractWraplet, WrapletChildrenMap } from "../src";
-import { BaseTestWraplet } from "./resources/BaseTestWraplet";
+import { BaseElementTestWraplet } from "./resources/BaseElementTestWraplet";
 import { DeepWriteable } from "../src/types/Utils";
 
 const testWrapletSelectorAttribute = "data-test-selector";
@@ -33,9 +30,8 @@ const childrenMap = {
   },
 } as const satisfies WrapletChildrenMap;
 
-class TestWraplet<E extends Element = Element> extends BaseTestWraplet<
-  typeof childrenMap,
-  E
+class TestWraplet<E extends Element = Element> extends BaseElementTestWraplet<
+  typeof childrenMap
 > {
   private readonly someString: string;
   constructor(element: E, stringArgument: string) {
@@ -54,14 +50,14 @@ class TestWraplet<E extends Element = Element> extends BaseTestWraplet<
     return childrenMap;
   }
 
-  public static createWithArguments<
-    C extends BaseTestWraplet<WrapletChildrenMap>,
-  >(selectorAttribute: string, someString: string): C | null {
-    const wraplets = this.createWraplets(
-      document,
-      [someString],
-      `[${selectorAttribute}]`,
-    );
+  public static createWithArguments<C extends BaseElementTestWraplet>(
+    selectorAttribute: string,
+    someString: string,
+  ): C | null {
+    const wraplets = this.createWraplets(document, `[${selectorAttribute}]`, [
+      someString,
+    ]);
+
     if (wraplets.length === 0) {
       return null;
     }
@@ -83,7 +79,7 @@ test("Test passing arguments", () => {
   expect(wraplet?.getSomeString()).toBe(str);
 });
 
-test("Test passing arguments to child", () => {
+test("Test passing arguments to child by mapAlter callback", () => {
   const str = "some string";
   document.body.innerHTML = `<div ${testWrapletSelectorAttribute}><div ${testWrapletChildSelectorAttribute}></div></div>`;
   const wraplet = TestWraplet.createWithArguments<TestWraplet>(

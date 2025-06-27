@@ -1,9 +1,6 @@
-/**
- * @jest-environment jsdom
- */
 import "./setup";
 import { AbstractWraplet, WrapletChildrenMap } from "../src";
-import { BaseTestWraplet } from "./resources/BaseTestWraplet";
+import { BaseElementTestWraplet } from "./resources/BaseElementTestWraplet";
 
 const testWrapletSelectorAttribute = "data-test-selector";
 const testWrapletChildSelectorAttribute = `${testWrapletSelectorAttribute}-child`;
@@ -23,16 +20,13 @@ const childrenMap = {
   },
 } as const satisfies WrapletChildrenMap;
 
-class TestWraplet<E extends Element = Element> extends BaseTestWraplet<
-  typeof childrenMap,
-  E
-> {
+class TestWraplet extends BaseElementTestWraplet<typeof childrenMap> {
   protected defineChildrenMap(): typeof childrenMap {
     return childrenMap;
   }
 
-  public hasElement(): boolean {
-    return !!this.element;
+  public hasNode(): boolean {
+    return !!this.node;
   }
 }
 
@@ -40,40 +34,34 @@ class TestWraplet<E extends Element = Element> extends BaseTestWraplet<
 
 test("Test wraplet initialization", () => {
   document.body.innerHTML = `<div ${testWrapletSelectorAttribute}><div ${testWrapletChildSelectorAttribute}></div></div>`;
-  const wraplet = TestWraplet.create<HTMLElement>(testWrapletSelectorAttribute);
+  const wraplet = TestWraplet.create(testWrapletSelectorAttribute);
   expect(wraplet).toBeTruthy();
 });
 
 test("Test multiple wraplets initialization", () => {
   document.body.innerHTML = `<div ${testWrapletSelectorAttribute}></div><div ${testWrapletSelectorAttribute}><div ${testWrapletChildSelectorAttribute}></div></div>`;
-  const wraplets = TestWraplet.createAll<TestWraplet>(
-    testWrapletSelectorAttribute,
-  );
+  const wraplets = TestWraplet.createAll(testWrapletSelectorAttribute);
   expect(wraplets.length).toEqual(2);
 });
 
 test("Test wraplet has element", () => {
   document.body.innerHTML = `<div ${testWrapletSelectorAttribute}></div>`;
-  const wraplet = TestWraplet.create<HTMLElement, TestWraplet<HTMLElement>>(
-    testWrapletSelectorAttribute,
-  );
+  const wraplet = TestWraplet.create<TestWraplet>(testWrapletSelectorAttribute);
   if (!wraplet) {
     throw Error("Wraplet not initialized.");
   }
-  expect(wraplet.hasElement()).toBeTruthy();
+  expect(wraplet.hasNode()).toBeTruthy();
 });
 
 test("Test wraplet's element is accessible", () => {
   document.body.innerHTML = `<div ${testWrapletSelectorAttribute}></div>`;
-  const wraplet = TestWraplet.create<HTMLElement, TestWraplet<HTMLElement>>(
-    testWrapletSelectorAttribute,
-  );
+  const wraplet = TestWraplet.create(testWrapletSelectorAttribute);
   if (!wraplet) {
     throw Error("Wraplet not initialized.");
   }
-  const callback = jest.fn((element: HTMLElement) => element);
+  const callback = jest.fn((element: Element) => element);
 
-  wraplet.accessElement((element) => {
+  wraplet.accessNode((element) => {
     callback(element);
   });
 

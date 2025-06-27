@@ -1,10 +1,7 @@
-/**
- * @jest-environment jsdom
- */
 import "./setup";
 import { MissingRequiredChildError } from "../src/errors";
 import { AbstractWraplet, WrapletChildrenMap } from "../src";
-import { BaseTestWraplet } from "./resources/BaseTestWraplet";
+import { BaseElementTestWraplet } from "./resources/BaseElementTestWraplet";
 
 const testWrapletSelectorAttribute = "data-test-selector";
 const testWrapletChildSelectorAttribute = `${testWrapletSelectorAttribute}-child`;
@@ -24,10 +21,7 @@ const childrenMap = {
   },
 } as const satisfies WrapletChildrenMap;
 
-class TestWraplet<E extends Element = Element> extends BaseTestWraplet<
-  typeof childrenMap,
-  E
-> {
+class TestWraplet extends BaseElementTestWraplet<typeof childrenMap> {
   protected defineChildrenMap(): typeof childrenMap {
     return childrenMap;
   }

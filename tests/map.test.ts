@@ -1,9 +1,6 @@
-/**
- * @jest-environment jsdom
- */
 import "./setup";
 import { AbstractWraplet, WrapletChildrenMap } from "../src";
-import { BaseTestWraplet } from "./resources/BaseTestWraplet";
+import { BaseElementTestWraplet } from "./resources/BaseElementTestWraplet";
 import { MapError } from "../src/errors";
 
 const testWrapletSelectorAttribute = "data-test-selector";
@@ -22,10 +19,13 @@ const childrenMap = {
   },
 } as const satisfies WrapletChildrenMap;
 
-class TestWraplet<E extends Element = Element> extends BaseTestWraplet<
-  typeof childrenMap,
-  E
-> {
+class TestWraplet extends BaseElementTestWraplet<typeof childrenMap> {
+  protected defineChildrenMap(): typeof childrenMap {
+    return childrenMap;
+  }
+}
+
+class TestNodeWraplet extends AbstractWraplet<typeof childrenMap> {
   protected defineChildrenMap(): typeof childrenMap {
     return childrenMap;
   }
@@ -33,10 +33,58 @@ class TestWraplet<E extends Element = Element> extends BaseTestWraplet<
 
 // TESTS START HERE
 
-test("Test that `required` and missing selector are mutually exclusive", () => {
+test("Test that 'required' and missing selector are mutually exclusive", () => {
   document.body.innerHTML = `<div ${testWrapletSelectorAttribute}></div>`;
   const createWraplet = () => {
     TestWraplet.create(testWrapletSelectorAttribute);
   };
-  expect(createWraplet).toThrowError(MapError);
+  expect(createWraplet).toThrow(MapError);
+});
+
+test("Test that map has to be empty if wrapped node cannot have children", () => {
+  const textNode = document.createTextNode("test");
+  const createNodeWraplet = () => {
+    new TestNodeWraplet(textNode);
+  };
+  expect(createNodeWraplet).toThrow(MapError);
+});
+
+test("Test map altering", () => {
+  const mapAlterChildrenMap = {
+    child: {
+      selector: ".something",
+      Class: TestWrapletChild,
+      multiple: false,
+      required: true,
+    },
+  } as const satisfies WrapletChildrenMap;
+
+  class TestAlterMapWraplet extends AbstractWraplet<
+    typeof mapAlterChildrenMap
+  > {
+    protected defineChildrenMap(): typeof mapAlterChildrenMap {
+      return mapAlterChildrenMap;
+    }
+
+    public getAlteredMap() {
+      return this.core.getChildrenMap();
+    }
+  }
+
+  const mainAttribute = "data-main";
+  const alteredClass = "altered";
+
+  document.body.innerHTML = `
+<div ${mainAttribute}>
+    <div class="${alteredClass}"></div>
+</div>`;
+
+  const element = document.querySelector(`[${mainAttribute}]`) as Element;
+  const alteredSelector = `.${alteredClass}`;
+  const wraplet = new TestAlterMapWraplet(element, (map) => {
+    (map["child"]["selector"] as string) = alteredSelector;
+  });
+
+  const alteredMap = wraplet.getAlteredMap();
+  expect(alteredMap["child"]["selector"]).toBe(alteredSelector);
 });
