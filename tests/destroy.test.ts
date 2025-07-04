@@ -2,6 +2,7 @@ import "./setup";
 
 import { AbstractWraplet, WrapletChildrenMap } from "../src";
 import { BaseElementTestWraplet } from "./resources/BaseElementTestWraplet";
+import { RequiredChildDestroyedError } from "../src/errors";
 
 const testWrapletSelectorAttribute = "data-test-selector";
 const testWrapletChildSelectorSingleAttribute =
@@ -30,14 +31,14 @@ const childrenMap = {
     selector: `[${testWrapletChildSelectorSingleAttribute}]`,
     Class: TestWrapletChild,
     multiple: false,
-    required: true,
+    required: false,
   },
   childIndestuctible: {
     selector: `[${testWrapletChildSelectorIndestructibleAttribute}]`,
     Class: TestWrapletChild,
     multiple: false,
-    required: true,
-    destructable: false,
+    required: false,
+    destructible: false,
   },
   childOptional: {
     selector: `[${testWrapletChildSelectorSingleOptionalAttribute}]`,
@@ -49,7 +50,7 @@ const childrenMap = {
     selector: `[${testWrapletChildSelectorMultipleAttribute}]`,
     Class: TestWrapletChild,
     multiple: true,
-    required: true,
+    required: false,
   },
 } as const satisfies WrapletChildrenMap;
 
@@ -57,24 +58,24 @@ class TestWraplet extends BaseElementTestWraplet<typeof childrenMap> {
   protected defineChildrenMap(): typeof childrenMap {
     return childrenMap;
   }
-  destroy() {
-    super.destroy();
-  }
 }
 
 test("Test that 'destroy' is invoked on all children", () => {
   document.body.innerHTML = `
 <div ${testWrapletSelectorAttribute}>
-    <div ${testWrapletChildSelectorSingleAttribute}></div>
-    <div ${testWrapletChildSelectorIndestructibleAttribute}></div>    
-    <div ${testWrapletChildSelectorMultipleAttribute}></div>
-    <div ${testWrapletChildSelectorMultipleAttribute}></div>
-    <div ${testWrapletChildSelectorMultipleAttribute}></div>
-    <div ${testWrapletChildSelectorMultipleAttribute}></div>
+    <div ${testWrapletChildSelectorSingleAttribute}  class="c1"></div>
+    <div ${testWrapletChildSelectorIndestructibleAttribute} class="c-indestructible"></div>    
+    <div ${testWrapletChildSelectorMultipleAttribute} class="c2"></div>
+    <div ${testWrapletChildSelectorMultipleAttribute} class="c3"></div>
+    <div ${testWrapletChildSelectorMultipleAttribute} class="c4"></div>
+    <div ${testWrapletChildSelectorMultipleAttribute} class="c5"></div>
 </div>
 `;
   const wraplet = TestWraplet.create(testWrapletSelectorAttribute);
-  wraplet?.destroy();
+  if (!wraplet) {
+    throw new Error("Wraplet not initialized.");
+  }
+  wraplet.destroy();
   expect(TestWrapletChild.counter).toEqual(5);
   TestWrapletChild.counter = 0;
 });
@@ -91,7 +92,10 @@ test("Test that children are removed from the nodes after being destroyed", () =
 </div>
 `;
   const wraplet = TestWraplet.create(testWrapletSelectorAttribute);
-  wraplet?.destroy();
+  if (!wraplet) {
+    throw new Error("Wraplet not initialized.");
+  }
+  wraplet.destroy();
   const elements = document.querySelectorAll("*");
 
   for (const element of elements) {
@@ -127,7 +131,7 @@ test("Test that listeneres are being detached during destruction", () => {
       selector: `[${childAttribute}]`,
       Class: TestWrapletChild,
       multiple: false,
-      required: true,
+      required: false,
     },
   } as const satisfies WrapletChildrenMap;
 
@@ -160,4 +164,53 @@ test("Test that listeneres are being detached during destruction", () => {
   childNode.dispatchEvent(new Event("click"));
 
   expect(listener).toHaveBeenCalledTimes(1);
+});
+
+test("Test that if the required child has been destroyed then throw exception", () => {
+  const mainAttribute = "data-test-main";
+  const childAttribute = "data-test-child";
+
+  class TestWrapletChild extends AbstractWraplet {
+    protected defineChildrenMap(): {} {
+      return {};
+    }
+    public destroy() {
+      super.destroy();
+    }
+  }
+
+  const childrenMap = {
+    child: {
+      selector: `[${childAttribute}]`,
+      Class: TestWrapletChild,
+      multiple: false,
+      required: true,
+    },
+  } as const satisfies WrapletChildrenMap;
+
+  class TestWraplet extends BaseElementTestWraplet<typeof childrenMap> {
+    protected defineChildrenMap(): typeof childrenMap {
+      return childrenMap;
+    }
+  }
+
+  document.body.innerHTML = `
+<div ${mainAttribute}>
+    <div ${childAttribute}></div>
+</div>
+`;
+
+  const collection = TestWraplet.create<TestWraplet>(mainAttribute);
+  if (!collection) {
+    throw new Error("Wraplet not initialized.");
+  }
+
+  const child = collection.getChild("child");
+  if (!child) {
+    throw new Error("Child not found.");
+  }
+
+  expect(() => {
+    child.destroy();
+  }).toThrow(RequiredChildDestroyedError);
 });

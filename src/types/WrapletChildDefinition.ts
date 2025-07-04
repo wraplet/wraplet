@@ -8,5 +8,5 @@ export type WrapletChildDefinition<
   required: boolean;
   multiple: boolean;
   args?: unknown[];
-  destructable?: boolean;
+  destructible?: boolean;
 };

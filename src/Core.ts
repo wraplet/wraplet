@@ -1,10 +1,15 @@
 import { WrapletChildren } from "./types/WrapletChildren";
 import { Nullable } from "./types/Utils";
-import { MapError, MissingRequiredChildError } from "./errors";
+import {
+  MapError,
+  MissingRequiredChildError,
+  RequiredChildDestroyedError,
+} from "./errors";
 import { Wraplet } from "./types/Wraplet";
 import { WrapletChildrenMap } from "./types/WrapletChildrenMap";
 import { CommonMethods } from "./AbstractWraplet";
 import { isWraplet } from "./utils";
+import { DestroyChildListener, DestroyListener } from "./types/DestroyListener";
 
 type ListenerData = {
   node: Node;
@@ -18,20 +23,58 @@ export default class Core<
   N extends Node = Node,
   CM extends CommonMethods = CommonMethods,
 > {
+  public isDestroyed: boolean = false;
+  public children: WrapletChildren<M>;
+
   /**
    * This is the log of all node accessors, available for easier debugging.
    */
   private __debugNodeAccessors: ((element: N) => void)[] = [];
-  private isDestroyed: boolean = false;
+  private destroyListeners: DestroyListener<N>[] = [];
+  private destroyChildListeners: DestroyChildListener<N>[] = [];
   private listeners: ListenerData[] = [];
-  public children: WrapletChildren<M>;
 
   constructor(
     public node: N,
     private map: M,
     private wraplet: Wraplet<N>,
   ) {
-    this.children = this.instantiateChildren(node);
+    const children = this.instantiateChildren(node);
+
+    /*
+     * We set up a proxy to check if children have not been destroyed before fetching them.
+     */
+    this.children = new Proxy(children, {
+      get: function get(target, name: string) {
+        if (!(name in target)) {
+          throw new Error("Child has not been found.");
+        }
+
+        function isDestroyed(wraplet: Wraplet<N>): boolean {
+          return wraplet.isDestroyed;
+        }
+
+        const child: any = target[name];
+        if (Array.isArray(child)) {
+          const destroyed = child.find(isDestroyed);
+
+          if (destroyed) {
+            throw new Error(
+              "Core error: One of the children in the array has been destroyed but not removed",
+            );
+          }
+
+          return target[name];
+        }
+
+        if (child !== null && isDestroyed(child)) {
+          throw new Error("The child has been destroyed");
+        }
+
+        return target[name];
+      },
+    });
+
     if (!this.node.wraplets) {
       this.node.wraplets = [];
     }
@@ -91,7 +134,18 @@ export default class Core<
 
       const childWraplet: Wraplet<N>[] = [];
       for (const childElement of childElements) {
-        childWraplet.push(this.createWraplet(wrapletClass, childElement, args));
+        const wraplet = this.createWraplet(wrapletClass, childElement, args);
+
+        const destroyListener = (wraplet: Wraplet<N>) => {
+          this.removeChild(wraplet, id);
+
+          for (const listener of this.destroyChildListeners) {
+            listener(wraplet, id);
+          }
+        };
+        // Listen for the child's destruction.
+        wraplet.addDestroyListener(destroyListener);
+        childWraplet.push(wraplet);
         if (!multiple) {
           break;
         }
@@ -128,6 +182,14 @@ export default class Core<
     callback(this.node);
   }
 
+  public addDestroyListener(callback: DestroyListener<N>): void {
+    this.destroyListeners.push(callback);
+  }
+
+  public addDestroyChildListener(callback: DestroyChildListener<N>): void {
+    this.destroyChildListeners.push(callback);
+  }
+
   public createWraplet(
     wrapletClass: new (...args: any[]) => Wraplet<N>,
     childElement: Node,
@@ -149,12 +211,15 @@ export default class Core<
       const name = childEntries[0];
       const child = childEntries[1];
       const map = this.getChildrenMap();
-      if (!map[name].destructable) {
+      if (!map[name].destructible) {
         continue;
       }
 
       if (Array.isArray(child)) {
-        for (const item of child) {
+        // We need to loop through the copy of the array because some items can be removed from
+        // the original during the loop.
+        const childArray = child.slice(0);
+        for (const item of childArray) {
           if (!isWraplet<N>(item)) {
             throw new Error("Internal logic error. Item is not a wraplet.");
           }
@@ -163,7 +228,6 @@ export default class Core<
               `Internal logic error. Action "${String(method)}" is not defined for the child "${name}".`,
             );
           }
-
           if (payload) {
             item[method](payload);
           } else {
@@ -196,8 +260,6 @@ export default class Core<
 
   /**
    * This method removes from nodes references to this wraplet and its children recuresively.
-   *
-   * @protected
    */
   public destroy(): void {
     if (this.isDestroyed) {
@@ -212,6 +274,11 @@ export default class Core<
       const options = listener.options;
       node.removeEventListener(eventName, callback, options);
     }
+
+    for (const listener of this.destroyListeners) {
+      listener(this.wraplet);
+    }
+    this.destroyListeners.length = 0;
 
     this.removeWrapletFromNode(this.wraplet, this.node);
     this.executeOnChildren(this.children, "destroy");
@@ -235,7 +302,7 @@ export default class Core<
     return {
       ...{
         args: [],
-        destructable: true,
+        destructible: true,
       },
       ...definition,
     };
@@ -287,5 +354,30 @@ export default class Core<
   ) {
     this.listeners.push({ node, eventName, callback, options });
     node.addEventListener(eventName, callback, options);
+  }
+
+  private removeChild(wraplet: Wraplet<N>, id: string): void {
+    if (Array.isArray(this.children[id])) {
+      const index = this.children[id].findIndex((value) => {
+        return value === wraplet;
+      });
+
+      if (index === -1) {
+        throw new Error(
+          "Internal logic error. Destroyed child couldn't be removed because it's not among the children.",
+        );
+      }
+      this.children[id].splice(index, 1);
+      return;
+    }
+
+    if (this.map[id].required) {
+      throw new RequiredChildDestroyedError(
+        "Required child has been destroyed.",
+      );
+    }
+
+    // @ts-expect-error The type is unknown because we are dealing with a generic here.
+    this.children[id] = null;
   }
 }

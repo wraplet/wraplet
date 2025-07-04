@@ -3,6 +3,7 @@ import { WrapletChildren } from "./types/WrapletChildren";
 import { Wraplet } from "./types/Wraplet";
 import { DeepWriteable } from "./types/Utils";
 import Core from "./Core";
+import { DestroyListener } from "./types/DestroyListener";
 
 export type CommonMethods = {
   destroy: {};
@@ -32,7 +33,10 @@ export abstract class AbstractWraplet<
       mapAlterCallback(map);
     }
 
-    this.core = new Core(node, map, this);
+    const core: Core<M, N, CM> = new Core(node, map, this);
+    core.addDestroyChildListener(this.onChildDestroyed);
+
+    this.core = core;
   }
 
   protected get node(): N {
@@ -49,6 +53,14 @@ export abstract class AbstractWraplet<
 
   public destroy() {
     this.core.destroy();
+  }
+
+  public get isDestroyed(): boolean {
+    return this.core.isDestroyed;
+  }
+
+  public addDestroyListener(callback: DestroyListener<N>): void {
+    this.core.addDestroyListener(callback);
   }
 
   protected abstract defineChildrenMap(): M;
@@ -72,4 +84,10 @@ export abstract class AbstractWraplet<
 
     return result;
   }
+
+  /**
+   * This method will be ivoked if one of the wraplet's children has been destroyed.
+   */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  protected onChildDestroyed(child: Wraplet<N>, id: string) {}
 }
