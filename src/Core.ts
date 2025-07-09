@@ -113,7 +113,7 @@ export default class Core<
         continue;
       }
 
-      const childElements = (node as ParentNode).querySelectorAll(selector);
+      const childElements = node.querySelectorAll(selector);
       if (childElements.length === 0) {
         if (isRequired) {
           throw new MissingRequiredChildError(
