@@ -38,7 +38,9 @@ class TestWraplet<E extends Element = Element> extends BaseElementTestWraplet<
     const mapAlter = function (map: DeepWriteable<typeof childrenMap>) {
       map["child"]["args"] = [stringArgument];
     };
-    super(element, mapAlter);
+    super(element, {
+      mapAlterCallback: mapAlter,
+    });
     this.someString = stringArgument;
   }
 
@@ -50,10 +52,9 @@ class TestWraplet<E extends Element = Element> extends BaseElementTestWraplet<
     return childrenMap;
   }
 
-  public static createWithArguments<C extends BaseElementTestWraplet>(
-    selectorAttribute: string,
-    someString: string,
-  ): C | null {
+  public static createWithArguments<
+    C extends BaseElementTestWraplet<typeof childrenMap>,
+  >(selectorAttribute: string, someString: string): C | null {
     const wraplets = this.createWraplets(document, `[${selectorAttribute}]`, [
       someString,
     ]);

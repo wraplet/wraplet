@@ -2,6 +2,7 @@ import "./setup";
 import { AbstractWraplet, WrapletChildrenMap } from "../src";
 import { BaseElementTestWraplet } from "./resources/BaseElementTestWraplet";
 import { MapError } from "../src/errors";
+import { CoreInitOptions } from "../src/types/CoreInitOptions";
 
 const testWrapletSelectorAttribute = "data-test-selector";
 
@@ -67,7 +68,7 @@ test("Test map altering", () => {
     }
 
     public getAlteredMap() {
-      return this.core.getChildrenMap();
+      return this.core.map;
     }
   }
 
@@ -81,9 +82,13 @@ test("Test map altering", () => {
 
   const element = document.querySelector(`[${mainAttribute}]`) as Element;
   const alteredSelector = `.${alteredClass}`;
-  const wraplet = new TestAlterMapWraplet(element, (map) => {
-    (map["child"]["selector"] as string) = alteredSelector;
-  });
+  const initOptions: Partial<CoreInitOptions<typeof mapAlterChildrenMap>> = {
+    mapAlterCallback: (map) => {
+      (map["child"]["selector"] as string) = alteredSelector;
+    },
+  };
+
+  const wraplet = new TestAlterMapWraplet(element, initOptions);
 
   const alteredMap = wraplet.getAlteredMap();
   expect(alteredMap["child"]["selector"]).toBe(alteredSelector);

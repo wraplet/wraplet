@@ -15,10 +15,17 @@ export abstract class BaseElementTestWraplet<
   }
 
   public static create<
-    C extends BaseElementTestWraplet = BaseElementTestWraplet,
-  >(selectorAttribute: string, args: unknown[] = []): C | null {
+    C extends BaseElementTestWraplet<any, any> = BaseElementTestWraplet<
+      any,
+      any
+    >,
+  >(
+    selectorAttribute: string,
+    args: unknown[] = [],
+    element: ParentNode = document,
+  ): C | null {
     const wraplets = this.createWraplets(
-      document,
+      element,
       `[${selectorAttribute}]`,
       args,
     );

@@ -3,6 +3,7 @@ import "./setup";
 import { AbstractWraplet, WrapletChildrenMap } from "../src";
 import { BaseElementTestWraplet } from "./resources/BaseElementTestWraplet";
 import { RequiredChildDestroyedError } from "../src/errors";
+import { ChildInstance } from "../src/types/ChildInstance";
 
 const testWrapletSelectorAttribute = "data-test-selector";
 const testWrapletChildSelectorSingleAttribute =
@@ -213,4 +214,61 @@ test("Test that if the required child has been destroyed then throw exception", 
   expect(() => {
     child.destroy();
   }).toThrow(RequiredChildDestroyedError);
+});
+
+test("Destroy child listener", () => {
+  const mainAttribute = "data-test-main";
+  const childAttribute = "data-test-child";
+
+  const func = jest.fn();
+
+  class TestWrapletChild extends AbstractWraplet {
+    protected defineChildrenMap(): {} {
+      return {};
+    }
+    public destroy() {
+      super.destroy();
+    }
+  }
+
+  const childrenMap = {
+    child: {
+      selector: `[${childAttribute}]`,
+      Class: TestWrapletChild,
+      multiple: false,
+      required: false,
+    },
+  } as const satisfies WrapletChildrenMap;
+
+  class TestWraplet extends BaseElementTestWraplet<typeof childrenMap> {
+    protected defineChildrenMap(): typeof childrenMap {
+      return childrenMap;
+    }
+    protected onChildDestroyed<K extends keyof typeof childrenMap>(
+      child: ChildInstance<typeof childrenMap, K>,
+      id: K,
+    ) {
+      expect(id).toEqual("child");
+      expect(child).toBeInstanceOf(TestWrapletChild);
+      func();
+    }
+  }
+
+  document.body.innerHTML = `
+<div ${mainAttribute}>
+    <div ${childAttribute}></div>
+</div>
+`;
+
+  const wraplet = TestWraplet.create<TestWraplet>(mainAttribute);
+  if (!wraplet) {
+    throw new Error("Wraplet not initialized.");
+  }
+  const child = wraplet.getChild("child");
+  if (!child) {
+    throw new Error("Child not found.");
+  }
+  child.destroy();
+
+  expect(func).toHaveBeenCalledTimes(1);
 });
