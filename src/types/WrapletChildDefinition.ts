@@ -1,8 +1,8 @@
 import { Wraplet } from "./Wraplet";
 
-export type WrapletChildDefinition<T extends Wraplet = Wraplet> = {
+export type WrapletChildDefinition = {
   selector?: string;
-  Class: { new (...args: any[]): T };
+  Class: { new (...args: any[]): Wraplet };
   required: boolean;
   multiple: boolean;
   args?: unknown[];
