@@ -7,7 +7,7 @@
   "author": "Łukasz Zaroda",
   "repository": {
     "type": "git",
-    "url": "https://github.com/lukasz-zaroda/wraplet.git"
+    "url": "https://github.com/wraplet/wraplet.git"
   },
   "files": ["dist"],
   "scripts": {
