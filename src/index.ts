@@ -1,6 +1,10 @@
 export { Core } from "./Core";
 export { AbstractWraplet } from "./AbstractWraplet";
-export { isWraplet } from "./utils";
+export {
+  isWraplet,
+  destroyWrapletsRecursively,
+  getWrapletsFromNode,
+} from "./utils";
 export { getGlobalWrapletManager } from "./getGlobalWrapletManager";
 
 export type { WrapletChildrenMap } from "./types/WrapletChildrenMap";
