@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "outDir": "./dist/typescript",
+    "outDir": "./dist",
     "noImplicitAny": true,
     "module": "ES2022",
     "target": "ES2022",
