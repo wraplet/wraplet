@@ -1,3 +1,4 @@
+/** @jest-config-loader esbuild-register */
 /** @type {import('ts-jest').JestConfigWithTsJest} **/
 export default {
   testEnvironment: "jsdom",

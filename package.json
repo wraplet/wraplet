@@ -40,6 +40,7 @@
     "@types/jest": "^30.0.0",
     "@types/node": "^24.1.0",
     "@types/webpack": "^5.28.5",
+    "esbuild-register": "^3.6.0",
     "eslint": "^9.29.0",
     "eslint-config-prettier": "^10.1.5",
     "eslint-plugin-prettier": "^5.5.1",
