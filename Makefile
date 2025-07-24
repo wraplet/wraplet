@@ -2,6 +2,8 @@
 .PHONY: $(MAKECMDGOALS)
 SHELL = /bin/bash
 
+MAKEFILE_DIR := $(shell dirname $(abspath $(lastword $(MAKEFILE_LIST))))
+
 lint-fix:
 	yarn run lint:fix
 
@@ -12,6 +14,7 @@ tests:
 	yarn run tests
 
 build:
+	rm -r ${MAKEFILE_DIR}/dist/*
 	yarn run build
 
 publish: build

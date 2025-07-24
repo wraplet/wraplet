@@ -1,0 +1,182 @@
+import "./setup";
+import { ElementStorage } from "../src/storage";
+
+test("Test element storage", () => {
+  const attribute = "data-test-wraplet";
+  type Options = {
+    option1: string;
+    option2?: boolean;
+    option3?: string;
+  };
+
+  const element = document.createElement("div");
+  element.setAttribute(attribute, '{"option1":"initial value"}');
+
+  const validators: Record<keyof Options, (value: unknown) => boolean> = {
+    option1: (value) => typeof value === "string",
+    option2: (value) => typeof value === "boolean",
+    option3: (value) => typeof value === "string",
+  };
+
+  const storage = new ElementStorage<Options>(
+    element,
+    attribute,
+    validators,
+    { option1: "default value" },
+    { keepFresh: true },
+  );
+
+  // Test if the value was correctly fetched from the attribute.
+  expect(storage.get("option1")).toEqual("initial value");
+
+  // Test setAll.
+  storage.setAll({ option1: "new value", option2: false });
+  expect(storage.getAll()).toEqual({ option1: "new value", option2: false });
+
+  // Test if the new value is available.
+  storage.set("option1", "new value");
+  expect(storage.get("option1")).toEqual("new value");
+
+  // Test deleteAll.
+  storage.set("option1", "new value");
+  storage.deleteAll();
+  expect(storage.getAll()).toEqual({ option1: "default value" });
+
+  // Test if the attribute's value has been updated.
+  storage.setAll({ option1: "new value" });
+  expect(element.getAttribute(attribute)).toEqual('{"option1":"new value"}');
+  storage.deleteAll();
+  expect(element.getAttribute(attribute)).toEqual("");
+
+  // Test if the default value is still available.
+  expect(storage.get("option1")).toEqual("default value");
+
+  // Test validators.
+  const validatorTrigger = () => {
+    storage.set("option1", false as any);
+  };
+  expect(validatorTrigger).toThrow();
+
+  // Test getMultiple.
+  storage.deleteAll();
+  storage.set("option1", "some value");
+  storage.set("option2", true);
+  expect(storage.getMultiple(["option1"])).toEqual({
+    option1: "some value",
+  });
+
+  // Test deleteAll.
+  storage.setAll({
+    option1: "some value",
+    option2: true,
+  });
+  storage.deleteAll();
+  expect(storage.getAll()).toEqual({ option1: "default value" });
+
+  // Test setMultiple.
+  storage.deleteAll();
+  storage.setMultiple({
+    option1: "some value",
+    option2: true,
+    option3: "some other value",
+  });
+  expect(storage.getAll()).toEqual({
+    option1: "some value",
+    option2: true,
+    option3: "some other value",
+  });
+
+  // Test deleteMultiple.
+  storage.setAll({
+    option1: "some value",
+    option2: true,
+    option3: "some other value",
+  });
+  storage.deleteMultiple(["option1", "option2"]);
+  expect(storage.getAll()).toEqual({
+    option1: "default value",
+    option3: "some other value",
+  });
+});
+
+test("Test element storage fresh data", () => {
+  const attribute = "data-test-wraplet";
+  type Options = {
+    option1: string;
+    option2?: boolean;
+  };
+
+  const element = document.createElement("div");
+  element.setAttribute(attribute, '{"option1":"initial value"}');
+
+  const validators: Record<keyof Options, (value: unknown) => boolean> = {
+    option1: (value) => typeof value === "string",
+    option2: (value) => typeof value === "boolean",
+  };
+
+  const storage = new ElementStorage<Options>(
+    element,
+    attribute,
+    validators,
+    { option1: "default value" },
+    { keepFresh: true },
+  );
+
+  // Test the freshness of data.
+  element.setAttribute(attribute, '{"option1":"fresh data"}');
+  expect(storage.get("option1")).toEqual("fresh data");
+});
+
+test("Test element storage non-fresh data", () => {
+  const attribute = "data-test-wraplet";
+  type Options = {
+    option1: string;
+    option2?: boolean;
+  };
+
+  const element = document.createElement("div");
+  element.setAttribute(attribute, '{"option1":"initial value"}');
+
+  const validators: Record<keyof Options, (value: unknown) => boolean> = {
+    option1: (value) => typeof value === "string",
+    option2: (value) => typeof value === "boolean",
+  };
+
+  const storage = new ElementStorage<Options>(
+    element,
+    attribute,
+    validators,
+    { option1: "default value" },
+    { keepFresh: false },
+  );
+
+  // Test if data is indeed not fresh.
+  element.setAttribute(attribute, '{"option1":"fresh data"}');
+  expect(storage.get("option1")).toEqual("initial value");
+
+  // Test if data has been refreshed.
+  storage.refresh();
+  expect(storage.get("option1")).toEqual("fresh data");
+});
+
+test("Test element storage fresh data by default", () => {
+  const attribute = "data-test-wraplet";
+  type Options = {
+    option1: string;
+  };
+
+  const element = document.createElement("div");
+  element.setAttribute(attribute, '{"option1":"initial value"}');
+
+  const validators: Record<keyof Options, (value: unknown) => boolean> = {
+    option1: (value) => typeof value === "string",
+  };
+
+  const storage = new ElementStorage<Options>(element, attribute, validators, {
+    option1: "default value",
+  });
+
+  // Test if data is fresh.
+  element.setAttribute(attribute, '{"option1":"fresh data"}');
+  expect(storage.get("option1")).toEqual("fresh data");
+});
