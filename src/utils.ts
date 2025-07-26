@@ -33,6 +33,19 @@ export function actOnNodesRecursevily(
   }
 }
 
+export function findWrapletsRecursively(node: Node): Set<Wraplet> {
+  const wraplets: Set<Wraplet> = new Set();
+
+  actOnNodesRecursevily(node, (node) => {
+    const nodeWraplets = getWrapletsFromNode(node);
+    for (const wraplet of nodeWraplets) {
+      wraplets.add(wraplet);
+    }
+  });
+
+  return wraplets;
+}
+
 export function destroyWrapletsRecursively(node: Node): void {
   actOnNodesRecursevily(node, (node) => {
     const wraplets = getWrapletsFromNode(node);

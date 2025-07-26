@@ -5,19 +5,35 @@ import { Core } from "./Core";
 import { DestroyListener } from "./types/DestroyListener";
 import { ChildInstance } from "./types/ChildInstance";
 import { CoreInitOptions } from "./types/CoreInitOptions";
+import { Groupable, GroupExtractor } from "./types/Groupable";
+import { NodeTreeParent } from "./types/NodeTreeParent";
 
 export type CommonMethods = {
   destroy: {};
 };
 
 export abstract class AbstractWraplet<
-  M extends WrapletChildrenMap = {},
-  N extends Node = Node,
-  CM extends CommonMethods = CommonMethods,
-> implements Wraplet<N>
+    M extends WrapletChildrenMap = {},
+    N extends Node = Node,
+    CM extends CommonMethods = CommonMethods,
+  >
+  implements Wraplet<N>, Groupable, NodeTreeParent
 {
   public isWraplet: true = true;
+  public isGroupable: true = true;
+  public isNodeTreeParent: true = true;
+
   protected core: Core<M, N, CM>;
+  private groupsExtractor: GroupExtractor = (node: Node) => {
+    if (node instanceof Element) {
+      const groupsString = node.getAttribute("data-js-wraplet-groups");
+      if (groupsString) {
+        return groupsString.split(",");
+      }
+    }
+
+    return [];
+  };
 
   constructor(node: N, initOptions: Partial<CoreInitOptions<M>> = {}) {
     if (!node) {
@@ -32,6 +48,34 @@ export abstract class AbstractWraplet<
 
     this.core = new Core(node, map, this, initOptions);
     this.initialize();
+  }
+
+  public getNodeTreeChildren(): Wraplet[] {
+    const children: Wraplet[] = [];
+    for (const child of Object.values(this.children)) {
+      if (Array.isArray(child)) {
+        for (const item of child) {
+          children.push(item);
+        }
+      } else {
+        children.push(child);
+      }
+    }
+
+    // Return only descendants.
+    return children.filter((value) => {
+      value.accessNode((node) => {
+        return this.node.contains(node);
+      });
+    });
+  }
+
+  public setGroupsExtractor(callback: GroupExtractor): void {
+    this.groupsExtractor = callback;
+  }
+
+  getGroups(): string[] {
+    return this.groupsExtractor(this.node);
   }
 
   protected get node(): N {

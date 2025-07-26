@@ -5,7 +5,6 @@ export {
   destroyWrapletsRecursively,
   getWrapletsFromNode,
 } from "./utils";
-export { getGlobalWrapletManager } from "./getGlobalWrapletManager";
 
 export type { WrapletChildrenMap } from "./types/WrapletChildrenMap";
 export type { Wraplet } from "./types/Wraplet";

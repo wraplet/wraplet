@@ -1,5 +1,6 @@
 import { Storage } from "../types/Storage/Storage";
 import { StorageValidationError } from "../errors";
+import { StorageValidators } from "../types/Storage/StorageValidators";
 
 export type ElementStorageOptions = {
   keepFresh?: boolean;
@@ -13,7 +14,7 @@ export class ElementStorage<D extends Record<string, unknown>>
   constructor(
     private element: Element,
     private attribute: string,
-    private validators: Record<keyof D, (value: unknown) => boolean>,
+    private validators: StorageValidators<D>,
     private defaults: D,
     private options: ElementStorageOptions = {},
   ) {
