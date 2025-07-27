@@ -1,10 +1,16 @@
 import { Wraplet } from "./Wraplet";
 
+const NodeTreeParentSymbol = Symbol("NodeTreeParent");
+export { NodeTreeParentSymbol };
+
 export interface NodeTreeParent {
-  isNodeTreeParent: true;
+  [NodeTreeParentSymbol]: true;
   getNodeTreeChildren(): Wraplet[];
 }
 
 export function isNodeTreeParent(object: object): object is NodeTreeParent {
-  return (object as { isNodeTreeParent: unknown }).isNodeTreeParent === true;
+  return (
+    (object as { [NodeTreeParentSymbol]: unknown })[NodeTreeParentSymbol] ===
+    true
+  );
 }

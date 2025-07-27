@@ -1,5 +1,5 @@
 import "./setup";
-import { NodeTreeManager } from "../src/types/NodeTreeManager";
+import { NodeTreeManager } from "../src/NodeTreeManager/NodeTreeManager";
 import { BaseElementTestWraplet } from "./resources/BaseElementTestWraplet";
 import {
   countNodesRecursively,
@@ -8,7 +8,8 @@ import {
   predictElementCount,
 } from "./resources/utils";
 import DefaultNodeTreeManager from "../src/NodeTreeManager/DefaultNodeTreeManager";
-import {AbstractWraplet, Wraplet, WrapletChildrenMap} from "../src";
+import { AbstractWraplet, Wraplet, WrapletChildrenMap } from "../src";
+import {isNodeTreeParent} from "../src/types/NodeTreeParent";
 
 test("Test default node tree manager destroy tree", () => {
   const func = jest.fn();
@@ -62,7 +63,11 @@ test("Test default node tree manager initialize tree", () => {
       throw new Error("Node is not parent node.");
     }
     func();
-    TestWraplet.create(attribute, [], node);
+    const wraplet = TestWraplet.create(attribute, [], node);
+    if (!wraplet) {
+      throw new Error("Wraplet not created.");
+    }
+    return [wraplet];
   });
 
   manager.initializeNodeTree(element);
@@ -73,7 +78,6 @@ test("Test default node tree manager initialize tree", () => {
 });
 
 test("Test wraplet tree manager initialization performance", () => {
-
   class TestWrapletChild extends AbstractWraplet {
     protected defineChildrenMap(): {} {
       return {};
@@ -127,4 +131,83 @@ test("Test wraplet tree manager initialization performance", () => {
     predictElementCount(treeData.depth, treeData.childrenPerNode),
   );
   expect(endTime - startTime).toBeLessThan(1000);
+});
+
+test("Test searching for wraplets in the node tree manager", () => {
+  class TestWrapletChild extends AbstractWraplet<{}, Element> {
+    public getValue(): string | null {
+      return this.node.getAttribute("data-value");
+    }
+    protected defineChildrenMap(): {} {
+      return {};
+    }
+  }
+
+  const map = {
+    child1: {
+      selector: `[data-child-1]`,
+      multiple: false,
+      Class: TestWrapletChild,
+      required: true,
+    },
+    child2: {
+      selector: `[data-child-2]`,
+      multiple: false,
+      Class: TestWrapletChild,
+      required: true,
+    },
+  } as const satisfies WrapletChildrenMap;
+
+  class TestWraplet extends AbstractWraplet<typeof map> {
+    protected defineChildrenMap(): typeof map {
+      return map;
+    }
+
+    public static create(node: ParentNode, attribute: string): TestWraplet[] {
+      return TestWraplet.createWraplets(node, `[${attribute}]`);
+    }
+  }
+  document.body.innerHTML = `
+<div data-parent>
+    <div data-child-1 data-value="1"></div>
+    <div data-child-2></div>
+</div>
+`;
+
+  const manager = new DefaultNodeTreeManager();
+  manager.addWrapletInitializer((node: Node) => {
+    if (!isParentNode(node)) {
+      throw new Error("Node is not parent node.");
+    }
+    const wraplet = TestWraplet.create(node, "data-parent");
+    if (!wraplet) {
+      throw new Error("Wraplet not created.");
+    }
+    return wraplet;
+  });
+
+  manager.initializeNodeTree(document);
+
+  const collection = manager.getCollection();
+
+  // Test findOne.
+  const wraplet = collection.findOne((item) => {
+    return item instanceof TestWraplet;
+  });
+  expect(wraplet).toBeInstanceOf(TestWraplet);
+
+  // Test find.
+  const items = collection.find((item: Wraplet) => {
+    if (item instanceof TestWraplet) {
+      return true;
+    } else if (item instanceof TestWrapletChild) {
+      return item.getValue() === "1";
+    }
+
+    return false;
+  });
+
+  // We don't use "toHaveLength" because jest would attempt to display values of the properties, of items, which would
+  // result in error because "children" properties access is validated.
+  expect(items.length).toBe(2);
 });

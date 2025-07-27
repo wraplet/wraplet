@@ -5,8 +5,13 @@ import { Core } from "./Core";
 import { DestroyListener } from "./types/DestroyListener";
 import { ChildInstance } from "./types/ChildInstance";
 import { CoreInitOptions } from "./types/CoreInitOptions";
-import { Groupable, GroupExtractor } from "./types/Groupable";
-import { NodeTreeParent } from "./types/NodeTreeParent";
+import {
+  defaultGroupableAttribute,
+  Groupable,
+  GroupableSymbol,
+  GroupExtractor,
+} from "./types/Groupable";
+import { NodeTreeParent, NodeTreeParentSymbol } from "./types/NodeTreeParent";
 
 export type CommonMethods = {
   destroy: {};
@@ -20,13 +25,13 @@ export abstract class AbstractWraplet<
   implements Wraplet<N>, Groupable, NodeTreeParent
 {
   public isWraplet: true = true;
-  public isGroupable: true = true;
-  public isNodeTreeParent: true = true;
+  public [GroupableSymbol]: true = true;
+  public [NodeTreeParentSymbol]: true = true;
 
   protected core: Core<M, N, CM>;
   private groupsExtractor: GroupExtractor = (node: Node) => {
     if (node instanceof Element) {
-      const groupsString = node.getAttribute("data-js-wraplet-groups");
+      const groupsString = node.getAttribute(defaultGroupableAttribute);
       if (groupsString) {
         return groupsString.split(",");
       }
@@ -63,10 +68,12 @@ export abstract class AbstractWraplet<
     }
 
     // Return only descendants.
-    return children.filter((value) => {
-      value.accessNode((node) => {
-        return this.node.contains(node);
+    return children.filter((child) => {
+      let result = false;
+      child.accessNode((childsNode) => {
+        result = this.node.contains(childsNode);
       });
+      return result;
     });
   }
 
@@ -74,7 +81,7 @@ export abstract class AbstractWraplet<
     this.groupsExtractor = callback;
   }
 
-  getGroups(): string[] {
+  public getGroups(): string[] {
     return this.groupsExtractor(this.node);
   }
 

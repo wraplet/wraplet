@@ -3,8 +3,9 @@ import { AbstractWraplet, WrapletChildrenMap } from "../src";
 import { BaseElementTestWraplet } from "./resources/BaseElementTestWraplet";
 import { ChildInstance } from "../src/types/ChildInstance";
 import { ChildrenAreNotAvailableError } from "../src/errors";
-import {NodeTreeManager} from "../src/types/NodeTreeManager";
+import {NodeTreeManager} from "../src/NodeTreeManager/NodeTreeManager";
 import DefaultNodeTreeManager from "../src/NodeTreeManager/DefaultNodeTreeManager";
+import {defaultGroupableAttribute, GroupExtractor} from "../src/types/Groupable";
 
 const testWrapletSelectorAttribute = "data-test-selector";
 const testWrapletChildSelectorAttribute = `${testWrapletSelectorAttribute}-child`;
@@ -385,4 +386,78 @@ test("Test wraplet syncing children", () => {
   // We make sure that the arrays didn't change.
   expect(topChildrenBefore).toBe(topChildrenAfter);
   expect(childrenBefore).toBe(childrenAfter);
+});
+
+describe("Test wraplet groupable", () => {
+  const customGroupableAttribute = "data-custom-groupable";
+
+  class TestWrapletChild extends AbstractWraplet<{}, Element> {
+    public getValue(): string | null {
+      return this.node.getAttribute("data-value");
+    }
+    protected defineChildrenMap(): {} {
+      return {};
+    }
+  }
+
+  const map = {
+    child1: {
+      selector: `[data-child-1]`,
+      multiple: false,
+      Class: TestWrapletChild,
+      required: true,
+    },
+    child2: {
+      selector: `[data-child-2]`,
+      multiple: false,
+      Class: TestWrapletChild,
+      required: true,
+    },
+  } as const satisfies WrapletChildrenMap;
+
+  class TestWraplet extends BaseElementTestWraplet<typeof map> {
+    protected defineChildrenMap(): typeof map {
+      return map;
+    }
+  }
+  document.body.innerHTML = `
+<div data-parent>
+    <div data-child-1 ${defaultGroupableAttribute}="group1,group2" ${customGroupableAttribute}="group1"></div>
+    <div data-child-2 ${defaultGroupableAttribute}="group2" ${customGroupableAttribute}="group1,group2"></div>
+</div>
+`;
+
+  const wraplet = TestWraplet.create<TestWraplet>("data-parent", [], document);
+  if (!wraplet) {
+    throw new Error("Wraplets not created.");
+  }
+
+  const child1 = wraplet.getChild("child1");
+  const child2 = wraplet.getChild("child2");
+
+  it("Test wraplet groupable default groups attribute", () => {
+    expect(child1.getGroups()).toEqual(["group1", "group2"]);
+    expect(child2.getGroups()).toEqual(["group2"]);
+  });
+
+  it("Test wraplet groupable custom groups attribute", () => {
+    const newGroupExtractor: GroupExtractor = (node: Node) => {
+      if (!(node instanceof Element)) {
+        throw new Error("The node is not an element.");
+      }
+      const value = node.getAttribute(customGroupableAttribute);
+      if (!value) {
+        throw new Error(
+          "The element does not have a custom groupable attribute.",
+        );
+      }
+      return value.split(",");
+    };
+
+    child1.setGroupsExtractor(newGroupExtractor);
+    child2.setGroupsExtractor(newGroupExtractor);
+
+    expect(child1.getGroups()).toEqual(["group1"]);
+    expect(child2.getGroups()).toEqual(["group1", "group2"]);
+  });
 });
