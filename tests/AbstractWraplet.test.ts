@@ -3,9 +3,10 @@ import { AbstractWraplet, WrapletChildrenMap } from "../src";
 import { BaseElementTestWraplet } from "./resources/BaseElementTestWraplet";
 import { ChildInstance } from "../src/types/ChildInstance";
 import { ChildrenAreNotAvailableError } from "../src/errors";
-import {NodeTreeManager} from "../src/NodeTreeManager/NodeTreeManager";
-import DefaultNodeTreeManager from "../src/NodeTreeManager/DefaultNodeTreeManager";
-import {defaultGroupableAttribute, GroupExtractor} from "../src/types/Groupable";
+import {
+  defaultGroupableAttribute,
+  GroupExtractor,
+} from "../src/types/Groupable";
 
 const testWrapletSelectorAttribute = "data-test-selector";
 const testWrapletChildSelectorAttribute = `${testWrapletSelectorAttribute}-child`;
@@ -36,19 +37,19 @@ class TestWraplet extends BaseElementTestWraplet<typeof childrenMap> {
 }
 
 describe("Wraplet initialization", () => {
-  test("Test wraplet initialization", () => {
+  it("Test wraplet initialization", () => {
     document.body.innerHTML = `<div ${testWrapletSelectorAttribute}><div ${testWrapletChildSelectorAttribute}></div></div>`;
     const wraplet = TestWraplet.create(testWrapletSelectorAttribute);
     expect(wraplet).toBeTruthy();
   });
 
-  test("Test multiple wraplets initialization", () => {
+  it("Test multiple wraplets initialization", () => {
     document.body.innerHTML = `<div ${testWrapletSelectorAttribute}></div><div ${testWrapletSelectorAttribute}><div ${testWrapletChildSelectorAttribute}></div></div>`;
     const wraplets = TestWraplet.createAll(testWrapletSelectorAttribute);
     expect(wraplets.length).toEqual(2);
   });
 
-  test("Test wraplet has element", () => {
+  it("Test wraplet has element", () => {
     document.body.innerHTML = `<div ${testWrapletSelectorAttribute}></div>`;
     const wraplet = TestWraplet.create<TestWraplet>(
       testWrapletSelectorAttribute,
@@ -59,7 +60,7 @@ describe("Wraplet initialization", () => {
     expect(wraplet.hasNode()).toBeTruthy();
   });
 
-  test("Test wraplet's element is accessible", () => {
+  it("Test wraplet's element is accessible", () => {
     document.body.innerHTML = `<div ${testWrapletSelectorAttribute}></div>`;
     const wraplet = TestWraplet.create(testWrapletSelectorAttribute);
     if (!wraplet) {
@@ -74,7 +75,7 @@ describe("Wraplet initialization", () => {
     expect(callback).toHaveBeenCalledTimes(1);
   });
 
-  test("Test wraplet create matches the top element", () => {
+  it("Test wraplet create matches the top element", () => {
     const attribute = "data-test-selector";
 
     class TestWraplet extends AbstractWraplet {
@@ -99,7 +100,7 @@ describe("Wraplet initialization", () => {
     expect(wraplet).toBeInstanceOf(TestWraplet);
   });
 
-  test("Test wraplet child instantiate listener", () => {
+  it("Test wraplet child instantiate listener", () => {
     const attribute = "data-test-wraplet";
     const child1Attribute = `${attribute}-child1`;
     const child2Attribute = `${attribute}-child2`;
@@ -166,7 +167,7 @@ describe("Wraplet initialization", () => {
     expect(instatiatedFunc).toHaveBeenCalledTimes(1);
   });
 
-  test("Test wraplet initialization status", () => {
+  it("Test wraplet initialization status", () => {
     const attribute = "data-test-wraplet";
     const child1Attribute = `${attribute}-child1`;
 
@@ -218,7 +219,7 @@ describe("Wraplet initialization", () => {
     expect(wraplet.isInitialized).toEqual(true);
   });
 
-  test("Test that proper errors are thrown when accessing children when they are instantiated or not", () => {
+  it("Test that proper errors are thrown when accessing children when they are instantiated or not", () => {
     const attribute = "data-test-wraplet";
     const child1Attribute = `${attribute}-child1`;
 
@@ -284,7 +285,7 @@ describe("Wraplet initialization", () => {
   });
 });
 
-test("Test wraplet syncing children", () => {
+it("Test wraplet syncing children", () => {
   const mainAttribute = "data-main-wraplet";
   const childrenAttribute = "data-children-wraplet";
   const childAttribute = "data-child-wraplet";

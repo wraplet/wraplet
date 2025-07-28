@@ -1,7 +1,7 @@
 import "./setup";
 import { ElementStorage } from "../src/storage";
 
-test("Test element storage", () => {
+it("Test element storage", () => {
   const attribute = "data-test-wraplet";
   type Options = {
     option1: string;
@@ -99,7 +99,7 @@ test("Test element storage", () => {
   });
 });
 
-test("Test element storage fresh data", () => {
+it("Test element storage fresh data", () => {
   const attribute = "data-test-wraplet";
   type Options = {
     option1: string;
@@ -127,7 +127,7 @@ test("Test element storage fresh data", () => {
   expect(storage.get("option1")).toEqual("fresh data");
 });
 
-test("Test element storage non-fresh data", () => {
+it("Test element storage non-fresh data", () => {
   const attribute = "data-test-wraplet";
   type Options = {
     option1: string;
@@ -159,7 +159,7 @@ test("Test element storage non-fresh data", () => {
   expect(storage.get("option1")).toEqual("fresh data");
 });
 
-test("Test element storage fresh data by default", () => {
+it("Test element storage fresh data by default", () => {
   const attribute = "data-test-wraplet";
   type Options = {
     option1: string;

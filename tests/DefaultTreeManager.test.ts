@@ -11,7 +11,7 @@ import DefaultNodeTreeManager from "../src/NodeTreeManager/DefaultNodeTreeManage
 import { AbstractWraplet, Wraplet, WrapletChildrenMap } from "../src";
 import {isNodeTreeParent} from "../src/types/NodeTreeParent";
 
-test("Test default node tree manager destroy tree", () => {
+it("Test default node tree manager destroy tree", () => {
   const func = jest.fn();
 
   class TestWraplet extends BaseElementTestWraplet {
@@ -40,7 +40,7 @@ test("Test default node tree manager destroy tree", () => {
   expect(func).toHaveBeenCalledTimes(2);
 });
 
-test("Test default node tree manager initialize tree", () => {
+it("Test default node tree manager initialize tree", () => {
   class TestWraplet extends BaseElementTestWraplet {
     protected defineChildrenMap(): {} {
       return {};
@@ -77,7 +77,7 @@ test("Test default node tree manager initialize tree", () => {
   expect(element.wraplets).toHaveLength(1);
 });
 
-test("Test wraplet tree manager initialization performance", () => {
+it("Test wraplet tree manager initialization performance", () => {
   class TestWrapletChild extends AbstractWraplet {
     protected defineChildrenMap(): {} {
       return {};
@@ -133,7 +133,7 @@ test("Test wraplet tree manager initialization performance", () => {
   expect(endTime - startTime).toBeLessThan(1000);
 });
 
-test("Test searching for wraplets in the node tree manager", () => {
+it("Test searching for wraplets in the node tree manager", () => {
   class TestWrapletChild extends AbstractWraplet<{}, Element> {
     public getValue(): string | null {
       return this.node.getAttribute("data-value");
