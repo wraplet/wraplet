@@ -7,7 +7,7 @@ import {
 } from "../Collection/WrapletCollection";
 import { WrapletCollectionReadonly } from "../Collection/WrapletCollectionReadonly";
 import { DefaultWrapletCollection } from "../Collection/DefaultWrapletCollection";
-import {isNodeTreeParent} from "../types/NodeTreeParent";
+import { isNodeTreeParent } from "../types/NodeTreeParent";
 
 export type Initializer = (node: Node) => Wraplet[];
 

@@ -9,7 +9,6 @@ import {
 } from "./resources/utils";
 import DefaultNodeTreeManager from "../src/NodeTreeManager/DefaultNodeTreeManager";
 import { AbstractWraplet, Wraplet, WrapletChildrenMap } from "../src";
-import {isNodeTreeParent} from "../src/types/NodeTreeParent";
 
 it("Test default node tree manager destroy tree", () => {
   const func = jest.fn();
