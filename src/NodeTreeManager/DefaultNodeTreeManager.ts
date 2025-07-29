@@ -1,7 +1,7 @@
 import { destroyWrapletsRecursively } from "../utils";
 import { NodeTreeManager } from "./NodeTreeManager";
 import { Wraplet } from "../types/Wraplet";
-import { isWrapletSet, WrapletSet } from "../types/Set/WrapletSet";
+import { WrapletSet } from "../types/Set/WrapletSet";
 import { WrapletSetReadonly } from "../types/Set/WrapletSetReadonly";
 import { DefaultWrapletSet } from "../Set/DefaultWrapletSet";
 import { isNodeTreeParent } from "../types/NodeTreeParent";
@@ -10,12 +10,7 @@ export type Initializer = (node: Node) => Wraplet[];
 
 export default class DefaultNodeTreeManager implements NodeTreeManager {
   private initializers: Initializer[] = [];
-
-  constructor(private items: WrapletSet = new DefaultWrapletSet()) {
-    if (!isWrapletSet(items)) {
-      throw new TypeError("'items' must be an instance of 'WrapletSet'");
-    }
-  }
+  private items: WrapletSet = new DefaultWrapletSet();
 
   public addWrapletInitializer(callback: Initializer): void {
     this.initializers.push(callback);

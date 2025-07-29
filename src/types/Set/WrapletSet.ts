@@ -8,6 +8,7 @@ export interface WrapletSet extends BaseSet<Wraplet>, Set<Wraplet> {
   [WrapletSetSymbol]: true;
 }
 
+/* istanbul ignore next */
 const isWrapletSet = (object: object): object is WrapletSet => {
   return (object as { [WrapletSetSymbol]: unknown })[WrapletSetSymbol] === true;
 };

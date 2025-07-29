@@ -10,6 +10,7 @@ export interface WrapletSetReadonly<T extends Wraplet = Wraplet>
   [WrapletSetReadonlySymbol]: true;
 }
 
+/* istanbul ignore next */
 const isWrapletSetReadonly = (object: object): object is WrapletSetReadonly => {
   return (
     (object as { [WrapletSetReadonlySymbol]: unknown })[

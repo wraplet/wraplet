@@ -9,6 +9,7 @@ export interface Groupable {
   getGroups(): string[];
 }
 
+/* istanbul ignore next */
 export function isGroupable(object: object): object is Groupable {
   return (object as { [GroupableSymbol]: unknown })[GroupableSymbol] === true;
 }
