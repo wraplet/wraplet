@@ -4,11 +4,11 @@ import { BaseElementTestWraplet } from "./resources/BaseElementTestWraplet";
 import {
   countNodesRecursively,
   createElementTree,
-  isParentNode,
   predictElementCount,
 } from "./resources/utils";
 import DefaultNodeTreeManager from "../src/NodeTreeManager/DefaultNodeTreeManager";
 import { AbstractWraplet, Wraplet, WrapletChildrenMap } from "../src";
+import { isParentNode } from "../src/utils";
 
 it("Test default node tree manager destroy tree", () => {
   const func = jest.fn();

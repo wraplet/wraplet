@@ -1,9 +1,5 @@
 /* istanbul ignore file */
 
-export function isParentNode(node: Node): node is ParentNode {
-  return typeof (node as any).querySelectorAll === "function";
-}
-
 export function createElementTree(
   depth: number,
   childrenPerNode: number,

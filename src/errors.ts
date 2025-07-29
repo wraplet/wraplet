@@ -11,3 +11,5 @@ export class ValidationMissingError extends Error {}
 export class InvalidOptionsError extends Error {}
 
 export class StorageValidationError extends Error {}
+
+export class ChildWrongInstanceError extends Error {}

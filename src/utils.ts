@@ -11,6 +11,13 @@ export function isWraplet<N extends Node = Node>(
   );
 }
 
+export function isParentNode(node: Node): node is ParentNode {
+  return (
+    typeof (node as Node & { querySelectorAll: unknown }).querySelectorAll ===
+    "function"
+  );
+}
+
 export function getWrapletsFromNode<N extends Node = Node>(
   node: N,
 ): Wraplet<N>[] {

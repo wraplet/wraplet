@@ -1,4 +1,4 @@
-export { Core } from "./Core";
+export { DefaultCore } from "./DefaultCore";
 export { AbstractWraplet } from "./AbstractWraplet";
 export {
   isWraplet,

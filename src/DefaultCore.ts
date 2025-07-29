@@ -2,6 +2,7 @@ import { WrapletChildren } from "./types/WrapletChildren";
 import { Nullable } from "./types/Utils";
 import {
   ChildrenAreNotAvailableError,
+  ChildWrongInstanceError,
   MapError,
   MissingRequiredChildError,
   RequiredChildDestroyedError,
@@ -9,12 +10,13 @@ import {
 import { Wraplet } from "./types/Wraplet";
 import { WrapletChildrenMap } from "./types/WrapletChildrenMap";
 import { CommonMethods } from "./AbstractWraplet";
-import { isWraplet } from "./utils";
+import { isParentNode, isWraplet } from "./utils";
 import { DestroyListener } from "./types/DestroyListener";
 import { InstantiateChildListener } from "./types/InstantiateChildListener";
 import { ChildInstance } from "./types/ChildInstance";
 import { DestroyChildListener } from "./types/DestroyChildListener";
 import { CoreInitOptions } from "./types/CoreInitOptions";
+import { Core, CoreSymbol } from "./types/Core";
 
 type ListenerData = {
   node: Node;
@@ -23,20 +25,18 @@ type ListenerData = {
   options?: AddEventListenerOptions | boolean;
 };
 
-export class Core<
+export class DefaultCore<
   M extends WrapletChildrenMap = {},
   N extends Node = Node,
   CM extends CommonMethods = CommonMethods,
-> {
+> implements Core<M, N, CM>
+{
+  public [CoreSymbol]: true = true;
   public isDestroyed: boolean = false;
   public isGettingDestroyed: boolean = false;
   public isInitialized: boolean = false;
   private instantiatedChildren: Partial<WrapletChildren<M>>;
 
-  /**
-   * This is the log of all node accessors, available for easier debugging.
-   */
-  private __debugNodeAccessors: ((element: N) => void)[] = [];
   private destroyListeners: DestroyListener<N>[] = [];
   private destroyChildListeners: DestroyChildListener<M, keyof M>[] = [];
   private instantiateChildListeners: InstantiateChildListener<M, keyof M>[] =
@@ -44,10 +44,8 @@ export class Core<
   private listeners: ListenerData[] = [];
 
   constructor(
-    public node: N,
     public map: M,
-    private wraplet: Wraplet<N>,
-    private initOptions: Partial<CoreInitOptions<M>> = {},
+    initOptions: Partial<CoreInitOptions<M>> = {},
   ) {
     for (const id in map) {
       map[id] = this.addDefaultsToChildDefinition(map[id]);
@@ -64,14 +62,16 @@ export class Core<
    * processing occurs (instantiate child listeners) that needs access to the core, so core has to
    * exist already.
    */
-  public init() {
-    const children = this.instantiateChildren(this.node);
-    this.instantiatedChildren = this.wrapChildren(children);
+  public init(wraplet: Wraplet<N>) {
+    wraplet.accessNode((node) => {
+      if (!node.wraplets) {
+        node.wraplets = [];
+      }
+      const children = this.instantiateChildren(node);
+      this.instantiatedChildren = this.wrapChildren(children);
+      node.wraplets.push(wraplet);
+    });
 
-    if (!this.node.wraplets) {
-      this.node.wraplets = [];
-    }
-    this.node.wraplets.push(this.wraplet);
     this.isInitialized = true;
   }
 
@@ -79,7 +79,7 @@ export class Core<
     const children: Partial<Nullable<WrapletChildren<M>>> =
       this.instantiatedChildren;
     // We check if are dealing with the ParentNode object.
-    if (!this.isParentNode(node)) {
+    if (!isParentNode(node)) {
       if (Object.keys(this.map).length > 0) {
         throw new MapError(
           "If the node provided cannot have children, the children map should be empty.",
@@ -105,8 +105,8 @@ export class Core<
     return children as WrapletChildren<M>;
   }
 
-  public syncChildren(): void {
-    this.instantiatedChildren = this.instantiateChildren(this.node);
+  public syncChildren(node: N): void {
+    this.instantiatedChildren = this.instantiateChildren(node);
   }
 
   private isCorrectSingleWrapletInstanceGuard<K extends keyof M>(
@@ -234,7 +234,7 @@ export class Core<
         continue;
       }
       if (!this.isCorrectSingleWrapletInstanceGuard(wraplet, id)) {
-        throw new Error(
+        throw new ChildWrongInstanceError(
           `${this.constructor.name}: The "${id}" child is not an array of the expected type.`,
         );
       }
@@ -242,11 +242,6 @@ export class Core<
     }
 
     return items as WrapletChildren<M>[keyof WrapletChildren<M>];
-  }
-
-  public accessNode(callback: (node: N) => void) {
-    this.__debugNodeAccessors.push(callback);
-    callback(this.node);
   }
 
   public addDestroyListener(callback: DestroyListener<N>): void {
@@ -344,9 +339,9 @@ export class Core<
   }
 
   /**
-   * This method removes from nodes references to this wraplet and its children recuresively.
+   * This method removes from nodes references to this wraplet and its children recursively.
    */
-  public destroy(): void {
+  public destroy(wraplet: Wraplet<N>): void {
     if (this.isDestroyed) {
       throw new Error("Wraplet is already destroyed.");
     }
@@ -362,11 +357,14 @@ export class Core<
     }
 
     for (const listener of this.destroyListeners) {
-      listener(this.wraplet);
+      listener(wraplet);
     }
     this.destroyListeners.length = 0;
 
-    this.removeWrapletFromNode(this.wraplet, this.node);
+    wraplet.accessNode((node) => {
+      this.removeWrapletFromNode(wraplet, node);
+    });
+
     this.executeOnChildren(this.children, "destroy");
     this.isGettingDestroyed = false;
     this.isDestroyed = true;
@@ -400,36 +398,6 @@ export class Core<
     method: string,
   ): wraplet is Wraplet<N> & { [method](payload?: CM[keyof CM]): unknown } {
     return typeof (wraplet as any)[method] === "function";
-  }
-
-  private isParentNode(node: Node): node is ParentNode {
-    return typeof (node as any).querySelectorAll === "function";
-  }
-
-  private childTypeGuard<S extends keyof WrapletChildren<M>>(
-    variable: Wraplet<N> | Wraplet<N>[] | null,
-    id: S,
-  ): variable is WrapletChildren<M>[S] {
-    const map = this.map;
-    const Class = map[id].Class;
-    const isRequired = map[id].required;
-    const isMultiple = map[id].multiple;
-    if (isMultiple) {
-      if (!Array.isArray(variable)) {
-        return false;
-      }
-      if (isRequired) {
-        return variable.every((value) => value instanceof Class);
-      }
-
-      return true;
-    }
-
-    if (isRequired) {
-      return variable instanceof Class;
-    }
-
-    return variable instanceof Class || variable === null;
   }
 
   public addEventListener(

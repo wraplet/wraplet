@@ -274,7 +274,7 @@ describe("Wraplet initialization", () => {
         // Disable default initialization.
       }
       public init() {
-        this.core.init();
+        this.core.init(this);
       }
     }
 
@@ -349,7 +349,7 @@ it("Test wraplet syncing children", () => {
 
   class TestWraplet extends BaseElementTestWraplet<typeof childrenMap> {
     public syncChildren(): void {
-      this.core.syncChildren();
+      this.core.syncChildren(this.node);
     }
     protected defineChildrenMap(): typeof childrenMap {
       return childrenMap;

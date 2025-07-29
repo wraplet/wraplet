@@ -1,7 +1,7 @@
 import { WrapletChildrenMap } from "./types/WrapletChildrenMap";
 import { WrapletChildren } from "./types/WrapletChildren";
 import { Wraplet } from "./types/Wraplet";
-import { Core } from "./Core";
+import { DefaultCore } from "./DefaultCore";
 import { DestroyListener } from "./types/DestroyListener";
 import { ChildInstance } from "./types/ChildInstance";
 import { CoreInitOptions } from "./types/CoreInitOptions";
@@ -12,6 +12,7 @@ import {
   GroupExtractor,
 } from "./types/Groupable";
 import { NodeTreeParent, NodeTreeParentSymbol } from "./types/NodeTreeParent";
+import { Core } from "./types/Core";
 
 export type CommonMethods = {
   destroy: {};
@@ -40,7 +41,15 @@ export abstract class AbstractWraplet<
     return [];
   };
 
-  constructor(node: N, initOptions: Partial<CoreInitOptions<M>> = {}) {
+  /**
+   * This is the log of all node accessors, available for easier debugging.
+   */
+  private __debugNodeAccessors: ((element: N) => void)[] = [];
+
+  constructor(
+    protected node: N,
+    initOptions: Partial<CoreInitOptions<M>> = {},
+  ) {
     if (!node) {
       throw new Error("Node is required to create a wraplet.");
     }
@@ -51,7 +60,7 @@ export abstract class AbstractWraplet<
     ];
     initOptions.destroyChildListeners = [this.onChildDestroyed.bind(this)];
 
-    this.core = new Core(node, map, this, initOptions);
+    this.core = new DefaultCore(map, initOptions);
     this.initialize();
   }
 
@@ -85,20 +94,17 @@ export abstract class AbstractWraplet<
     return this.groupsExtractor(this.node);
   }
 
-  protected get node(): N {
-    return this.core.node;
-  }
-
   protected get children(): WrapletChildren<M> {
     return this.core.children;
   }
 
   public accessNode(callback: (node: N) => void) {
-    this.core.accessNode(callback);
+    this.__debugNodeAccessors.push(callback);
+    callback(this.node);
   }
 
   public destroy() {
-    this.core.destroy();
+    this.core.destroy(this);
   }
 
   public isDestroyed(completely: boolean = false): boolean {
@@ -122,7 +128,7 @@ export abstract class AbstractWraplet<
   protected onChildDestroyed(child: ChildInstance<M, keyof M>, id: keyof M) {}
 
   protected initialize(): void {
-    this.core.init();
+    this.core.init(this);
   }
 
   /**
