@@ -6,8 +6,8 @@ export {
   getWrapletsFromNode,
 } from "./utils";
 
-export type { WrapletSetReadonly } from "./Set/WrapletSetReadonly";
-export type { WrapletSet } from "./Set/WrapletSet";
+export type { WrapletSetReadonly } from "./types/Set/WrapletSetReadonly";
+export type { WrapletSet } from "./types/Set/WrapletSet";
 
 export { DefaultWrapletSetReadonly } from "./Set/DefaultWrapletSetReadonly";
 export { DefaultWrapletSet } from "./Set/DefaultWrapletSet";

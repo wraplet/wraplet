@@ -37,6 +37,25 @@ class TestWraplet extends BaseElementTestWraplet<typeof childrenMap> {
 }
 
 describe("Wraplet initialization", () => {
+  it("Test wraplet node is required", () => {
+    class TestWraplet extends AbstractWraplet {
+      protected defineChildrenMap(): {} {
+        return {};
+      }
+    }
+    const func = () => {
+      new TestWraplet(undefined as any);
+    };
+    expect(func).toThrow(Error);
+  });
+
+  it("Test AbstractWraplet instantiation is prohibited", () => {
+    const func = () => {
+      (AbstractWraplet as any).createWraplets(undefined, undefined);
+    };
+    expect(func).toThrow(Error);
+  });
+
   it("Test wraplet initialization", () => {
     document.body.innerHTML = `<div ${testWrapletSelectorAttribute}><div ${testWrapletChildSelectorAttribute}></div></div>`;
     const wraplet = TestWraplet.create(testWrapletSelectorAttribute);
@@ -414,6 +433,12 @@ describe("Test wraplet groupable", () => {
       Class: TestWrapletChild,
       required: true,
     },
+    child3: {
+      selector: `[data-child-3]`,
+      multiple: false,
+      Class: TestWrapletChild,
+      required: true,
+    },
   } as const satisfies WrapletChildrenMap;
 
   class TestWraplet extends BaseElementTestWraplet<typeof map> {
@@ -425,6 +450,7 @@ describe("Test wraplet groupable", () => {
 <div data-parent>
     <div data-child-1 ${defaultGroupableAttribute}="group1,group2" ${customGroupableAttribute}="group1"></div>
     <div data-child-2 ${defaultGroupableAttribute}="group2" ${customGroupableAttribute}="group1,group2"></div>
+    <div data-child-3></div>
 </div>
 `;
 
@@ -435,10 +461,12 @@ describe("Test wraplet groupable", () => {
 
   const child1 = wraplet.getChild("child1");
   const child2 = wraplet.getChild("child2");
+  const child3 = wraplet.getChild("child3");
 
   it("Test wraplet groupable default groups attribute", () => {
     expect(child1.getGroups()).toEqual(["group1", "group2"]);
     expect(child2.getGroups()).toEqual(["group2"]);
+    expect(child3.getGroups()).toEqual([]);
   });
 
   it("Test wraplet groupable custom groups attribute", () => {
@@ -461,4 +489,56 @@ describe("Test wraplet groupable", () => {
     expect(child1.getGroups()).toEqual(["group1"]);
     expect(child2.getGroups()).toEqual(["group1", "group2"]);
   });
+});
+
+it("Test wraplet NodeTreeParent interface", () => {
+  const attribute = "data-test-wraplet";
+  class TestWrapletChild extends AbstractWraplet<{}, Element> {
+    protected defineChildrenMap(): {} {
+      return {};
+    }
+  }
+
+  const map = {
+    child1: {
+      selector: `[data-child-1]`,
+      multiple: false,
+      Class: TestWrapletChild,
+      required: true,
+    },
+    child2: {
+      selector: `[data-child-2]`,
+      multiple: false,
+      Class: TestWrapletChild,
+      required: true,
+    },
+    children: {
+      selector: `[data-children]`,
+      multiple: true,
+      Class: TestWrapletChild,
+      required: true,
+    },
+  } as const satisfies WrapletChildrenMap;
+
+  class TestWraplet extends BaseElementTestWraplet<typeof map> {
+    protected defineChildrenMap(): typeof map {
+      return map;
+    }
+  }
+
+  document.body.innerHTML = `
+<div ${attribute}>
+  <div data-child-1></div>
+  <div data-child-2></div>
+  <div data-children></div>
+  <div data-children></div>
+</div>
+`;
+  const wraplet = TestWraplet.create<TestWraplet>(attribute);
+  if (!wraplet) {
+    throw new Error("Wraplets not created.");
+  }
+
+  const nodeTreeChildren = wraplet.getNodeTreeChildren();
+  expect(nodeTreeChildren.length).toBe(4);
 });

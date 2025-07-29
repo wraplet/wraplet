@@ -1,12 +1,12 @@
-import { Wraplet } from "../types/Wraplet";
-import { SearchableSet } from "./SearchableSet";
+import { Wraplet } from "../Wraplet";
+import { BaseSet } from "./BaseSet";
 
 const WrapletSetReadonlySymbol = Symbol("WrapletSetReadonly");
 export { WrapletSetReadonlySymbol };
 
-export interface WrapletSetReadonly
-  extends SearchableSet<Wraplet>,
-    ReadonlySet<Wraplet> {
+export interface WrapletSetReadonly<T extends Wraplet = Wraplet>
+  extends BaseSet<T>,
+    ReadonlySet<T> {
   [WrapletSetReadonlySymbol]: true;
 }
 

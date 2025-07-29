@@ -9,6 +9,7 @@ import {
 } from "./resources/utils";
 import DefaultNodeTreeManager from "../src/NodeTreeManager/DefaultNodeTreeManager";
 import { AbstractWraplet, Wraplet, WrapletChildrenMap } from "../src";
+import {isNodeTreeParent} from "../src/types/NodeTreeParent";
 
 it("Test default node tree manager destroy tree", () => {
   const func = jest.fn();
@@ -153,6 +154,12 @@ it("Test searching for wraplets in the node tree manager", () => {
       Class: TestWrapletChild,
       required: true,
     },
+    children: {
+      selector: `[data-children]`,
+      multiple: true,
+      Class: TestWrapletChild,
+      required: false,
+    },
   } as const satisfies WrapletChildrenMap;
 
   class TestWraplet extends AbstractWraplet<typeof map> {
@@ -168,6 +175,8 @@ it("Test searching for wraplets in the node tree manager", () => {
 <div data-parent>
     <div data-child-1 data-value="1"></div>
     <div data-child-2></div>
+    <div data-children></div>
+    <div data-children></div>
 </div>
 `;
 
@@ -191,6 +200,9 @@ it("Test searching for wraplets in the node tree manager", () => {
   const wraplet = set.findOne((item) => {
     return item instanceof TestWraplet;
   });
+  if (!wraplet) {
+    throw new Error("Wraplet not found.");
+  }
   expect(wraplet).toBeInstanceOf(TestWraplet);
 
   // Test find.

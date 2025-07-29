@@ -167,7 +167,7 @@ export abstract class AbstractWraplet<
     N extends Node,
     T extends AbstractWraplet<any, N> = never,
   >(node: ParentNode, selector: string, additional_args: unknown[] = []): T[] {
-    if (this instanceof AbstractWraplet) {
+    if (this === AbstractWraplet) {
       throw new Error("You cannot instantiate an abstract class.");
     }
 

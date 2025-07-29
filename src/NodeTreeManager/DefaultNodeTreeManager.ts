@@ -1,8 +1,8 @@
 import { destroyWrapletsRecursively } from "../utils";
 import { NodeTreeManager } from "./NodeTreeManager";
 import { Wraplet } from "../types/Wraplet";
-import { isWrapletSet, WrapletSet } from "../Set/WrapletSet";
-import { WrapletSetReadonly } from "../Set/WrapletSetReadonly";
+import { isWrapletSet, WrapletSet } from "../types/Set/WrapletSet";
+import { WrapletSetReadonly } from "../types/Set/WrapletSetReadonly";
 import { DefaultWrapletSet } from "../Set/DefaultWrapletSet";
 import { isNodeTreeParent } from "../types/NodeTreeParent";
 

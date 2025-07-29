@@ -1,3 +1,4 @@
+/* istanbul ignore file */
 import { AbstractWraplet, WrapletChildrenMap } from "../../src";
 import { WrapletChildren } from "../../src/types/WrapletChildren";
 import { CommonMethods } from "../../src/AbstractWraplet";

@@ -2,7 +2,7 @@ import { Wraplet } from "../types/Wraplet";
 import {
   WrapletSetReadonly,
   WrapletSetReadonlySymbol,
-} from "./WrapletSetReadonly";
+} from "../types/Set/WrapletSetReadonly";
 import { DefaultSearchableSet } from "./DefaultSearchableSet";
 
 export class DefaultWrapletSetReadonly<T extends Wraplet>
