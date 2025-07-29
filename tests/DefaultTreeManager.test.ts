@@ -124,8 +124,6 @@ it("Test wraplet tree manager initialization performance", () => {
   manager.initializeNodeTree(tree);
   const endTime = performance.now();
 
-  //console.log(countNodesRecursively(tree), endTime - startTime);
-
   expect(countNodesRecursively(tree)).toBe(
     predictElementCount(treeData.depth, treeData.childrenPerNode),
   );
@@ -187,16 +185,16 @@ it("Test searching for wraplets in the node tree manager", () => {
 
   manager.initializeNodeTree(document);
 
-  const collection = manager.getCollection();
+  const set = manager.getSet();
 
   // Test findOne.
-  const wraplet = collection.findOne((item) => {
+  const wraplet = set.findOne((item) => {
     return item instanceof TestWraplet;
   });
   expect(wraplet).toBeInstanceOf(TestWraplet);
 
   // Test find.
-  const items = collection.find((item: Wraplet) => {
+  const items = set.find((item: Wraplet) => {
     if (item instanceof TestWraplet) {
       return true;
     } else if (item instanceof TestWrapletChild) {

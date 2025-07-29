@@ -1,0 +1,13 @@
+import { Wraplet } from "../types/Wraplet";
+import {
+  WrapletSetReadonly,
+  WrapletSetReadonlySymbol,
+} from "./WrapletSetReadonly";
+import { DefaultSearchableSet } from "./DefaultSearchableSet";
+
+export class DefaultWrapletSetReadonly<T extends Wraplet>
+  extends DefaultSearchableSet<T>
+  implements WrapletSetReadonly
+{
+  [WrapletSetReadonlySymbol]: true = true;
+}

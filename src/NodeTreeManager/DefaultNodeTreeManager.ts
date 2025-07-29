@@ -1,12 +1,9 @@
 import { destroyWrapletsRecursively } from "../utils";
 import { NodeTreeManager } from "./NodeTreeManager";
 import { Wraplet } from "../types/Wraplet";
-import {
-  isWrapletCollection,
-  WrapletCollection,
-} from "../Collection/WrapletCollection";
-import { WrapletCollectionReadonly } from "../Collection/WrapletCollectionReadonly";
-import { DefaultWrapletCollection } from "../Collection/DefaultWrapletCollection";
+import { isWrapletSet, WrapletSet } from "../Set/WrapletSet";
+import { WrapletSetReadonly } from "../Set/WrapletSetReadonly";
+import { DefaultWrapletSet } from "../Set/DefaultWrapletSet";
 import { isNodeTreeParent } from "../types/NodeTreeParent";
 
 export type Initializer = (node: Node) => Wraplet[];
@@ -14,13 +11,9 @@ export type Initializer = (node: Node) => Wraplet[];
 export default class DefaultNodeTreeManager implements NodeTreeManager {
   private initializers: Initializer[] = [];
 
-  constructor(
-    private collection: WrapletCollection = new DefaultWrapletCollection(),
-  ) {
-    if (!isWrapletCollection(collection)) {
-      throw new TypeError(
-        "'collection' must be an instance of 'WrapletCollection'",
-      );
+  constructor(private items: WrapletSet = new DefaultWrapletSet()) {
+    if (!isWrapletSet(items)) {
+      throw new TypeError("'items' must be an instance of 'WrapletSet'");
     }
   }
 
@@ -32,15 +25,15 @@ export default class DefaultNodeTreeManager implements NodeTreeManager {
     for (const initializer of this.initializers) {
       const wraplets = initializer(node);
       for (const wraplet of wraplets) {
-        this.collection.add(wraplet);
+        this.items.add(wraplet);
         if (isNodeTreeParent(wraplet)) {
           const children = wraplet.getNodeTreeChildren();
           for (const child of children) {
-            this.collection.add(child);
+            this.items.add(child);
           }
         }
         wraplet.addDestroyListener((wraplet) => {
-          this.collection.delete(wraplet);
+          this.items.delete(wraplet);
         });
       }
     }
@@ -50,7 +43,7 @@ export default class DefaultNodeTreeManager implements NodeTreeManager {
     destroyWrapletsRecursively(node);
   }
 
-  public getCollection(): WrapletCollectionReadonly {
-    return this.collection;
+  public getSet(): WrapletSetReadonly {
+    return this.items as unknown as WrapletSetReadonly;
   }
 }

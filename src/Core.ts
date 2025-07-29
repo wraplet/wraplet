@@ -29,6 +29,7 @@ export class Core<
   CM extends CommonMethods = CommonMethods,
 > {
   public isDestroyed: boolean = false;
+  public isGettingDestroyed: boolean = false;
   public isInitialized: boolean = false;
   private instantiatedChildren: Partial<WrapletChildren<M>>;
 
@@ -349,6 +350,7 @@ export class Core<
     if (this.isDestroyed) {
       throw new Error("Wraplet is already destroyed.");
     }
+    this.isGettingDestroyed = true;
 
     // Remove listeners.
     for (const listener of this.listeners) {
@@ -366,6 +368,7 @@ export class Core<
 
     this.removeWrapletFromNode(this.wraplet, this.node);
     this.executeOnChildren(this.children, "destroy");
+    this.isGettingDestroyed = false;
     this.isDestroyed = true;
   }
 
@@ -475,7 +478,7 @@ export class Core<
       return;
     }
 
-    if (this.map[id].required) {
+    if (this.map[id].required && !this.isGettingDestroyed) {
       throw new RequiredChildDestroyedError(
         "Required child has been destroyed.",
       );
@@ -525,7 +528,7 @@ export class Core<
         }
 
         function isDestroyed(wraplet: Wraplet<N>): boolean {
-          return wraplet.isDestroyed;
+          return wraplet.isDestroyed(true);
         }
 
         const child: any = target[name];

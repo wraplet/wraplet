@@ -201,12 +201,12 @@ it("Test that if the required child has been destroyed then throw exception", ()
 </div>
 `;
 
-  const collection = TestWraplet.create<TestWraplet>(mainAttribute);
-  if (!collection) {
+  const wraplet = TestWraplet.create<TestWraplet>(mainAttribute);
+  if (!wraplet) {
     throw new Error("Wraplet not initialized.");
   }
 
-  const child = collection.getChild("child");
+  const child = wraplet.getChild("child");
   if (!child) {
     throw new Error("Child not found.");
   }
