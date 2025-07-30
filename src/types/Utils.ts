@@ -14,10 +14,7 @@ export type DeepWriteable<T> = {
 /**
  * Generic guard.
  */
-const is = <T extends object>(
-  object: object,
-  symbol: symbol,
-): object is T => {
+const is = <T extends object>(object: object, symbol: symbol): object is T => {
   return (object as { [symbol]: unknown })[symbol] === true;
 };
 

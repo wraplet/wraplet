@@ -13,3 +13,5 @@ export class InvalidOptionsError extends Error {}
 export class StorageValidationError extends Error {}
 
 export class ChildWrongInstanceError extends Error {}
+
+export class ChildrenExpectedArrayError extends Error {}

@@ -29,6 +29,29 @@ export function getWrapletsFromNode<N extends Node = Node>(
   return wraplets as Wraplet<N>[];
 }
 
+export function removeWrapletFromNode<N extends Node>(
+  wraplet: Wraplet<N>,
+  node: N,
+): void {
+  const index = node.wraplets?.findIndex((value) => {
+    return value === wraplet;
+  });
+
+  if (index !== undefined && index > -1) {
+    node.wraplets?.splice(index, 1);
+  }
+}
+
+export function addWrapletToNode<N extends Node>(
+  wraplet: Wraplet<N>,
+  node: N,
+): void {
+  if (!node.wraplets) {
+    node.wraplets = [];
+  }
+  node.wraplets.push(wraplet);
+}
+
 export function actOnNodesRecursively(
   node: Node,
   callback: (node: Node) => void,

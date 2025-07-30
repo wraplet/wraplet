@@ -69,7 +69,7 @@ describe("Test wraplet map", () => {
       }
 
       public getAlteredMap() {
-        return this.core.map;
+        return this.childrenManager.map;
       }
     }
 

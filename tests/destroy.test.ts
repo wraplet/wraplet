@@ -117,7 +117,7 @@ it("Test that listeneres are being detached during destruction", () => {
     constructor(node: Element) {
       super(node);
 
-      this.core.addEventListener(node, "click", () => {
+      this.childrenManager.addEventListener(node, "click", () => {
         listener();
       });
     }

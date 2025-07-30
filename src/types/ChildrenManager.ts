@@ -1,8 +1,6 @@
 import { WrapletChildren } from "./WrapletChildren";
 import { WrapletChildrenMap } from "./WrapletChildrenMap";
-import { Wraplet } from "./Wraplet";
 import { CommonMethods } from "../AbstractWraplet";
-import { DestroyListener } from "./DestroyListener";
 import { DestroyChildListener } from "./DestroyChildListener";
 import { InstantiateChildListener } from "./InstantiateChildListener";
 import { is } from "./Utils";
@@ -14,7 +12,7 @@ export { CoreSymbol };
  * Core interface that defines the public API for managing wraplet relationships
  * and lifecycles.
  */
-export interface Core<
+export interface ChildrenManager<
   M extends WrapletChildrenMap = {},
   N extends Node = Node,
   CM extends CommonMethods = CommonMethods,
@@ -45,7 +43,7 @@ export interface Core<
    * Initialize the core.
    * This must be called after construction to fully initialize the core.
    */
-  init(wraplet: Wraplet<N>): void;
+  init(): void;
 
   /**
    * Instantiate children based on the map and the current node.
@@ -56,11 +54,6 @@ export interface Core<
    * Synchronize the children instances with the DOM.
    */
   syncChildren(node: N): void;
-
-  /**
-   * Add a listener that will be called when the wraplet is destroyed.
-   */
-  addDestroyListener(callback: DestroyListener<N>): void;
 
   /**
    * Add a listener that will be called when a child is destroyed.
@@ -86,12 +79,7 @@ export interface Core<
   /**
    * Destroy the core and all its children.
    */
-  destroy(wraplet: Wraplet<N>): void;
-
-  /**
-   * Remove a wraplet from a node's wraplets array.
-   */
-  removeWrapletFromNode(wraplet: Wraplet<N>, node: N): void;
+  destroy(): void;
 
   /**
    * Add an event listener to a node and track it for cleanup.
@@ -115,8 +103,8 @@ export interface Core<
 }
 
 /* istanbul ignore next */
-const isCore = (object: object): object is Core => {
-  return is<Core>(object, CoreSymbol);
+const isCore = (object: object): object is ChildrenManager => {
+  return is<ChildrenManager>(object, CoreSymbol);
 };
 
 export { isCore };

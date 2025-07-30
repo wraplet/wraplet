@@ -1,7 +1,7 @@
 import { WrapletChildrenMap } from "./types/WrapletChildrenMap";
 import { WrapletChildren } from "./types/WrapletChildren";
 import { Wraplet } from "./types/Wraplet";
-import { DefaultCore } from "./DefaultCore";
+import { DefaultChildrenManager } from "./DefaultChildrenManager";
 import { DestroyListener } from "./types/DestroyListener";
 import { ChildInstance } from "./types/ChildInstance";
 import { CoreInitOptions } from "./types/CoreInitOptions";
@@ -12,7 +12,8 @@ import {
   GroupExtractor,
 } from "./types/Groupable";
 import { NodeTreeParent, NodeTreeParentSymbol } from "./types/NodeTreeParent";
-import { Core } from "./types/Core";
+import { ChildrenManager } from "./types/ChildrenManager";
+import { addWrapletToNode, removeWrapletFromNode } from "./utils";
 
 export type CommonMethods = {
   destroy: {};
@@ -29,7 +30,7 @@ export abstract class AbstractWraplet<
   public [GroupableSymbol]: true = true;
   public [NodeTreeParentSymbol]: true = true;
 
-  protected core: Core<M, N, CM>;
+  protected childrenManager: ChildrenManager<M, N, CM>;
   private groupsExtractor: GroupExtractor = (node: Node) => {
     if (node instanceof Element) {
       const groupsString = node.getAttribute(defaultGroupableAttribute);
@@ -40,6 +41,7 @@ export abstract class AbstractWraplet<
 
     return [];
   };
+  private destroyListeners: DestroyListener<N>[] = [];
 
   /**
    * This is the log of all node accessors, available for easier debugging.
@@ -60,7 +62,7 @@ export abstract class AbstractWraplet<
     ];
     initOptions.destroyChildListeners = [this.onChildDestroyed.bind(this)];
 
-    this.core = new DefaultCore(map, initOptions);
+    this.childrenManager = new DefaultChildrenManager(node, map, initOptions);
     this.initialize();
   }
 
@@ -95,7 +97,7 @@ export abstract class AbstractWraplet<
   }
 
   protected get children(): WrapletChildren<M> {
-    return this.core.children;
+    return this.childrenManager.children;
   }
 
   public accessNode(callback: (node: N) => void) {
@@ -104,21 +106,27 @@ export abstract class AbstractWraplet<
   }
 
   public destroy() {
-    this.core.destroy(this);
+    for (const listener of this.destroyListeners) {
+      listener(this);
+    }
+    this.destroyListeners.length = 0;
+    removeWrapletFromNode(this, this.node);
+    this.childrenManager.destroy();
   }
 
   public isDestroyed(completely: boolean = false): boolean {
     return completely
-      ? this.core.isDestroyed
-      : this.core.isGettingDestroyed || this.core.isDestroyed;
+      ? this.childrenManager.isDestroyed
+      : this.childrenManager.isGettingDestroyed ||
+          this.childrenManager.isDestroyed;
   }
 
   public get isInitialized(): boolean {
-    return this.core.isInitialized;
+    return this.childrenManager.isInitialized;
   }
 
   public addDestroyListener(callback: DestroyListener<N>): void {
-    this.core.addDestroyListener(callback);
+    this.destroyListeners.push(callback);
   }
 
   /**
@@ -128,7 +136,8 @@ export abstract class AbstractWraplet<
   protected onChildDestroyed(child: ChildInstance<M, keyof M>, id: keyof M) {}
 
   protected initialize(): void {
-    this.core.init(this);
+    this.childrenManager.init();
+    addWrapletToNode(this, this.node);
   }
 
   /**
@@ -160,7 +169,7 @@ export abstract class AbstractWraplet<
   ): item is ChildInstance<M, K> {
     return (
       actualUnknownId === (onlyId || actualUnknownId) &&
-      item instanceof this.core.map[actualUnknownId]["Class"]
+      item instanceof this.childrenManager.map[actualUnknownId]["Class"]
     );
   }
 

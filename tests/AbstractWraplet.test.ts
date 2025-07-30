@@ -265,7 +265,7 @@ describe("Wraplet initialization", () => {
         return map;
       }
       public getChildrenUninitialized() {
-        return this.core.uninitializedChildren;
+        return this.childrenManager.uninitializedChildren;
       }
       public getChildrenInitialized() {
         return this.children;
@@ -274,7 +274,7 @@ describe("Wraplet initialization", () => {
         // Disable default initialization.
       }
       public init() {
-        this.core.init(this);
+        this.childrenManager.init();
       }
     }
 
@@ -349,7 +349,7 @@ it("Test wraplet syncing children", () => {
 
   class TestWraplet extends BaseElementTestWraplet<typeof childrenMap> {
     public syncChildren(): void {
-      this.core.syncChildren(this.node);
+      this.childrenManager.syncChildren(this.node);
     }
     protected defineChildrenMap(): typeof childrenMap {
       return childrenMap;

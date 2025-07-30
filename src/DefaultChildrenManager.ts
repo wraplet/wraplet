@@ -1,6 +1,7 @@
 import { WrapletChildren } from "./types/WrapletChildren";
 import { Nullable } from "./types/Utils";
 import {
+  ChildrenExpectedArrayError,
   ChildrenAreNotAvailableError,
   ChildWrongInstanceError,
   MapError,
@@ -11,12 +12,11 @@ import { Wraplet } from "./types/Wraplet";
 import { WrapletChildrenMap } from "./types/WrapletChildrenMap";
 import { CommonMethods } from "./AbstractWraplet";
 import { isParentNode, isWraplet } from "./utils";
-import { DestroyListener } from "./types/DestroyListener";
 import { InstantiateChildListener } from "./types/InstantiateChildListener";
 import { ChildInstance } from "./types/ChildInstance";
 import { DestroyChildListener } from "./types/DestroyChildListener";
 import { CoreInitOptions } from "./types/CoreInitOptions";
-import { Core, CoreSymbol } from "./types/Core";
+import { ChildrenManager, CoreSymbol } from "./types/ChildrenManager";
 
 type ListenerData = {
   node: Node;
@@ -25,11 +25,11 @@ type ListenerData = {
   options?: AddEventListenerOptions | boolean;
 };
 
-export class DefaultCore<
+export class DefaultChildrenManager<
   M extends WrapletChildrenMap = {},
   N extends Node = Node,
   CM extends CommonMethods = CommonMethods,
-> implements Core<M, N, CM>
+> implements ChildrenManager<M, N, CM>
 {
   public [CoreSymbol]: true = true;
   public isDestroyed: boolean = false;
@@ -37,13 +37,13 @@ export class DefaultCore<
   public isInitialized: boolean = false;
   private instantiatedChildren: Partial<WrapletChildren<M>>;
 
-  private destroyListeners: DestroyListener<N>[] = [];
   private destroyChildListeners: DestroyChildListener<M, keyof M>[] = [];
   private instantiateChildListeners: InstantiateChildListener<M, keyof M>[] =
     [];
   private listeners: ListenerData[] = [];
 
   constructor(
+    private node: N,
     public map: M,
     initOptions: Partial<CoreInitOptions<M>> = {},
   ) {
@@ -59,18 +59,12 @@ export class DefaultCore<
    * Initialize core.
    *
    * We couldn't put this step in the constructor, because during initialization some wraplet
-   * processing occurs (instantiate child listeners) that needs access to the core, so core has to
-   * exist already.
+   * processing occurs (instantiate child listeners) that needs access to the children manager,
+   * so the children manager has to exist already.
    */
-  public init(wraplet: Wraplet<N>) {
-    wraplet.accessNode((node) => {
-      if (!node.wraplets) {
-        node.wraplets = [];
-      }
-      const children = this.instantiateChildren(node);
-      this.instantiatedChildren = this.wrapChildren(children);
-      node.wraplets.push(wraplet);
-    });
+  public init() {
+    const children = this.instantiateChildren(this.node);
+    this.instantiatedChildren = this.wrapChildren(children);
 
     this.isInitialized = true;
   }
@@ -130,7 +124,9 @@ export class DefaultCore<
     const existingWrapletsOnNode = childElement.wraplets || [];
     if (this.map[id]["multiple"]) {
       if (!Array.isArray(existingChild)) {
-        throw new Error("Internal logic error. Expected an array.");
+        throw new ChildrenExpectedArrayError(
+          "Internal logic error. Expected an array.",
+        );
       }
       const intersection = this.intersect(
         existingChild,
@@ -244,10 +240,6 @@ export class DefaultCore<
     return items as WrapletChildren<M>[keyof WrapletChildren<M>];
   }
 
-  public addDestroyListener(callback: DestroyListener<N>): void {
-    this.destroyListeners.push(callback);
-  }
-
   public addDestroyChildListener(
     callback: DestroyChildListener<M, keyof M>,
   ): void {
@@ -299,8 +291,7 @@ export class DefaultCore<
     for (const childEntries of Object.entries(children)) {
       const name = childEntries[0];
       const child = childEntries[1];
-      const map = this.map;
-      if (!map[name].destructible) {
+      if (!this.map[name].destructible) {
         continue;
       }
 
@@ -341,7 +332,7 @@ export class DefaultCore<
   /**
    * This method removes from nodes references to this wraplet and its children recursively.
    */
-  public destroy(wraplet: Wraplet<N>): void {
+  public destroy(): void {
     if (this.isDestroyed) {
       throw new Error("Wraplet is already destroyed.");
     }
@@ -356,31 +347,9 @@ export class DefaultCore<
       node.removeEventListener(eventName, callback, options);
     }
 
-    for (const listener of this.destroyListeners) {
-      listener(wraplet);
-    }
-    this.destroyListeners.length = 0;
-
-    wraplet.accessNode((node) => {
-      this.removeWrapletFromNode(wraplet, node);
-    });
-
     this.executeOnChildren(this.children, "destroy");
     this.isGettingDestroyed = false;
     this.isDestroyed = true;
-  }
-
-  /**
-   * Remove the wraplet from the list of wraplets.
-   */
-  public removeWrapletFromNode(wraplet: Wraplet<N>, node: N): void {
-    const index = node.wraplets?.findIndex((value) => {
-      return value === wraplet;
-    });
-
-    if (index !== undefined && index > -1) {
-      node.wraplets?.splice(index, 1);
-    }
   }
 
   private addDefaultsToChildDefinition<A extends M[keyof M]>(definition: A): A {

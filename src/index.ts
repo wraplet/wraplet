@@ -1,4 +1,4 @@
-export { DefaultCore } from "./DefaultCore";
+export { DefaultChildrenManager } from "./DefaultChildrenManager";
 export { AbstractWraplet } from "./AbstractWraplet";
 export {
   isWraplet,
