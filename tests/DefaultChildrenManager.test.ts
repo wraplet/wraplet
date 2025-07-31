@@ -283,4 +283,37 @@ describe("Test DefaultChildrenManager", () => {
     childrenManager.syncChildren();
     expect(func).toHaveBeenCalledTimes(4);
   });
+
+  it("Test DefaultChildrenManager execute on children", () => {
+    const node = document.createElement("div");
+    node.innerHTML =
+      "<div data-children></div><div data-children><div data-child></div></div";
+
+    const map = {
+      children: {
+        selector: "[data-children]",
+        Class: TestWrapletClass,
+        multiple: true,
+        required: false,
+      },
+      child: {
+        selector: "[data-child]",
+        Class: TestWrapletClass,
+        multiple: false,
+        required: false,
+      },
+    } as const satisfies WrapletChildrenMap;
+
+    const childrenManager: ChildrenManager<typeof map> =
+      new DefaultChildrenManager(node, map);
+
+    const func = jest.fn();
+    childrenManager.addDestroyChildListener(() => {
+      func();
+    });
+
+    childrenManager.init();
+    destroyWrapletsRecursively(node);
+    expect(func).toHaveBeenCalledTimes(3);
+  });
 });

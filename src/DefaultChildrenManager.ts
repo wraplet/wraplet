@@ -9,7 +9,7 @@ import {
   ChildrenMultipleInstancesOnASingleNodeError,
   ChildrenTooManyFoundError,
 } from "./errors";
-import { isWraplet, Wraplet } from "./types/Wraplet";
+import { Wraplet } from "./types/Wraplet";
 import { WrapletChildrenMap } from "./types/WrapletChildrenMap";
 import { CommonMethods } from "./AbstractWraplet";
 import { getWrapletsFromNode, isParentNode } from "./utils";
@@ -271,56 +271,6 @@ export class DefaultChildrenManager<
   }
 
   /**
-   * This method allows executing the specified method on the wraplet and all its children.
-   * The original wraplet and all children need to have this method implemented.
-   */
-  public executeOnChildren(
-    children: WrapletChildren<M>,
-    method: keyof CM & string,
-    payload?: CM[keyof CM],
-  ) {
-    for (const childEntries of Object.entries(children)) {
-      const name = childEntries[0];
-      const child = childEntries[1];
-      if (!this.map[name].destructible) {
-        continue;
-      }
-
-      if (Array.isArray(child)) {
-        // We need to loop through the copy of the array because some items can be removed from
-        // the original during the loop.
-        const childArray = child.slice(0);
-        for (const item of childArray) {
-          if (!isWraplet<N>(item)) {
-            throw new Error("Internal logic error. Item is not a wraplet.");
-          }
-          if (!this.wrapletHasMethodGuard(item, method)) {
-            throw new Error(
-              `Internal logic error. Action "${String(method)}" is not defined for the child "${name}".`,
-            );
-          }
-          if (payload) {
-            item[method](payload);
-          } else {
-            item[method]();
-          }
-        }
-      } else if (isWraplet<N>(child)) {
-        if (!this.wrapletHasMethodGuard(child, method)) {
-          throw new Error(
-            `Internal logic error. Action "${String(method)}" is not defined for the child "${name}".`,
-          );
-        }
-        if (payload) {
-          child[method](payload);
-        } else {
-          child[method]();
-        }
-      }
-    }
-  }
-
-  /**
    * This method removes from nodes references to this wraplet and its children recursively.
    */
   public destroy(): void {
@@ -338,7 +288,8 @@ export class DefaultChildrenManager<
       node.removeEventListener(eventName, callback, options);
     }
 
-    this.executeOnChildren(this.children, "destroy");
+    this.destroyChildren();
+
     this.isGettingDestroyed = false;
     this.isDestroyed = true;
   }
@@ -505,6 +456,24 @@ export class DefaultChildrenManager<
 
     for (const listener of initOptions.destroyChildListeners) {
       this.destroyChildListeners.push(listener);
+    }
+  }
+
+  private destroyChildren(): void {
+    for (const [key, child] of Object.entries(this.children)) {
+      if (!child || !this.map[key]["destructible"]) {
+        continue;
+      }
+      if (this.map[key]["multiple"]) {
+        // We need to loop through the copy of the array because some items can be removed from
+        // the original during the loop.
+        const childArray = child.slice(0);
+        for (const item of childArray as Wraplet<N>[]) {
+          item.destroy();
+        }
+      } else {
+        (child as Wraplet<N>).destroy();
+      }
     }
   }
 }

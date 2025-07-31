@@ -22,7 +22,6 @@ export type CommonMethods = {
 export abstract class AbstractWraplet<
     M extends WrapletChildrenMap = {},
     N extends Node = Node,
-    CM extends CommonMethods = CommonMethods,
   >
   implements Wraplet<N>, Groupable, NodeTreeParent
 {
@@ -30,7 +29,7 @@ export abstract class AbstractWraplet<
   public [GroupableSymbol]: true = true;
   public [NodeTreeParentSymbol]: true = true;
 
-  protected childrenManager: ChildrenManager<M, N, CM>;
+  protected childrenManager: ChildrenManager<M, N>;
   private groupsExtractor: GroupExtractor = (node: Node) => {
     if (node instanceof Element) {
       const groupsString = node.getAttribute(defaultGroupableAttribute);

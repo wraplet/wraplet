@@ -1,6 +1,5 @@
 import { WrapletChildren } from "./WrapletChildren";
 import { WrapletChildrenMap } from "./WrapletChildrenMap";
-import { CommonMethods } from "../AbstractWraplet";
 import { DestroyChildListener } from "./DestroyChildListener";
 import { InstantiateChildListener } from "./InstantiateChildListener";
 import { is } from "./Utils";
@@ -15,7 +14,6 @@ export { CoreSymbol };
 export interface ChildrenManager<
   M extends WrapletChildrenMap = {},
   N extends Node = Node,
-  CM extends CommonMethods = CommonMethods,
 > {
   [CoreSymbol]: true;
 
@@ -65,15 +63,6 @@ export interface ChildrenManager<
    */
   addInstantiateChildListener(
     callback: InstantiateChildListener<M, keyof M>,
-  ): void;
-
-  /**
-   * Execute a method on all children.
-   */
-  executeOnChildren(
-    children: WrapletChildren<M>,
-    method: keyof CM & string,
-    payload?: CM[keyof CM],
   ): void;
 
   /**
