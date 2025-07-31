@@ -1,3 +1,5 @@
+import { is } from "./Utils";
+
 export type GroupExtractor = (node: Node) => string[];
 
 const GroupableSymbol = Symbol("Groupable");
@@ -10,8 +12,8 @@ export interface Groupable {
 }
 
 /* istanbul ignore next */
-export function isGroupable(object: object): object is Groupable {
-  return (object as { [GroupableSymbol]: unknown })[GroupableSymbol] === true;
+export function isGroupable(object: unknown): object is Groupable {
+  return is(object, GroupableSymbol);
 }
 
 const defaultGroupableAttribute = "data-js-wraplet-groupable";

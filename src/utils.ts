@@ -1,15 +1,6 @@
 import { Wraplet } from "./types/Wraplet";
-
-export function isWraplet<N extends Node = Node>(
-  obj: unknown,
-): obj is Wraplet<N> {
-  return (
-    typeof obj === "object" &&
-    obj !== null &&
-    "isWraplet" in obj &&
-    obj.isWraplet === true
-  );
-}
+import { DefaultWrapletSet } from "./Set/DefaultWrapletSet";
+import { isWrapletSet, WrapletSet } from "./types/Set/WrapletSet";
 
 export function isParentNode(node: Node): node is ParentNode {
   return (
@@ -20,26 +11,23 @@ export function isParentNode(node: Node): node is ParentNode {
 
 export function getWrapletsFromNode<N extends Node = Node>(
   node: N,
-): Wraplet<N>[] {
+): WrapletSet {
   const wraplets = node.wraplets;
-  if (!Array.isArray(wraplets)) {
-    return [];
+  if (!isWrapletSet(wraplets) || wraplets.size === 0) {
+    return new DefaultWrapletSet();
   }
 
-  return wraplets as Wraplet<N>[];
+  return wraplets;
 }
 
 export function removeWrapletFromNode<N extends Node>(
   wraplet: Wraplet<N>,
   node: N,
-): void {
-  const index = node.wraplets?.findIndex((value) => {
-    return value === wraplet;
-  });
-
-  if (index !== undefined && index > -1) {
-    node.wraplets?.splice(index, 1);
+): boolean {
+  if (!node.wraplets) {
+    return false;
   }
+  return node.wraplets.delete(wraplet);
 }
 
 export function addWrapletToNode<N extends Node>(
@@ -47,9 +35,9 @@ export function addWrapletToNode<N extends Node>(
   node: N,
 ): void {
   if (!node.wraplets) {
-    node.wraplets = [];
+    node.wraplets = new DefaultWrapletSet();
   }
-  node.wraplets.push(wraplet);
+  node.wraplets.add(wraplet);
 }
 
 export function actOnNodesRecursively(

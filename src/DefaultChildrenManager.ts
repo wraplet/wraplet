@@ -7,11 +7,12 @@ import {
   MapError,
   MissingRequiredChildError,
   RequiredChildDestroyedError,
+  ChildrenMultipleInstancesOnASingleNodeError,
 } from "./errors";
-import { Wraplet } from "./types/Wraplet";
+import { isWraplet, Wraplet } from "./types/Wraplet";
 import { WrapletChildrenMap } from "./types/WrapletChildrenMap";
 import { CommonMethods } from "./AbstractWraplet";
-import { isParentNode, isWraplet } from "./utils";
+import { getWrapletsFromNode, isParentNode } from "./utils";
 import { InstantiateChildListener } from "./types/InstantiateChildListener";
 import { ChildInstance } from "./types/ChildInstance";
 import { DestroyChildListener } from "./types/DestroyChildListener";
@@ -63,17 +64,17 @@ export class DefaultChildrenManager<
    * so the children manager has to exist already.
    */
   public init() {
-    const children = this.instantiateChildren(this.node);
+    const children = this.instantiateChildren();
     this.instantiatedChildren = this.wrapChildren(children);
 
     this.isInitialized = true;
   }
 
-  public instantiateChildren(node: N): WrapletChildren<M> {
+  public instantiateChildren(): WrapletChildren<M> {
     const children: Partial<Nullable<WrapletChildren<M>>> =
       this.instantiatedChildren;
     // We check if are dealing with the ParentNode object.
-    if (!isParentNode(node)) {
+    if (!isParentNode(this.node)) {
       if (Object.keys(this.map).length > 0) {
         throw new MapError(
           "If the node provided cannot have children, the children map should be empty.",
@@ -88,19 +89,23 @@ export class DefaultChildrenManager<
       this.validateMapItem(id, item);
       if (multiple) {
         // We can assert as much because items
-        children[id] = this.instantiateMultipleWrapletsChild(item, node, id);
+        children[id] = this.instantiateMultipleWrapletsChild(
+          item,
+          this.node,
+          id,
+        );
         continue;
       }
 
-      children[id] = this.instantiateSingleWrapletChild(item, node, id);
+      children[id] = this.instantiateSingleWrapletChild(item, this.node, id);
     }
 
     // Now we should have all properties set, so let's assert the final form.
     return children as WrapletChildren<M>;
   }
 
-  public syncChildren(node: N): void {
-    this.instantiatedChildren = this.instantiateChildren(node);
+  public syncChildren(): void {
+    this.instantiatedChildren = this.instantiateChildren();
   }
 
   private isCorrectSingleWrapletInstanceGuard<K extends keyof M>(
@@ -114,6 +119,7 @@ export class DefaultChildrenManager<
     id: keyof M,
     childElement: Node,
   ): Wraplet<N> | null {
+    // If a child doesn't have instantiated wraplets yet, then return null.
     if (
       this.instantiatedChildren === undefined ||
       !this.instantiatedChildren[id]
@@ -121,7 +127,8 @@ export class DefaultChildrenManager<
       return null;
     }
     const existingChild = this.instantiatedChildren[id];
-    const existingWrapletsOnNode = childElement.wraplets || [];
+    const existingWrapletsOnNode = getWrapletsFromNode(childElement);
+    // Handle multiple.
     if (this.map[id]["multiple"]) {
       if (!Array.isArray(existingChild)) {
         throw new ChildrenExpectedArrayError(
@@ -136,12 +143,15 @@ export class DefaultChildrenManager<
         return null;
       } else if (intersection.length === 1) {
         return intersection[0];
-      } else if (intersection.length > 1) {
-        throw new Error(
-          "Internal logic error. Multiple wraplets found for the same child.",
-        );
       }
-    } else if (this.instantiatedChildren[id] !== null) {
+
+      throw new ChildrenMultipleInstancesOnASingleNodeError(
+        "Internal logic error. Multiple instances of the same child found on a single node.",
+      );
+    }
+
+    // Handle single.
+    if (this.instantiatedChildren[id] !== null) {
       return existingChild as Wraplet<N>;
     }
 
@@ -425,9 +435,8 @@ export class DefaultChildrenManager<
     this.instantiatedChildren[id] = null;
   }
 
-  private intersect<T>(a: T[], b: T[]) {
-    const setB = new Set<T>(b);
-    return [...new Set(a)].filter((x) => setB.has(x));
+  private intersect<T>(a: T[], b: Set<T>): T[] {
+    return [...new Set(a)].filter((x) => b.has(x));
   }
 
   private validateMapItem(id: string, item: M[keyof M]): void {

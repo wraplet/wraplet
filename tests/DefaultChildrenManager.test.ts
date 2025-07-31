@@ -1,18 +1,31 @@
 import "./setup";
-import { DefaultChildrenManager, Wraplet, WrapletChildrenMap } from "../src";
-import { ChildrenExpectedArrayError, MapError } from "../src/errors";
+import {
+  DefaultChildrenManager,
+  getWrapletsFromNode,
+  Wraplet,
+  WrapletChildrenMap,
+} from "../src";
+import {
+  ChildrenExpectedArrayError,
+  ChildrenMultipleInstancesOnASingleNodeError,
+  MapError,
+} from "../src/errors";
 import { ChildrenManager } from "../src/types/ChildrenManager";
 import { DestroyListener } from "../src/types/DestroyListener";
+import { addWrapletToNode } from "../src/utils";
+import { WrapletSymbol } from "../src/types/Wraplet";
 
 describe("Test DefaultChildrenManager", () => {
-  class WrapletClassMock implements Wraplet {
+  class TestWrapletClass implements Wraplet {
+    [WrapletSymbol]: true = true;
     isInitialized: boolean = false;
-    isWraplet: true = true;
 
     private destroyListeners: DestroyListener<Node>[] = [];
     private _isDestroyed: boolean = false;
 
-    constructor(private node: Node) {}
+    constructor(private node: Node) {
+      addWrapletToNode(this, node);
+    }
 
     accessNode(callback: (node: Node) => void): void {
       callback(this.node);
@@ -39,7 +52,7 @@ describe("Test DefaultChildrenManager", () => {
     const map = {
       children: {
         selector: "[data-something]",
-        Class: WrapletClassMock,
+        Class: TestWrapletClass,
         multiple: false,
         required: false,
       },
@@ -49,14 +62,14 @@ describe("Test DefaultChildrenManager", () => {
 
     const func1 = () => {
       const childrenManager = new DefaultChildrenManager(node, map);
-      childrenManager.instantiateChildren(node);
+      childrenManager.instantiateChildren();
     };
 
     expect(func1).toThrow(MapError);
 
     const func2 = () => {
       const childrenManager = new DefaultChildrenManager(node, {});
-      childrenManager.instantiateChildren(node);
+      childrenManager.instantiateChildren();
     };
 
     expect(func2).not.toThrow(MapError);
@@ -72,7 +85,7 @@ describe("Test DefaultChildrenManager", () => {
     const map = {
       children: {
         selector: "[data-something]",
-        Class: WrapletClassMock,
+        Class: TestWrapletClass,
         multiple: true,
         required: false,
       },
@@ -87,9 +100,43 @@ describe("Test DefaultChildrenManager", () => {
       (childrenManager.children as any)["children"] = {
         isDestroyed: () => false,
       };
-      childrenManager.syncChildren(node);
+      childrenManager.syncChildren();
     };
 
     expect(func).toThrow(ChildrenExpectedArrayError);
+  });
+
+  it("Test DefaultChildrenManager internal error multiple child instances on a single node", () => {
+    const node = document.createElement("div");
+    node.innerHTML = `
+  <div data-something></div>
+  <div data-something></div>
+`;
+
+    const map = {
+      children: {
+        selector: "[data-something]",
+        Class: TestWrapletClass,
+        multiple: true,
+        required: false,
+      },
+    } as const satisfies WrapletChildrenMap;
+
+    const childrenManager: ChildrenManager<typeof map> =
+      new DefaultChildrenManager(node, map);
+
+    const func = () => {
+      childrenManager.init();
+
+      // For an unexplained reason one element has two instances of the "children" child.
+      const elements = Array.from(node.querySelectorAll("[data-something]"));
+      const wraplets = getWrapletsFromNode(elements[0]);
+
+      addWrapletToNode(Array.from(wraplets)[0], elements[1]);
+
+      childrenManager.syncChildren();
+    };
+
+    expect(func).toThrow(ChildrenMultipleInstancesOnASingleNodeError);
   });
 });

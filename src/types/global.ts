@@ -1,7 +1,7 @@
-import { Wraplet } from "./Wraplet";
+import { WrapletSet } from "./Set/WrapletSet";
 
 declare global {
   interface Node {
-    wraplets?: Wraplet[];
+    wraplets?: WrapletSet;
   }
 }

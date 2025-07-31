@@ -1,6 +1,6 @@
 import { WrapletChildrenMap } from "./types/WrapletChildrenMap";
 import { WrapletChildren } from "./types/WrapletChildren";
-import { Wraplet } from "./types/Wraplet";
+import { Wraplet, WrapletSymbol } from "./types/Wraplet";
 import { DefaultChildrenManager } from "./DefaultChildrenManager";
 import { DestroyListener } from "./types/DestroyListener";
 import { ChildInstance } from "./types/ChildInstance";
@@ -26,7 +26,7 @@ export abstract class AbstractWraplet<
   >
   implements Wraplet<N>, Groupable, NodeTreeParent
 {
-  public isWraplet: true = true;
+  public [WrapletSymbol]: true = true;
   public [GroupableSymbol]: true = true;
   public [NodeTreeParentSymbol]: true = true;
 

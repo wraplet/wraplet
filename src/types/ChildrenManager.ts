@@ -53,7 +53,7 @@ export interface ChildrenManager<
   /**
    * Synchronize the children instances with the DOM.
    */
-  syncChildren(node: N): void;
+  syncChildren(): void;
 
   /**
    * Add a listener that will be called when a child is destroyed.
@@ -103,7 +103,7 @@ export interface ChildrenManager<
 }
 
 /* istanbul ignore next */
-const isCore = (object: object): object is ChildrenManager => {
+const isCore = (object: unknown): object is ChildrenManager => {
   return is<ChildrenManager>(object, CoreSymbol);
 };
 

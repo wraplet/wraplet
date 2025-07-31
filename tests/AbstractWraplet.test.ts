@@ -349,7 +349,7 @@ it("Test wraplet syncing children", () => {
 
   class TestWraplet extends BaseElementTestWraplet<typeof childrenMap> {
     public syncChildren(): void {
-      this.childrenManager.syncChildren(this.node);
+      this.childrenManager.syncChildren();
     }
     protected defineChildrenMap(): typeof childrenMap {
       return childrenMap;

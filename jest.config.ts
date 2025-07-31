@@ -6,4 +6,12 @@ export default {
     "^.+.tsx?$": ["ts-jest",{}],
   },
   preset: "ts-jest",
+  coverageThreshold: {
+    global: {
+      statements: 95,
+      branches: 90,
+      functions: 95,
+      lines: 90,
+    },
+  },
 };

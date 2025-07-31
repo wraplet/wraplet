@@ -104,9 +104,9 @@ it("Test that children are removed from the nodes after being destroyed", () => 
       continue;
     }
     if (element.hasAttribute(testWrapletChildSelectorIndestructibleAttribute)) {
-      expect(element.wraplets.length).toEqual(1);
+      expect(element.wraplets.size).toEqual(1);
     } else {
-      expect(element.wraplets.length).toEqual(0);
+      expect(element.wraplets.size).toEqual(0);
     }
   }
 });

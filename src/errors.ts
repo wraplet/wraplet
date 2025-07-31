@@ -6,12 +6,10 @@ export class RequiredChildDestroyedError extends Error {}
 
 export class ChildrenAreNotAvailableError extends Error {}
 
-export class ValidationMissingError extends Error {}
-
-export class InvalidOptionsError extends Error {}
-
 export class StorageValidationError extends Error {}
 
 export class ChildWrongInstanceError extends Error {}
 
 export class ChildrenExpectedArrayError extends Error {}
+
+export class ChildrenMultipleInstancesOnASingleNodeError extends Error {}

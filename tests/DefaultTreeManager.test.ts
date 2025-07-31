@@ -71,9 +71,13 @@ it("Test default node tree manager initialize tree", () => {
 
   manager.initializeNodeTree(element);
 
+  if (!element.wraplets) {
+    throw new Error("No wraplets found in the element.");
+  }
+
   expect(func).toHaveBeenCalledTimes(1);
-  expect(element.wraplets).toBeDefined();
-  expect(element.wraplets).toHaveLength(1);
+  expect(element.wraplets.size).toBeDefined();
+  expect(element.wraplets.size).toBe(1);
 });
 
 it("Test wraplet tree manager initialization performance", () => {
