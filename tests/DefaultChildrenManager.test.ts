@@ -1,6 +1,7 @@
 import "./setup";
 import {
   DefaultChildrenManager,
+  destroyWrapletsRecursively,
   getWrapletsFromNode,
   Wraplet,
   WrapletChildrenMap,
@@ -8,6 +9,7 @@ import {
 import {
   ChildrenExpectedArrayError,
   ChildrenMultipleInstancesOnASingleNodeError,
+  ChildrenTooManyFoundError,
   MapError,
 } from "../src/errors";
 import { ChildrenManager } from "../src/types/ChildrenManager";
@@ -138,5 +140,147 @@ describe("Test DefaultChildrenManager", () => {
     };
 
     expect(func).toThrow(ChildrenMultipleInstancesOnASingleNodeError);
+  });
+
+  it("Test DefaultChildrenManager child without selector", () => {
+    const node = document.createElement("div");
+    node.innerHTML = "<div></div>";
+
+    const map = {
+      children: {
+        Class: TestWrapletClass,
+        multiple: false,
+        required: false,
+      },
+    } as const satisfies WrapletChildrenMap;
+
+    const childrenManager: ChildrenManager<typeof map> =
+      new DefaultChildrenManager(node, map);
+
+    const func = () => {
+      childrenManager.init();
+    };
+
+    expect(func).not.toThrow();
+    expect(childrenManager.children["children"]).toBeNull();
+  });
+
+  it("Test DefaultChildrenManager too many elements found", () => {
+    const node = document.createElement("div");
+    node.innerHTML = "<div data-something></div><div data-something></div";
+
+    const map = {
+      children: {
+        selector: "[data-something]",
+        Class: TestWrapletClass,
+        multiple: false,
+        required: false,
+      },
+    } as const satisfies WrapletChildrenMap;
+
+    const childrenManager: ChildrenManager<typeof map> =
+      new DefaultChildrenManager(node, map);
+
+    const func = () => {
+      childrenManager.init();
+    };
+
+    expect(func).toThrow(ChildrenTooManyFoundError);
+  });
+
+  it("Test DefaultChildrenManager multiple without selector", () => {
+    const node = document.createElement("div");
+    node.innerHTML = "<div data-something></div><div data-something></div";
+
+    const map = {
+      children: {
+        Class: TestWrapletClass,
+        multiple: true,
+        required: false,
+      },
+    } as const satisfies WrapletChildrenMap;
+
+    const childrenManager: ChildrenManager<typeof map> =
+      new DefaultChildrenManager(node, map);
+
+    childrenManager.init();
+    expect(childrenManager.children["children"]).toBeInstanceOf(Array);
+  });
+
+  it("Test DefaultChildrenManager destroy children listeners", () => {
+    const node = document.createElement("div");
+    node.innerHTML =
+      "<div data-children></div><div data-children><div data-child></div></div";
+
+    const map = {
+      children: {
+        selector: "[data-children]",
+        Class: TestWrapletClass,
+        multiple: true,
+        required: false,
+      },
+      child: {
+        selector: "[data-child]",
+        Class: TestWrapletClass,
+        multiple: false,
+        required: false,
+      },
+    } as const satisfies WrapletChildrenMap;
+
+    const childrenManager: ChildrenManager<typeof map> =
+      new DefaultChildrenManager(node, map);
+
+    const func = jest.fn();
+    childrenManager.addDestroyChildListener(() => {
+      func();
+    });
+
+    childrenManager.init();
+    destroyWrapletsRecursively(node);
+    expect(func).toHaveBeenCalledTimes(3);
+  });
+
+  it("Test DefaultChildrenManager instantiate children listeners", () => {
+    const node = document.createElement("div");
+    node.innerHTML = "<div data-children></div><div data-children></div";
+
+    const map = {
+      children: {
+        selector: "[data-children]",
+        Class: TestWrapletClass,
+        multiple: true,
+        required: false,
+      },
+      child: {
+        selector: "[data-child]",
+        Class: TestWrapletClass,
+        multiple: false,
+        required: false,
+      },
+    } as const satisfies WrapletChildrenMap;
+
+    const childrenManager: ChildrenManager<typeof map> =
+      new DefaultChildrenManager(node, map);
+
+    const func = jest.fn();
+    childrenManager.addInstantiateChildListener(() => {
+      func();
+    });
+
+    childrenManager.init();
+    expect(func).toHaveBeenCalledTimes(2);
+    const newChildrenItem = document.createElement("div");
+    newChildrenItem.setAttribute("data-children", "");
+    node.appendChild(newChildrenItem);
+
+    childrenManager.syncChildren();
+    expect(func).toHaveBeenCalledTimes(3);
+
+    const newChildItem = document.createElement("div");
+    newChildrenItem.setAttribute("data-child", "");
+    node.appendChild(newChildItem);
+
+    childrenManager.syncChildren();
+    expect(func).toHaveBeenCalledTimes(4);
   });
 });

@@ -3,11 +3,11 @@ import { Nullable } from "./types/Utils";
 import {
   ChildrenExpectedArrayError,
   ChildrenAreNotAvailableError,
-  ChildWrongInstanceError,
   MapError,
   MissingRequiredChildError,
   RequiredChildDestroyedError,
   ChildrenMultipleInstancesOnASingleNodeError,
+  ChildrenTooManyFoundError,
 } from "./errors";
 import { isWraplet, Wraplet } from "./types/Wraplet";
 import { WrapletChildrenMap } from "./types/WrapletChildrenMap";
@@ -108,13 +108,6 @@ export class DefaultChildrenManager<
     this.instantiatedChildren = this.instantiateChildren();
   }
 
-  private isCorrectSingleWrapletInstanceGuard<K extends keyof M>(
-    item: unknown,
-    id: K,
-  ): item is WrapletChildren<M>[K] {
-    return item instanceof this.map[id].Class;
-  }
-
   private findExistingWraplet(
     id: keyof M,
     childElement: Node,
@@ -151,11 +144,7 @@ export class DefaultChildrenManager<
     }
 
     // Handle single.
-    if (this.instantiatedChildren[id] !== null) {
-      return existingChild as Wraplet<N>;
-    }
-
-    return null;
+    return existingChild as Wraplet<N>;
   }
 
   private instantiateSingleWrapletChild<T extends keyof M>(
@@ -177,7 +166,7 @@ export class DefaultChildrenManager<
     }
 
     if (childElements.length > 1) {
-      throw new Error(
+      throw new ChildrenTooManyFoundError(
         `${this.constructor.name}: More than one element was found for the "${id}" child. Selector used: "${selector}".`,
       );
     }
@@ -193,7 +182,7 @@ export class DefaultChildrenManager<
     id: Extract<T, string>,
     mapItem: M[T],
     node: Node,
-  ): Wraplet<N> | null {
+  ): Wraplet<N> {
     // Re-use existing wraplet.
     const existingWraplet = this.findExistingWraplet(id, node);
     if (existingWraplet) {
@@ -236,14 +225,6 @@ export class DefaultChildrenManager<
         continue;
       }
       const wraplet = this.instantiateWrapletItem(id, mapItem, childElement);
-      if (!wraplet) {
-        continue;
-      }
-      if (!this.isCorrectSingleWrapletInstanceGuard(wraplet, id)) {
-        throw new ChildWrongInstanceError(
-          `${this.constructor.name}: The "${id}" child is not an array of the expected type.`,
-        );
-      }
       items.push(wraplet);
     }
 
