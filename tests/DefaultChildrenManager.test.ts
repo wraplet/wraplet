@@ -9,8 +9,6 @@ import {
 } from "../src";
 import {
   ChildrenAreAlreadyDestroyedError,
-  ChildrenExpectedArrayError,
-  ChildrenMultipleInstancesOnASingleNodeError,
   ChildrenTooManyFoundError,
   MapError,
 } from "../src/errors";
@@ -79,7 +77,7 @@ describe("Test DefaultChildrenManager", () => {
     expect(func2).not.toThrow(MapError);
   });
 
-  it("Test DefaultChildrenManager internal error children expected array", () => {
+  it("Test DefaultChildrenManager internal error children expected a wraplet set", () => {
     const node = document.createElement("div");
     node.innerHTML = `
   <div data-something></div>
@@ -107,7 +105,7 @@ describe("Test DefaultChildrenManager", () => {
       childrenManager.syncChildren();
     };
 
-    expect(func).toThrow(ChildrenExpectedArrayError);
+    expect(func).toThrow("Internal logic error. Expected a WrapletSet.");
   });
 
   it("Test DefaultChildrenManager internal error multiple child instances on a single node", () => {
@@ -141,7 +139,9 @@ describe("Test DefaultChildrenManager", () => {
       childrenManager.syncChildren();
     };
 
-    expect(func).toThrow(ChildrenMultipleInstancesOnASingleNodeError);
+    expect(func).toThrow(
+      "Internal logic error. Multiple instances of the same child found on a single node.",
+    );
   });
 
   it("Test DefaultChildrenManager child without selector", () => {
@@ -321,15 +321,22 @@ describe("Test DefaultChildrenManager", () => {
     expect(func).toThrow(ChildrenAreAlreadyDestroyedError);
   });
 
-  it("Test DefaultChildrenManager cannot be destroyed twice", () => {
+  it("Test DefaultChildrenManager child disappeared from parent before being destroyed", () => {
     const node = document.createElement("div");
-    node.innerHTML = "<div data-children></div><div data-children></div>";
+    node.innerHTML =
+      "<div data-children></div><div data-children></div><div data-child></div>";
 
     const map = {
       children: {
         selector: "[data-children]",
         Class: TestWrapletClass,
         multiple: true,
+        required: false,
+      },
+      child: {
+        selector: "[data-child]",
+        Class: TestWrapletClass,
+        multiple: false,
         required: false,
       },
     } as const satisfies WrapletChildrenMap;
@@ -339,11 +346,49 @@ describe("Test DefaultChildrenManager", () => {
 
     childrenManager.init();
 
-    const func = () => {
-      childrenManager.destroy();
-      childrenManager.destroy();
+    const child = childrenManager.children["child"];
+    (childrenManager.children as any)["child"] = null;
+
+    const func1 = () => {
+      child?.destroy();
     };
 
-    expect(func).toThrow(ChildrenAreAlreadyDestroyedError);
+    expect(func1).toThrow(
+      "Internal logic error. Destroyed child couldn't be removed because it's already null.",
+    );
+
+    // Re-sync children to fix an issue.
+    childrenManager.syncChildren();
+    expect(childrenManager.children["child"]).not.toBeNull();
+
+    const childrenItems = childrenManager.children["children"];
+    const childrenItem = Array.from(childrenItems)[0];
+    childrenItems.delete(childrenItem);
+
+    const func2 = () => {
+      childrenItem?.destroy();
+    };
+
+    expect(func2).toThrow(
+      "Internal logic error. Destroyed child couldn't be removed because it's not among the children.",
+    );
+  });
+
+  it("Test DefaultChildrenManager user accessing non-existing children", () => {
+    const node = document.createElement("div");
+
+    const map = {} as const satisfies WrapletChildrenMap;
+
+    const childrenManager: ChildrenManager<typeof map> =
+      new DefaultChildrenManager(node, map);
+
+    childrenManager.init();
+
+    const func = () => {
+      // eslint-disable-next-line @typescript-eslint/no-unused-expressions
+      (childrenManager.children as any)["child"];
+    };
+
+    expect(func).toThrow("Child has not been found.");
   });
 });

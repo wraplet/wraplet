@@ -2,20 +2,19 @@ import { WrapletChildren } from "./WrapletChildren";
 import { WrapletChildrenMap } from "./WrapletChildrenMap";
 import { DestroyChildListener } from "./DestroyChildListener";
 import { InstantiateChildListener } from "./InstantiateChildListener";
-import { is } from "./Utils";
 
-const CoreSymbol = Symbol("Core");
-export { CoreSymbol };
+const ChildrenManagerSymbol = Symbol("ChildrenManager");
+export { ChildrenManagerSymbol };
 
 /**
- * Core interface that defines the public API for managing wraplet relationships
+ * Children manager interface that defines the public API for managing wraplet relationships
  * and lifecycles.
  */
 export interface ChildrenManager<
   M extends WrapletChildrenMap = {},
   N extends Node = Node,
 > {
-  [CoreSymbol]: true;
+  [ChildrenManagerSymbol]: true;
 
   /**
    * Indicates whether the core is destroyed.
@@ -66,7 +65,7 @@ export interface ChildrenManager<
   ): void;
 
   /**
-   * Destroy the core and all its children.
+   * Destroy all children.
    */
   destroy(): void;
 
@@ -90,10 +89,3 @@ export interface ChildrenManager<
    */
   readonly uninitializedChildren: Partial<WrapletChildren<M>>;
 }
-
-/* istanbul ignore next */
-const isCore = (object: unknown): object is ChildrenManager => {
-  return is<ChildrenManager>(object, CoreSymbol);
-};
-
-export { isCore };

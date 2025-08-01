@@ -1,14 +1,13 @@
 import { WrapletChildren } from "./types/WrapletChildren";
 import { Nullable } from "./types/Utils";
 import {
-  ChildrenExpectedArrayError,
   ChildrenAreNotAvailableError,
   MapError,
   MissingRequiredChildError,
   RequiredChildDestroyedError,
-  ChildrenMultipleInstancesOnASingleNodeError,
   ChildrenTooManyFoundError,
   ChildrenAreAlreadyDestroyedError,
+  InternalLogicError,
 } from "./errors";
 import { Wraplet } from "./types/Wraplet";
 import { WrapletChildrenMap } from "./types/WrapletChildrenMap";
@@ -17,7 +16,10 @@ import { InstantiateChildListener } from "./types/InstantiateChildListener";
 import { ChildInstance } from "./types/ChildInstance";
 import { DestroyChildListener } from "./types/DestroyChildListener";
 import { CoreInitOptions } from "./types/CoreInitOptions";
-import { ChildrenManager, CoreSymbol } from "./types/ChildrenManager";
+import {
+  ChildrenManager,
+  ChildrenManagerSymbol,
+} from "./types/ChildrenManager";
 import { DestroyListener } from "./types/DestroyListener";
 import { isWrapletSet, WrapletSet } from "./types/Set/WrapletSet";
 import { DefaultWrapletSet } from "./Set/DefaultWrapletSet";
@@ -34,7 +36,7 @@ export class DefaultChildrenManager<
   N extends Node = Node,
 > implements ChildrenManager<M, N>
 {
-  public [CoreSymbol]: true = true;
+  public [ChildrenManagerSymbol]: true = true;
   public isDestroyed: boolean = false;
   public isGettingDestroyed: boolean = false;
   public isInitialized: boolean = false;
@@ -123,7 +125,7 @@ export class DefaultChildrenManager<
     // Handle multiple.
     if (this.map[id]["multiple"]) {
       if (!isWrapletSet<Wraplet<N>>(existingChild)) {
-        throw new ChildrenExpectedArrayError(
+        throw new InternalLogicError(
           "Internal logic error. Expected a WrapletSet.",
         );
       }
@@ -137,7 +139,7 @@ export class DefaultChildrenManager<
         return intersection[0];
       }
 
-      throw new ChildrenMultipleInstancesOnASingleNodeError(
+      throw new InternalLogicError(
         "Internal logic error. Multiple instances of the same child found on a single node.",
       );
     }
@@ -337,7 +339,7 @@ export class DefaultChildrenManager<
   ): void {
     if (isWrapletSet(this.instantiatedChildren[id])) {
       if (!this.instantiatedChildren[id].delete(wraplet)) {
-        throw new Error(
+        throw new InternalLogicError(
           "Internal logic error. Destroyed child couldn't be removed because it's not among the children.",
         );
       }
@@ -347,6 +349,12 @@ export class DefaultChildrenManager<
     if (this.map[id].required && !this.isGettingDestroyed) {
       throw new RequiredChildDestroyedError(
         "Required child has been destroyed.",
+      );
+    }
+
+    if (this.instantiatedChildren[id] === null) {
+      throw new InternalLogicError(
+        "Internal logic error. Destroyed child couldn't be removed because it's already null.",
       );
     }
 
@@ -391,28 +399,6 @@ export class DefaultChildrenManager<
         if (!(name in target)) {
           throw new Error("Child has not been found.");
         }
-
-        function isDestroyed(wraplet: Wraplet): boolean {
-          return wraplet.isDestroyed(true);
-        }
-
-        const child: any = target[name];
-        if (isWrapletSet(child)) {
-          const destroyed = child.findOne(isDestroyed);
-
-          if (destroyed) {
-            throw new Error(
-              "Core error: One of the children in the set has been destroyed but not removed",
-            );
-          }
-
-          return target[name];
-        }
-
-        if (child !== null && isDestroyed(child)) {
-          throw new Error("The child has been destroyed");
-        }
-
         return target[name];
       },
     });
@@ -451,7 +437,7 @@ export class DefaultChildrenManager<
       if (!child || !this.map[key]["destructible"]) {
         continue;
       }
-      if (this.map[key]["multiple"]) {
+      if (isWrapletSet(child)) {
         for (const item of child) {
           item.destroy();
         }
