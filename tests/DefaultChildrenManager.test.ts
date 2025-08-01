@@ -168,7 +168,7 @@ describe("Test DefaultChildrenManager", () => {
 
   it("Test DefaultChildrenManager too many elements found", () => {
     const node = document.createElement("div");
-    node.innerHTML = "<div data-something></div><div data-something></div";
+    node.innerHTML = "<div data-something></div><div data-something></div>";
 
     const map = {
       children: {
@@ -191,7 +191,7 @@ describe("Test DefaultChildrenManager", () => {
 
   it("Test DefaultChildrenManager multiple without selector", () => {
     const node = document.createElement("div");
-    node.innerHTML = "<div data-something></div><div data-something></div";
+    node.innerHTML = "<div data-something></div><div data-something></div>";
 
     const map = {
       children: {
@@ -211,7 +211,7 @@ describe("Test DefaultChildrenManager", () => {
   it("Test DefaultChildrenManager destroy children listeners", () => {
     const node = document.createElement("div");
     node.innerHTML =
-      "<div data-children></div><div data-children><div data-child></div></div";
+      "<div data-children></div><div data-children><div data-child></div>";
 
     const map = {
       children: {
@@ -243,7 +243,7 @@ describe("Test DefaultChildrenManager", () => {
 
   it("Test DefaultChildrenManager instantiate children listeners", () => {
     const node = document.createElement("div");
-    node.innerHTML = "<div data-children></div><div data-children></div";
+    node.innerHTML = "<div data-children></div><div data-children></div>";
 
     const map = {
       children: {
@@ -288,7 +288,7 @@ describe("Test DefaultChildrenManager", () => {
   it("Test DefaultChildrenManager cannot be destroyed twice", () => {
     const node = document.createElement("div");
     node.innerHTML =
-      "<div data-children></div><div data-children><div data-child></div></div";
+      "<div data-children></div><div data-children></div><div data-child></div>";
 
     const map = {
       children: {
@@ -301,6 +301,32 @@ describe("Test DefaultChildrenManager", () => {
         selector: "[data-child]",
         Class: TestWrapletClass,
         multiple: false,
+        required: false,
+      },
+    } as const satisfies WrapletChildrenMap;
+
+    const childrenManager: ChildrenManager<typeof map> =
+      new DefaultChildrenManager(node, map);
+
+    childrenManager.init();
+
+    const func = () => {
+      childrenManager.destroy();
+      childrenManager.destroy();
+    };
+
+    expect(func).toThrow(ChildrenAreAlreadyDestroyedError);
+  });
+
+  it("Test DefaultChildrenManager cannot be destroyed twice", () => {
+    const node = document.createElement("div");
+    node.innerHTML = "<div data-children></div><div data-children></div>";
+
+    const map = {
+      children: {
+        selector: "[data-children]",
+        Class: TestWrapletClass,
+        multiple: true,
         required: false,
       },
     } as const satisfies WrapletChildrenMap;

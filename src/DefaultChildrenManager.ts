@@ -18,6 +18,7 @@ import { ChildInstance } from "./types/ChildInstance";
 import { DestroyChildListener } from "./types/DestroyChildListener";
 import { CoreInitOptions } from "./types/CoreInitOptions";
 import { ChildrenManager, CoreSymbol } from "./types/ChildrenManager";
+import {DestroyListener} from "./types/DestroyListener";
 
 type ListenerData = {
   node: Node;
@@ -254,7 +255,7 @@ export class DefaultChildrenManager<
     id: K,
     wraplet: Wraplet<N>,
   ) {
-    const destroyListener = <K extends keyof M>(
+    const destroyListener: DestroyListener<N> = (<K extends keyof M>(
       wraplet: ChildInstance<M, K>,
     ) => {
       this.removeChild(wraplet, id);
@@ -262,11 +263,9 @@ export class DefaultChildrenManager<
       for (const listener of this.destroyChildListeners) {
         listener(wraplet, id);
       }
-    };
+    }) as DestroyListener<N>;
     // Listen for the child's destruction.
-    wraplet.addDestroyListener(
-      destroyListener as (wraplet: Wraplet<N>) => void,
-    );
+    wraplet.addDestroyListener(destroyListener);
   }
 
   /**
