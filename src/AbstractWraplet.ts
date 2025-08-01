@@ -14,6 +14,7 @@ import {
 import { NodeTreeParent, NodeTreeParentSymbol } from "./types/NodeTreeParent";
 import { ChildrenManager } from "./types/ChildrenManager";
 import { addWrapletToNode, removeWrapletFromNode } from "./utils";
+import { isWrapletSet } from "./types/Set/WrapletSet";
 
 export abstract class AbstractWraplet<
     M extends WrapletChildrenMap = {},
@@ -64,7 +65,7 @@ export abstract class AbstractWraplet<
   public getNodeTreeChildren(): Wraplet[] {
     const children: Wraplet[] = [];
     for (const child of Object.values(this.children)) {
-      if (Array.isArray(child)) {
+      if (isWrapletSet(child)) {
         for (const item of child) {
           children.push(item);
         }

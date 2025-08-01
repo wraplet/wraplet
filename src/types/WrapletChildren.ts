@@ -1,5 +1,6 @@
 import { WrapletChildrenMap } from "./WrapletChildrenMap";
 import { InstantiableReturnType } from "./Utils";
+import { WrapletSet } from "./Set/WrapletSet";
 
 export type OptionalSingleInstantiableReturnType<
   T extends WrapletChildrenMap,
@@ -10,6 +11,6 @@ export type OptionalSingleInstantiableReturnType<
 
 export type WrapletChildren<T extends WrapletChildrenMap> = {
   [id in keyof T]: T[id]["multiple"] extends true
-    ? InstantiableReturnType<T[id]["Class"]>[]
+    ? WrapletSet<InstantiableReturnType<T[id]["Class"]>>
     : OptionalSingleInstantiableReturnType<T, id>;
 };

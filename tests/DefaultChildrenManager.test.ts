@@ -1,6 +1,7 @@
 import "./setup";
 import {
   DefaultChildrenManager,
+  DefaultWrapletSet,
   destroyWrapletsRecursively,
   getWrapletsFromNode,
   Wraplet,
@@ -205,7 +206,9 @@ describe("Test DefaultChildrenManager", () => {
       new DefaultChildrenManager(node, map);
 
     childrenManager.init();
-    expect(childrenManager.children["children"]).toBeInstanceOf(Array);
+    expect(childrenManager.children["children"]).toBeInstanceOf(
+      DefaultWrapletSet,
+    );
   });
 
   it("Test DefaultChildrenManager destroy children listeners", () => {

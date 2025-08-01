@@ -18,7 +18,9 @@ import { ChildInstance } from "./types/ChildInstance";
 import { DestroyChildListener } from "./types/DestroyChildListener";
 import { CoreInitOptions } from "./types/CoreInitOptions";
 import { ChildrenManager, CoreSymbol } from "./types/ChildrenManager";
-import {DestroyListener} from "./types/DestroyListener";
+import { DestroyListener } from "./types/DestroyListener";
+import { isWrapletSet, WrapletSet } from "./types/Set/WrapletSet";
+import { DefaultWrapletSet } from "./Set/DefaultWrapletSet";
 
 type ListenerData = {
   node: Node;
@@ -108,10 +110,7 @@ export class DefaultChildrenManager<
     this.instantiatedChildren = this.instantiateChildren();
   }
 
-  private findExistingWraplet(
-    id: keyof M,
-    childElement: Node,
-  ): Wraplet<N> | null {
+  private findExistingWraplet(id: keyof M, childElement: Node): Wraplet | null {
     // If a child doesn't have instantiated wraplets yet, then return null.
     if (
       this.instantiatedChildren === undefined ||
@@ -123,9 +122,9 @@ export class DefaultChildrenManager<
     const existingWrapletsOnNode = getWrapletsFromNode(childElement);
     // Handle multiple.
     if (this.map[id]["multiple"]) {
-      if (!Array.isArray(existingChild)) {
+      if (!isWrapletSet<Wraplet<N>>(existingChild)) {
         throw new ChildrenExpectedArrayError(
-          "Internal logic error. Expected an array.",
+          "Internal logic error. Expected a WrapletSet.",
         );
       }
       const intersection = this.intersect(
@@ -182,7 +181,7 @@ export class DefaultChildrenManager<
     id: Extract<T, string>,
     mapItem: M[T],
     node: Node,
-  ): Wraplet<N> {
+  ): Wraplet {
     // Re-use existing wraplet.
     const existingWraplet = this.findExistingWraplet(id, node);
     if (existingWraplet) {
@@ -208,24 +207,24 @@ export class DefaultChildrenManager<
   ): WrapletChildren<M>[keyof WrapletChildren<M>] {
     const selector = mapItem.selector;
     if (!selector) {
-      return [] as WrapletChildren<M>[keyof WrapletChildren<M>];
+      return new DefaultWrapletSet() as WrapletChildren<M>[keyof WrapletChildren<M>];
     }
 
     // Find children elements based on the map.
     const childElements = node.querySelectorAll(selector);
     this.validateElements(id, childElements, mapItem);
 
-    const items: Wraplet<N>[] =
+    const items: WrapletSet =
       this.instantiatedChildren && this.instantiatedChildren[id]
-        ? (this.instantiatedChildren[id] as Wraplet<N>[])
-        : [];
+        ? (this.instantiatedChildren[id] as WrapletSet<Wraplet<N>>)
+        : new DefaultWrapletSet<Wraplet<N>>();
     for (const childElement of childElements) {
       const existingWraplet = this.findExistingWraplet(id, childElement);
       if (existingWraplet) {
         continue;
       }
       const wraplet = this.instantiateWrapletItem(id, mapItem, childElement);
-      items.push(wraplet);
+      items.add(wraplet);
     }
 
     return items as WrapletChildren<M>[keyof WrapletChildren<M>];
@@ -336,17 +335,12 @@ export class DefaultChildrenManager<
     wraplet: ChildInstance<M, K>,
     id: K,
   ): void {
-    if (Array.isArray(this.instantiatedChildren[id])) {
-      const index = this.instantiatedChildren[id].findIndex((value) => {
-        return value === wraplet;
-      });
-
-      if (index === -1) {
+    if (isWrapletSet(this.instantiatedChildren[id])) {
+      if (!this.instantiatedChildren[id].delete(wraplet)) {
         throw new Error(
           "Internal logic error. Destroyed child couldn't be removed because it's not among the children.",
         );
       }
-      this.instantiatedChildren[id].splice(index, 1);
       return;
     }
 
@@ -360,8 +354,8 @@ export class DefaultChildrenManager<
     this.instantiatedChildren[id] = null;
   }
 
-  private intersect<T>(a: T[], b: Set<T>): T[] {
-    return [...new Set(a)].filter((x) => b.has(x));
+  private intersect<T>(a: Set<T>, b: Set<T>): T[] {
+    return [...a].filter((x) => b.has(x));
   }
 
   private validateMapItem(id: string, item: M[keyof M]): void {
@@ -398,17 +392,17 @@ export class DefaultChildrenManager<
           throw new Error("Child has not been found.");
         }
 
-        function isDestroyed(wraplet: Wraplet<N>): boolean {
+        function isDestroyed(wraplet: Wraplet): boolean {
           return wraplet.isDestroyed(true);
         }
 
         const child: any = target[name];
-        if (Array.isArray(child)) {
-          const destroyed = child.find(isDestroyed);
+        if (isWrapletSet(child)) {
+          const destroyed = child.findOne(isDestroyed);
 
           if (destroyed) {
             throw new Error(
-              "Core error: One of the children in the array has been destroyed but not removed",
+              "Core error: One of the children in the set has been destroyed but not removed",
             );
           }
 
@@ -458,14 +452,11 @@ export class DefaultChildrenManager<
         continue;
       }
       if (this.map[key]["multiple"]) {
-        // We need to loop through the copy of the array because some items can be removed from
-        // the original during the loop.
-        const childArray = child.slice(0);
-        for (const item of childArray as Wraplet<N>[]) {
+        for (const item of child) {
           item.destroy();
         }
       } else {
-        (child as Wraplet<N>).destroy();
+        child.destroy();
       }
     }
   }

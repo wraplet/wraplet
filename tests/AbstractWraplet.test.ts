@@ -385,7 +385,7 @@ it("Test wraplet syncing children", () => {
 
   function expectations(wraplet: TestWraplet) {
     // Make sure that "children" has only two elements.
-    expect(wraplet.getChild("children")).toHaveLength(2);
+    expect(wraplet.getChild("children").size).toBe(2);
     // Make sure that only two children wraplets have been initialized.
     expect(funcInstantiateChildren).toHaveBeenCalledTimes(2);
     expect(funcInstantiateSingleChild).toHaveBeenCalledTimes(1);

@@ -41,11 +41,13 @@ describe("Test wraplet multiple required children", () => {
   it("Test wraplet required children initialization", () => {
     document.body.innerHTML = `<div ${testWrapletSelectorAttribute}><div ${testWrapletChildSelectorAttribute}></div><div ${testWrapletChildSelectorAttribute}></div></div>`;
 
-    const wraplet = TestWraplet.create(testWrapletSelectorAttribute);
+    const wraplet = TestWraplet.create<TestWraplet>(
+      testWrapletSelectorAttribute,
+    );
     if (!wraplet) {
       throw new Error("Wraplet not initialized.");
     }
     const children = wraplet.getChild("children");
-    expect(children).toHaveLength(2);
+    expect(children.size).toBe(2);
   });
 });

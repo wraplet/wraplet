@@ -32,22 +32,26 @@ describe("Test wraplet multiple optional children", () => {
   it("Test wraplet optional children initialization empty children", () => {
     document.body.innerHTML = `<div ${testWrapletSelectorAttribute}></div>`;
 
-    const wraplet = TestWraplet.create(testWrapletSelectorAttribute);
+    const wraplet = TestWraplet.create<TestWraplet>(
+      testWrapletSelectorAttribute,
+    );
     if (!wraplet) {
       throw new Error("Wraplet not initialized.");
     }
     const children = wraplet.getChild("children");
-    expect(children).toHaveLength(0);
+    expect(children.size).toBe(0);
   });
 
   it("Test wraplet optional children initialization", () => {
     document.body.innerHTML = `<div ${testWrapletSelectorAttribute}><div ${testWrapletChildSelectorAttribute}></div><div ${testWrapletChildSelectorAttribute}></div></div>`;
 
-    const wraplet = TestWraplet.create(testWrapletSelectorAttribute);
+    const wraplet = TestWraplet.create<TestWraplet>(
+      testWrapletSelectorAttribute,
+    );
     if (!wraplet) {
       throw new Error("Wraplet not initialized.");
     }
     const children = wraplet.getChild("children");
-    expect(children).toHaveLength(2);
+    expect(children.size).toBe(2);
   });
 });
