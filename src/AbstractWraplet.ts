@@ -15,10 +15,6 @@ import { NodeTreeParent, NodeTreeParentSymbol } from "./types/NodeTreeParent";
 import { ChildrenManager } from "./types/ChildrenManager";
 import { addWrapletToNode, removeWrapletFromNode } from "./utils";
 
-export type CommonMethods = {
-  destroy: {};
-};
-
 export abstract class AbstractWraplet<
     M extends WrapletChildrenMap = {},
     N extends Node = Node,

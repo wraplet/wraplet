@@ -14,4 +14,4 @@ export class ChildrenMultipleInstancesOnASingleNodeError extends Error {}
 
 export class ChildrenTooManyFoundError extends Error {}
 
-export class ChildDoesntHaveMethodError extends Error {}
+export class ChildrenAreAlreadyDestroyedError extends Error {}

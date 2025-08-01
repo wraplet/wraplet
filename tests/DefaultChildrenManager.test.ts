@@ -7,6 +7,7 @@ import {
   WrapletChildrenMap,
 } from "../src";
 import {
+  ChildrenAreAlreadyDestroyedError,
   ChildrenExpectedArrayError,
   ChildrenMultipleInstancesOnASingleNodeError,
   ChildrenTooManyFoundError,
@@ -284,7 +285,7 @@ describe("Test DefaultChildrenManager", () => {
     expect(func).toHaveBeenCalledTimes(4);
   });
 
-  it("Test DefaultChildrenManager execute on children", () => {
+  it("Test DefaultChildrenManager cannot be destroyed twice", () => {
     const node = document.createElement("div");
     node.innerHTML =
       "<div data-children></div><div data-children><div data-child></div></div";
@@ -307,13 +308,13 @@ describe("Test DefaultChildrenManager", () => {
     const childrenManager: ChildrenManager<typeof map> =
       new DefaultChildrenManager(node, map);
 
-    const func = jest.fn();
-    childrenManager.addDestroyChildListener(() => {
-      func();
-    });
-
     childrenManager.init();
-    destroyWrapletsRecursively(node);
-    expect(func).toHaveBeenCalledTimes(3);
+
+    const func = () => {
+      childrenManager.destroy();
+      childrenManager.destroy();
+    };
+
+    expect(func).toThrow(ChildrenAreAlreadyDestroyedError);
   });
 });

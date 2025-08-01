@@ -13,6 +13,7 @@ export interface Wraplet<N extends Node = Node> {
   addDestroyListener(callback: DestroyListener<N>): void;
 }
 
+/* istanbul ignore next */
 export function isWraplet<N extends Node>(
   object: unknown,
 ): object is Wraplet<N> {

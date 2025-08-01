@@ -8,10 +8,10 @@ import {
   RequiredChildDestroyedError,
   ChildrenMultipleInstancesOnASingleNodeError,
   ChildrenTooManyFoundError,
+  ChildrenAreAlreadyDestroyedError,
 } from "./errors";
 import { Wraplet } from "./types/Wraplet";
 import { WrapletChildrenMap } from "./types/WrapletChildrenMap";
-import { CommonMethods } from "./AbstractWraplet";
 import { getWrapletsFromNode, isParentNode } from "./utils";
 import { InstantiateChildListener } from "./types/InstantiateChildListener";
 import { ChildInstance } from "./types/ChildInstance";
@@ -29,8 +29,7 @@ type ListenerData = {
 export class DefaultChildrenManager<
   M extends WrapletChildrenMap = {},
   N extends Node = Node,
-  CM extends CommonMethods = CommonMethods,
-> implements ChildrenManager<M, N, CM>
+> implements ChildrenManager<M, N>
 {
   public [CoreSymbol]: true = true;
   public isDestroyed: boolean = false;
@@ -275,7 +274,9 @@ export class DefaultChildrenManager<
    */
   public destroy(): void {
     if (this.isDestroyed) {
-      throw new Error("Wraplet is already destroyed.");
+      throw new ChildrenAreAlreadyDestroyedError(
+        "Children are already destroyed.",
+      );
     }
     this.isGettingDestroyed = true;
 
@@ -302,13 +303,6 @@ export class DefaultChildrenManager<
       },
       ...definition,
     };
-  }
-
-  private wrapletHasMethodGuard(
-    wraplet: Wraplet<N>,
-    method: string,
-  ): wraplet is Wraplet<N> & { [method](payload?: CM[keyof CM]): unknown } {
-    return typeof (wraplet as any)[method] === "function";
   }
 
   public addEventListener(
