@@ -1,7 +1,8 @@
 import "./setup";
 import { ElementStorage } from "../src/storage";
+import { StorageValidationError } from "../src/errors";
 
-test("Test element storage", () => {
+it("Test element storage", () => {
   const attribute = "data-test-wraplet";
   type Options = {
     option1: string;
@@ -27,6 +28,7 @@ test("Test element storage", () => {
   );
 
   // Test if the value was correctly fetched from the attribute.
+  expect(storage.has("option1")).toEqual(true);
   expect(storage.get("option1")).toEqual("initial value");
 
   // Test setAll.
@@ -36,6 +38,10 @@ test("Test element storage", () => {
   // Test if the new value is available.
   storage.set("option1", "new value");
   expect(storage.get("option1")).toEqual("new value");
+
+  // Test delete.
+  storage.delete("option1");
+  expect(storage.get("option1")).toEqual("default value");
 
   // Test deleteAll.
   storage.set("option1", "new value");
@@ -99,7 +105,7 @@ test("Test element storage", () => {
   });
 });
 
-test("Test element storage fresh data", () => {
+it("Test element storage fresh data", () => {
   const attribute = "data-test-wraplet";
   type Options = {
     option1: string;
@@ -127,7 +133,7 @@ test("Test element storage fresh data", () => {
   expect(storage.get("option1")).toEqual("fresh data");
 });
 
-test("Test element storage non-fresh data", () => {
+it("Test element storage non-fresh data", () => {
   const attribute = "data-test-wraplet";
   type Options = {
     option1: string;
@@ -159,7 +165,7 @@ test("Test element storage non-fresh data", () => {
   expect(storage.get("option1")).toEqual("fresh data");
 });
 
-test("Test element storage fresh data by default", () => {
+it("Test element storage fresh data by default", () => {
   const attribute = "data-test-wraplet";
   type Options = {
     option1: string;
@@ -179,4 +185,46 @@ test("Test element storage fresh data by default", () => {
   // Test if data is fresh.
   element.setAttribute(attribute, '{"option1":"fresh data"}');
   expect(storage.get("option1")).toEqual("fresh data");
+});
+
+it("Test element storage data has to be an object", () => {
+  const attribute = "data-test-wraplet";
+  type Options = {
+    option1: string;
+  };
+
+  const element = document.createElement("div");
+  element.setAttribute(attribute, "1");
+
+  const validators: Record<keyof Options, (value: unknown) => boolean> = {
+    option1: (value) => typeof value === "string",
+  };
+
+  const func = () => {
+    new ElementStorage<Options>(element, attribute, validators, {
+      option1: "default value",
+    });
+  };
+  expect(func).toThrow(StorageValidationError);
+});
+
+it("Test element storage data validator returned false", () => {
+  const attribute = "data-test-wraplet";
+  type Options = {
+    option1: string;
+  };
+
+  const element = document.createElement("div");
+  element.setAttribute(attribute, '{"option1":1}');
+
+  const validators: Record<keyof Options, (value: unknown) => boolean> = {
+    option1: (value) => typeof value === "string",
+  };
+
+  const func = () => {
+    new ElementStorage<Options>(element, attribute, validators, {
+      option1: "default value",
+    });
+  };
+  expect(func).toThrow(StorageValidationError);
 });

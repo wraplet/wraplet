@@ -1,25 +1,53 @@
 import { WrapletChildrenMap } from "./types/WrapletChildrenMap";
 import { WrapletChildren } from "./types/WrapletChildren";
-import { Wraplet } from "./types/Wraplet";
-import { Core } from "./Core";
+import { Wraplet, WrapletSymbol } from "./types/Wraplet";
+import { DefaultChildrenManager } from "./DefaultChildrenManager";
 import { DestroyListener } from "./types/DestroyListener";
 import { ChildInstance } from "./types/ChildInstance";
 import { CoreInitOptions } from "./types/CoreInitOptions";
-
-export type CommonMethods = {
-  destroy: {};
-};
+import {
+  defaultGroupableAttribute,
+  Groupable,
+  GroupableSymbol,
+  GroupExtractor,
+} from "./types/Groupable";
+import { NodeTreeParent, NodeTreeParentSymbol } from "./types/NodeTreeParent";
+import { ChildrenManager } from "./types/ChildrenManager";
+import { addWrapletToNode, removeWrapletFromNode } from "./utils";
+import { isWrapletSet } from "./types/Set/WrapletSet";
 
 export abstract class AbstractWraplet<
-  M extends WrapletChildrenMap = {},
-  N extends Node = Node,
-  CM extends CommonMethods = CommonMethods,
-> implements Wraplet<N>
+    M extends WrapletChildrenMap = {},
+    N extends Node = Node,
+  >
+  implements Wraplet<N>, Groupable, NodeTreeParent
 {
-  public isWraplet: true = true;
-  protected core: Core<M, N, CM>;
+  public [WrapletSymbol]: true = true;
+  public [GroupableSymbol]: true = true;
+  public [NodeTreeParentSymbol]: true = true;
 
-  constructor(node: N, initOptions: Partial<CoreInitOptions<M>> = {}) {
+  protected childrenManager: ChildrenManager<M, N>;
+  private groupsExtractor: GroupExtractor = (node: Node) => {
+    if (node instanceof Element) {
+      const groupsString = node.getAttribute(defaultGroupableAttribute);
+      if (groupsString) {
+        return groupsString.split(",");
+      }
+    }
+
+    return [];
+  };
+  private destroyListeners: DestroyListener<N>[] = [];
+
+  /**
+   * This is the log of all node accessors, available for easier debugging.
+   */
+  private __debugNodeAccessors: ((element: N) => void)[] = [];
+
+  constructor(
+    protected node: N,
+    initOptions: Partial<CoreInitOptions<M>> = {},
+  ) {
     if (!node) {
       throw new Error("Node is required to create a wraplet.");
     }
@@ -30,36 +58,71 @@ export abstract class AbstractWraplet<
     ];
     initOptions.destroyChildListeners = [this.onChildDestroyed.bind(this)];
 
-    this.core = new Core(node, map, this, initOptions);
+    this.childrenManager = new DefaultChildrenManager(node, map, initOptions);
     this.initialize();
   }
 
-  protected get node(): N {
-    return this.core.node;
+  public getNodeTreeChildren(): Wraplet[] {
+    const children: Wraplet[] = [];
+    for (const child of Object.values(this.children)) {
+      if (isWrapletSet(child)) {
+        for (const item of child) {
+          children.push(item);
+        }
+      } else {
+        children.push(child);
+      }
+    }
+
+    // Return only descendants.
+    return children.filter((child) => {
+      let result = false;
+      child.accessNode((childsNode) => {
+        result = this.node.contains(childsNode);
+      });
+      return result;
+    });
+  }
+
+  public setGroupsExtractor(callback: GroupExtractor): void {
+    this.groupsExtractor = callback;
+  }
+
+  public getGroups(): string[] {
+    return this.groupsExtractor(this.node);
   }
 
   protected get children(): WrapletChildren<M> {
-    return this.core.children;
+    return this.childrenManager.children;
   }
 
   public accessNode(callback: (node: N) => void) {
-    this.core.accessNode(callback);
+    this.__debugNodeAccessors.push(callback);
+    callback(this.node);
   }
 
   public destroy() {
-    this.core.destroy();
+    for (const listener of this.destroyListeners) {
+      listener(this);
+    }
+    this.destroyListeners.length = 0;
+    removeWrapletFromNode(this, this.node);
+    this.childrenManager.destroy();
   }
 
-  public get isDestroyed(): boolean {
-    return this.core.isDestroyed;
+  public isDestroyed(completely: boolean = false): boolean {
+    return completely
+      ? this.childrenManager.isDestroyed
+      : this.childrenManager.isGettingDestroyed ||
+          this.childrenManager.isDestroyed;
   }
 
   public get isInitialized(): boolean {
-    return this.core.isInitialized;
+    return this.childrenManager.isInitialized;
   }
 
   public addDestroyListener(callback: DestroyListener<N>): void {
-    this.core.addDestroyListener(callback);
+    this.destroyListeners.push(callback);
   }
 
   /**
@@ -69,7 +132,8 @@ export abstract class AbstractWraplet<
   protected onChildDestroyed(child: ChildInstance<M, keyof M>, id: keyof M) {}
 
   protected initialize(): void {
-    this.core.init();
+    this.childrenManager.init();
+    addWrapletToNode(this, this.node);
   }
 
   /**
@@ -101,7 +165,7 @@ export abstract class AbstractWraplet<
   ): item is ChildInstance<M, K> {
     return (
       actualUnknownId === (onlyId || actualUnknownId) &&
-      item instanceof this.core.map[actualUnknownId]["Class"]
+      item instanceof this.childrenManager.map[actualUnknownId]["Class"]
     );
   }
 
@@ -114,7 +178,7 @@ export abstract class AbstractWraplet<
     N extends Node,
     T extends AbstractWraplet<any, N> = never,
   >(node: ParentNode, selector: string, additional_args: unknown[] = []): T[] {
-    if (this instanceof AbstractWraplet) {
+    if (this === AbstractWraplet) {
       throw new Error("You cannot instantiate an abstract class.");
     }
 

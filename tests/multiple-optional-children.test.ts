@@ -2,50 +2,56 @@ import "./setup";
 import { AbstractWraplet, WrapletChildrenMap } from "../src";
 import { BaseElementTestWraplet } from "./resources/BaseElementTestWraplet";
 
-const testWrapletSelectorAttribute = "data-test-selector";
-const testWrapletChildSelectorAttribute = `${testWrapletSelectorAttribute}-child`;
+describe("Test wraplet multiple optional children", () => {
+  const testWrapletSelectorAttribute = "data-test-selector";
+  const testWrapletChildSelectorAttribute = `${testWrapletSelectorAttribute}-child`;
 
-class TestWrapletChild extends AbstractWraplet<any> {
-  protected defineChildrenMap(): {} {
-    return {};
+  class TestWrapletChild extends AbstractWraplet<any> {
+    protected defineChildrenMap(): {} {
+      return {};
+    }
   }
-}
 
-const childrenMap = {
-  children: {
-    selector: `[${testWrapletChildSelectorAttribute}]`,
-    Class: TestWrapletChild,
-    multiple: true,
-    required: false,
-  },
-} as const satisfies WrapletChildrenMap;
+  const childrenMap = {
+    children: {
+      selector: `[${testWrapletChildSelectorAttribute}]`,
+      Class: TestWrapletChild,
+      multiple: true,
+      required: false,
+    },
+  } as const satisfies WrapletChildrenMap;
 
-class TestWraplet extends BaseElementTestWraplet<typeof childrenMap> {
-  protected defineChildrenMap(): typeof childrenMap {
-    return childrenMap;
+  class TestWraplet extends BaseElementTestWraplet<typeof childrenMap> {
+    protected defineChildrenMap(): typeof childrenMap {
+      return childrenMap;
+    }
   }
-}
 
-// TESTS START HERE
+  // TESTS START HERE
 
-test("Test wraplet optional children initialization empty children", () => {
-  document.body.innerHTML = `<div ${testWrapletSelectorAttribute}></div>`;
+  it("Test wraplet optional children initialization empty children", () => {
+    document.body.innerHTML = `<div ${testWrapletSelectorAttribute}></div>`;
 
-  const wraplet = TestWraplet.create(testWrapletSelectorAttribute);
-  if (!wraplet) {
-    throw new Error("Wraplet not initialized.");
-  }
-  const children = wraplet.getChild("children");
-  expect(children).toHaveLength(0);
-});
+    const wraplet = TestWraplet.create<TestWraplet>(
+      testWrapletSelectorAttribute,
+    );
+    if (!wraplet) {
+      throw new Error("Wraplet not initialized.");
+    }
+    const children = wraplet.getChild("children");
+    expect(children.size).toBe(0);
+  });
 
-test("Test wraplet optional children initialization", () => {
-  document.body.innerHTML = `<div ${testWrapletSelectorAttribute}><div ${testWrapletChildSelectorAttribute}></div><div ${testWrapletChildSelectorAttribute}></div></div>`;
+  it("Test wraplet optional children initialization", () => {
+    document.body.innerHTML = `<div ${testWrapletSelectorAttribute}><div ${testWrapletChildSelectorAttribute}></div><div ${testWrapletChildSelectorAttribute}></div></div>`;
 
-  const wraplet = TestWraplet.create(testWrapletSelectorAttribute);
-  if (!wraplet) {
-    throw new Error("Wraplet not initialized.");
-  }
-  const children = wraplet.getChild("children");
-  expect(children).toHaveLength(2);
+    const wraplet = TestWraplet.create<TestWraplet>(
+      testWrapletSelectorAttribute,
+    );
+    if (!wraplet) {
+      throw new Error("Wraplet not initialized.");
+    }
+    const children = wraplet.getChild("children");
+    expect(children.size).toBe(2);
+  });
 });

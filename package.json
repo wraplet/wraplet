@@ -32,7 +32,7 @@
     "dev:watch": "NODE_OPTIONS='--no-experimental-strip-types --import tsx' node ./node_modules/.bin/webpack --mode development --watch --config ./webpack.config.ts",
     "lint": "tsc --noemit && npx eslint './src/**/*.ts' './tests/**/*.ts'",
     "lint:fix": "npx eslint './src/**/*.ts' './tests/**/*.ts' --fix",
-    "tests": "jest"
+    "tests": "jest --coverage"
   },
   "dependencies": {},
   "devDependencies": {
@@ -48,6 +48,7 @@
     "jest": "^30.0.3",
     "jest-cli": "^30.0.3",
     "jest-environment-jsdom": "^30.0.2",
+    "npx": "^10.2.2",
     "prettier": "^3.6.1",
     "prettier-eslint": "^16.4.2",
     "ts-jest": "^29.4.0",

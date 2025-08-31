@@ -61,7 +61,7 @@ class TestWraplet extends BaseElementTestWraplet<typeof childrenMap> {
   }
 }
 
-test("Test that 'destroy' is invoked on all children", () => {
+it("Test that 'destroy' is invoked on all children", () => {
   document.body.innerHTML = `
 <div ${testWrapletSelectorAttribute}>
     <div ${testWrapletChildSelectorSingleAttribute}  class="c1"></div>
@@ -81,7 +81,7 @@ test("Test that 'destroy' is invoked on all children", () => {
   TestWrapletChild.counter = 0;
 });
 
-test("Test that children are removed from the nodes after being destroyed", () => {
+it("Test that children are removed from the nodes after being destroyed", () => {
   document.body.innerHTML = `
 <div ${testWrapletSelectorAttribute}>
     <div ${testWrapletChildSelectorSingleAttribute}></div>
@@ -104,20 +104,20 @@ test("Test that children are removed from the nodes after being destroyed", () =
       continue;
     }
     if (element.hasAttribute(testWrapletChildSelectorIndestructibleAttribute)) {
-      expect(element.wraplets.length).toEqual(1);
+      expect(element.wraplets.size).toEqual(1);
     } else {
-      expect(element.wraplets.length).toEqual(0);
+      expect(element.wraplets.size).toEqual(0);
     }
   }
 });
 
-test("Test that listeneres are being detached during destruction", () => {
+it("Test that listeneres are being detached during destruction", () => {
   const listener = jest.fn();
   class TestWrapletChild extends AbstractWraplet {
     constructor(node: Element) {
       super(node);
 
-      this.core.addEventListener(node, "click", () => {
+      this.childrenManager.addEventListener(node, "click", () => {
         listener();
       });
     }
@@ -167,7 +167,7 @@ test("Test that listeneres are being detached during destruction", () => {
   expect(listener).toHaveBeenCalledTimes(1);
 });
 
-test("Test that if the required child has been destroyed then throw exception", () => {
+it("Test that if the required child has been destroyed then throw exception", () => {
   const mainAttribute = "data-test-main";
   const childAttribute = "data-test-child";
 
@@ -201,12 +201,12 @@ test("Test that if the required child has been destroyed then throw exception", 
 </div>
 `;
 
-  const collection = TestWraplet.create<TestWraplet>(mainAttribute);
-  if (!collection) {
+  const wraplet = TestWraplet.create<TestWraplet>(mainAttribute);
+  if (!wraplet) {
     throw new Error("Wraplet not initialized.");
   }
 
-  const child = collection.getChild("child");
+  const child = wraplet.getChild("child");
   if (!child) {
     throw new Error("Child not found.");
   }
@@ -216,7 +216,7 @@ test("Test that if the required child has been destroyed then throw exception", 
   }).toThrow(RequiredChildDestroyedError);
 });
 
-test("Destroy child listener", () => {
+it("Destroy child listener", () => {
   const mainAttribute = "data-test-main";
   const childAttribute = "data-test-child";
 

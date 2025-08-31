@@ -1,11 +1,10 @@
+/* istanbul ignore file */
 import { AbstractWraplet, WrapletChildrenMap } from "../../src";
 import { WrapletChildren } from "../../src/types/WrapletChildren";
-import { CommonMethods } from "../../src/AbstractWraplet";
 
 export abstract class BaseElementTestWraplet<
   M extends WrapletChildrenMap = WrapletChildrenMap,
-  ME extends CommonMethods = CommonMethods,
-> extends AbstractWraplet<M, Element, ME> {
+> extends AbstractWraplet<M, Element> {
   public getChild<C extends keyof M>(name: C): WrapletChildren<M>[C] {
     return this.children[name];
   }
@@ -15,10 +14,7 @@ export abstract class BaseElementTestWraplet<
   }
 
   public static create<
-    C extends BaseElementTestWraplet<any, any> = BaseElementTestWraplet<
-      any,
-      any
-    >,
+    C extends BaseElementTestWraplet<any> = BaseElementTestWraplet<any>,
   >(
     selectorAttribute: string,
     args: unknown[] = [],

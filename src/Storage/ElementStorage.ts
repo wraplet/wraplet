@@ -1,5 +1,6 @@
 import { Storage } from "../types/Storage/Storage";
 import { StorageValidationError } from "../errors";
+import { StorageValidators } from "../types/Storage/StorageValidators";
 
 export type ElementStorageOptions = {
   keepFresh?: boolean;
@@ -13,7 +14,7 @@ export class ElementStorage<D extends Record<string, unknown>>
   constructor(
     private element: Element,
     private attribute: string,
-    private validators: Record<keyof D, (value: unknown) => boolean>,
+    private validators: StorageValidators<D>,
     private defaults: D,
     private options: ElementStorageOptions = {},
   ) {
@@ -74,7 +75,7 @@ export class ElementStorage<D extends Record<string, unknown>>
 
   public delete(key: keyof D): void {
     const data = this.getAll();
-    if (data[key]) {
+    if (key in data) {
       delete data[key];
     }
     this.element.setAttribute(this.attribute, JSON.stringify(data));
@@ -101,7 +102,9 @@ export class ElementStorage<D extends Record<string, unknown>>
     const dataString = this.getAttributeValue(this.attribute);
     if (dataString) {
       if (dataString.charAt(0) !== "{") {
-        throw new Error(`Data has to be defined as an object.`);
+        throw new StorageValidationError(
+          `Data has to be defined as an object.`,
+        );
       }
       const data: Record<string, unknown> = JSON.parse(dataString);
       if (!this.validateData(data)) {
