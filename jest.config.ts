@@ -8,10 +8,10 @@ export default {
   preset: "ts-jest",
   coverageThreshold: {
     global: {
-      statements: 95,
-      branches: 90,
-      functions: 95,
-      lines: 90,
+      statements: 100,
+      branches: 100,
+      functions: 100,
+      lines: 100,
     },
   },
 };

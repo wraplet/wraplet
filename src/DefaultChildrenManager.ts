@@ -10,7 +10,10 @@ import {
   InternalLogicError,
 } from "./errors";
 import { Wraplet } from "./types/Wraplet";
-import { WrapletChildrenMap } from "./types/WrapletChildrenMap";
+import {
+  WrapletChildrenMap,
+  WrapletChildrenMapWithDefaults,
+} from "./types/WrapletChildrenMap";
 import { getWrapletsFromNode, isParentNode } from "./utils";
 import { InstantiateChildListener } from "./types/InstantiateChildListener";
 import { ChildInstance } from "./types/ChildInstance";
@@ -23,6 +26,10 @@ import {
 import { DestroyListener } from "./types/DestroyListener";
 import { isWrapletSet, WrapletSet } from "./types/Set/WrapletSet";
 import { DefaultWrapletSet } from "./Set/DefaultWrapletSet";
+import {
+  WrapletChildDefinition,
+  WrapletChildDefinitionWithDefaults,
+} from "./types/WrapletChildDefinition";
 
 type ListenerData = {
   node: Node;
@@ -40,6 +47,7 @@ export class DefaultChildrenManager<
   public isDestroyed: boolean = false;
   public isGettingDestroyed: boolean = false;
   public isInitialized: boolean = false;
+  public map: WrapletChildrenMapWithDefaults<M>;
   private instantiatedChildren: Partial<WrapletChildren<M>>;
 
   private destroyChildListeners: DestroyChildListener<M, keyof M>[] = [];
@@ -49,12 +57,10 @@ export class DefaultChildrenManager<
 
   constructor(
     private node: N,
-    public map: M,
+    map: M,
     initOptions: Partial<CoreInitOptions<M>> = {},
   ) {
-    for (const id in map) {
-      map[id] = this.addDefaultsToChildDefinition(map[id]);
-    }
+    this.map = this.fillMapWithDefaults(map);
 
     this.processInitOptions(initOptions);
     this.instantiatedChildren = {};
@@ -149,7 +155,7 @@ export class DefaultChildrenManager<
   }
 
   private instantiateSingleWrapletChild<T extends keyof M>(
-    mapItem: M[T],
+    mapItem: WrapletChildDefinitionWithDefaults<M[T]>,
     node: ParentNode,
     id: Extract<T, string>,
   ): WrapletChildren<M>[T] | null {
@@ -181,7 +187,7 @@ export class DefaultChildrenManager<
 
   private instantiateWrapletItem<T extends keyof M>(
     id: Extract<T, string>,
-    mapItem: M[T],
+    mapItem: WrapletChildDefinitionWithDefaults<M[T]>,
     node: Node,
   ): Wraplet {
     // Re-use existing wraplet.
@@ -191,7 +197,7 @@ export class DefaultChildrenManager<
     }
 
     const wrapletClass = mapItem.Class;
-    const args = mapItem.args || [];
+    const args = mapItem.args;
     const wraplet = this.createIndividualWraplet(wrapletClass, node, args);
     this.prepareIndividualWraplet(id, wraplet);
 
@@ -203,7 +209,7 @@ export class DefaultChildrenManager<
   }
 
   private instantiateMultipleWrapletsChild<T extends keyof M>(
-    mapItem: M[T],
+    mapItem: WrapletChildDefinitionWithDefaults<M[T]>,
     node: ParentNode,
     id: Extract<T, string>,
   ): WrapletChildren<M>[keyof WrapletChildren<M>] {
@@ -247,7 +253,7 @@ export class DefaultChildrenManager<
   private createIndividualWraplet(
     wrapletClass: new (...args: any[]) => Wraplet<N>,
     childElement: Node,
-    args: unknown[] = [],
+    args: unknown[],
   ): Wraplet<N> {
     return new wrapletClass(...[...[childElement], ...args]);
   }
@@ -295,7 +301,17 @@ export class DefaultChildrenManager<
     this.isDestroyed = true;
   }
 
-  private addDefaultsToChildDefinition<A extends M[keyof M]>(definition: A): A {
+  private fillMapWithDefaults(map: M): WrapletChildrenMapWithDefaults<M> {
+    const newMap: Partial<WrapletChildrenMapWithDefaults<M>> = {};
+    for (const id in map) {
+      newMap[id] = this.addDefaultsToChildDefinition(map[id]);
+    }
+    return newMap as WrapletChildrenMapWithDefaults<M>;
+  }
+
+  private addDefaultsToChildDefinition<T extends WrapletChildDefinition>(
+    definition: T,
+  ): WrapletChildDefinitionWithDefaults<T> {
     return {
       ...{
         args: [],
@@ -366,7 +382,10 @@ export class DefaultChildrenManager<
     return [...a].filter((x) => b.has(x));
   }
 
-  private validateMapItem(id: string, item: M[keyof M]): void {
+  private validateMapItem(
+    id: string,
+    item: WrapletChildDefinitionWithDefaults<M[keyof M]>,
+  ): void {
     const selector = item.selector;
     const isRequired = item.required;
     if (!selector) {
@@ -381,7 +400,7 @@ export class DefaultChildrenManager<
   private validateElements(
     id: Extract<keyof M, string>,
     elements: NodeListOf<Element>,
-    mapItem: M[keyof M],
+    mapItem: WrapletChildDefinitionWithDefaults<M[keyof M]>,
   ): void {
     if (elements.length === 0 && mapItem.required) {
       throw new MissingRequiredChildError(

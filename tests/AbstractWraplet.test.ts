@@ -171,6 +171,9 @@ describe("Wraplet initialization", () => {
         if (this.isChildInstance(child, id, "child1")) {
           child.testMethod1();
         }
+        if (!this.isChildInstance(child, id)) {
+          throw new Error("Invalid child instance.");
+        }
       }
     }
 
@@ -541,4 +544,67 @@ it("Test wraplet NodeTreeParent interface", () => {
 
   const nodeTreeChildren = wraplet.getNodeTreeChildren();
   expect(nodeTreeChildren.length).toBe(4);
+});
+
+it("Test wraplet groupable when node is not an element", () => {
+  class TestWraplet extends AbstractWraplet {
+    protected defineChildrenMap(): {} {
+      return {};
+    }
+  }
+
+  const node = document.createTextNode("test");
+  const wraplet = new TestWraplet(node);
+  const groups = wraplet.getGroups();
+
+  expect(groups).toEqual([]);
+});
+
+it("Test wraplet map children args", () => {
+  class TestWrapletChild extends AbstractWraplet {
+    constructor(
+      node: Node,
+      public arg1: string,
+    ) {
+      super(node);
+    }
+    protected defineChildrenMap(): {} {
+      return {};
+    }
+  }
+
+  const arg1Value = "arg1";
+
+  const map = {
+    child: {
+      selector: `[data-child]`,
+      multiple: false,
+      Class: TestWrapletChild,
+      required: true,
+      args: [arg1Value],
+    },
+  } as const satisfies WrapletChildrenMap;
+
+  class TestWraplet extends BaseElementTestWraplet<typeof map> {
+    protected defineChildrenMap(): typeof map {
+      return map;
+    }
+
+    public getChildArg1Value(): string {
+      return this.children.child.arg1;
+    }
+  }
+
+  document.body.innerHTML = `
+<div data-wraplet>
+  <div data-child></div>
+</div>
+`;
+
+  const wraplet = TestWraplet.create<TestWraplet>("data-wraplet");
+  if (!wraplet) {
+    throw new Error("Wraplet not created.");
+  }
+
+  expect(wraplet.getChildArg1Value()).toEqual(arg1Value);
 });

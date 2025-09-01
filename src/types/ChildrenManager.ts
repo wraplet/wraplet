@@ -1,5 +1,8 @@
 import { WrapletChildren } from "./WrapletChildren";
-import { WrapletChildrenMap } from "./WrapletChildrenMap";
+import {
+  WrapletChildrenMap,
+  WrapletChildrenMapWithDefaults,
+} from "./WrapletChildrenMap";
 import { DestroyChildListener } from "./DestroyChildListener";
 import { InstantiateChildListener } from "./InstantiateChildListener";
 
@@ -34,7 +37,7 @@ export interface ChildrenManager<
   /**
    * The children map that defines the relationships between nodes.
    */
-  map: M;
+  map: WrapletChildrenMapWithDefaults<M>;
 
   /**
    * Initialize the core.

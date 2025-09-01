@@ -75,9 +75,11 @@ export class ElementStorage<D extends Record<string, unknown>>
 
   public delete(key: keyof D): void {
     const data = this.getAll();
-    if (key in data) {
-      delete data[key];
+    if (!(key in data)) {
+      return;
     }
+
+    delete data[key];
     this.element.setAttribute(this.attribute, JSON.stringify(data));
   }
 

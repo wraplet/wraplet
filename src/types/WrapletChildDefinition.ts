@@ -8,3 +8,7 @@ export type WrapletChildDefinition = {
   args?: unknown[];
   destructible?: boolean;
 };
+
+export type WrapletChildDefinitionWithDefaults<
+  T extends WrapletChildDefinition,
+> = T & { args: unknown[]; destructible: boolean };

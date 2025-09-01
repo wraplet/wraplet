@@ -272,3 +272,50 @@ it("Destroy child listener", () => {
 
   expect(func).toHaveBeenCalledTimes(1);
 });
+
+it("Test isDestroyed values", () => {
+  const mainAttribute = "data-test-main";
+  const childAttribute = "data-test-child";
+
+  class TestWrapletChild extends AbstractWraplet {
+    protected defineChildrenMap(): {} {
+      return {};
+    }
+  }
+
+  const childrenMap = {
+    child: {
+      selector: `[${childAttribute}]`,
+      Class: TestWrapletChild,
+      multiple: false,
+      required: false,
+    },
+  } as const satisfies WrapletChildrenMap;
+
+  class TestWraplet extends BaseElementTestWraplet<typeof childrenMap> {
+    protected defineChildrenMap(): typeof childrenMap {
+      return childrenMap;
+    }
+
+    protected onChildDestroyed() {
+      expect(this.isDestroyed()).toBe(true);
+      expect(this.isDestroyed(true)).toBe(false);
+    }
+  }
+
+  document.body.innerHTML = `
+<div ${mainAttribute}>
+    <div ${childAttribute}></div>
+</div>
+`;
+
+  const wraplet = TestWraplet.create<TestWraplet>(mainAttribute);
+  if (!wraplet) {
+    throw new Error("Wraplet not initialized.");
+  }
+  expect(wraplet.isDestroyed(false)).toBe(false);
+  expect(wraplet.isDestroyed(true)).toBe(false);
+  wraplet.destroy();
+  expect(wraplet.isDestroyed(false)).toBe(true);
+  expect(wraplet.isDestroyed(true)).toBe(true);
+});

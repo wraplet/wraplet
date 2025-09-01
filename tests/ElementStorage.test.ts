@@ -43,6 +43,10 @@ it("Test element storage", () => {
   storage.delete("option1");
   expect(storage.get("option1")).toEqual("default value");
 
+  // Test delete non-existing without errors.
+  // @ts-expect-error We are testing a non-existing key.
+  storage.delete("test");
+
   // Test deleteAll.
   storage.set("option1", "new value");
   storage.deleteAll();

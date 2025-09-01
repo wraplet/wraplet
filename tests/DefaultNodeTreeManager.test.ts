@@ -9,6 +9,7 @@ import {
 import DefaultNodeTreeManager from "../src/NodeTreeManager/DefaultNodeTreeManager";
 import { AbstractWraplet, Wraplet, WrapletChildrenMap } from "../src";
 import { isParentNode } from "../src/utils";
+import { WrapletSymbol } from "../src/types/Wraplet";
 
 it("Test default node tree manager destroy tree", () => {
   const func = jest.fn();
@@ -17,6 +18,7 @@ it("Test default node tree manager destroy tree", () => {
     protected defineChildrenMap(): {} {
       return {};
     }
+
     public destroy() {
       func();
       super.destroy();
@@ -139,6 +141,7 @@ it("Test searching for wraplets in the node tree manager", () => {
     public getValue(): string | null {
       return this.node.getAttribute("data-value");
     }
+
     protected defineChildrenMap(): {} {
       return {};
     }
@@ -174,6 +177,7 @@ it("Test searching for wraplets in the node tree manager", () => {
       return TestWraplet.createWraplets(node, `[${attribute}]`);
     }
   }
+
   document.body.innerHTML = `
 <div data-parent>
     <div data-child-1 data-value="1"></div>
@@ -222,4 +226,39 @@ it("Test searching for wraplets in the node tree manager", () => {
   // We don't use "toHaveLength" because jest would attempt to display values of the properties, of items, which would
   // result in error because "children" properties access is validated.
   expect(items.length).toBe(2);
+});
+
+it("Test initializing non-tree-parent wraplet", () => {
+  class TestWraplet implements Wraplet {
+    [WrapletSymbol]: true = true;
+    isInitialized: boolean = true;
+    isDestroyed(): boolean {
+      throw new Error("Method not implemented.");
+    }
+    accessNode(): void {}
+    destroy(): void {}
+    addDestroyListener(): void {}
+  }
+
+  const manager = new DefaultNodeTreeManager();
+  manager.addWrapletInitializer((node: Node) => {
+    if (!(node instanceof Document)) {
+      throw new Error("Node is not a Document");
+    }
+    const wraplet = new TestWraplet();
+    return [wraplet];
+  });
+
+  manager.initializeNodeTree(document);
+
+  const set = manager.getSet();
+
+  // Test findOne.
+  const wraplet = set.findOne((item) => {
+    return item instanceof TestWraplet;
+  });
+  if (!wraplet) {
+    throw new Error("Wraplet not found.");
+  }
+  expect(wraplet).toBeInstanceOf(TestWraplet);
 });
