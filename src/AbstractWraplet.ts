@@ -177,31 +177,18 @@ export abstract class AbstractWraplet<
   protected static createWraplets<
     N extends Node,
     T extends AbstractWraplet<any, N> = never,
-  >(node: ParentNode, selector: string, additional_args: unknown[] = []): T[] {
+  >(node: ParentNode, attribute: string, additional_args: unknown[] = []): T[] {
     if (this === AbstractWraplet) {
       throw new Error("You cannot instantiate an abstract class.");
     }
 
-    let searchNode = node.parentNode;
-    // We use a temporary parent to be able to match the top element with the "querySelectorAll"
-    // method.
-    let tempParent = null;
-    if (!searchNode) {
-      if (node instanceof Document) {
-        searchNode = node;
-      } else {
-        tempParent = document.createElement("div");
-        tempParent.appendChild(node);
-        searchNode = tempParent;
-      }
-    }
-
     const result: T[] = [];
-    const foundElements = searchNode.querySelectorAll(selector);
-    if (tempParent) {
-      tempParent.removeChild(node);
+
+    if (node instanceof Element && node.hasAttribute(attribute)) {
+      result.push(new (this as any)(node, ...additional_args));
     }
 
+    const foundElements = node.querySelectorAll(`[${attribute}]`);
     for (const element of foundElements) {
       result.push(new (this as any)(element, ...additional_args));
     }

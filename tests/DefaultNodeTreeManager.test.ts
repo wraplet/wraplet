@@ -104,7 +104,7 @@ it("Test wraplet tree manager initialization performance", () => {
     }
 
     public static create(node: ParentNode, attribute: string): TestWraplet[] {
-      return TestWraplet.createWraplets(node, `[${attribute}]`);
+      return TestWraplet.createWraplets(node, attribute);
     }
   }
 
@@ -174,7 +174,7 @@ it("Test searching for wraplets in the node tree manager", () => {
     }
 
     public static create(node: ParentNode, attribute: string): TestWraplet[] {
-      return TestWraplet.createWraplets(node, `[${attribute}]`);
+      return TestWraplet.createWraplets(node, attribute);
     }
   }
 

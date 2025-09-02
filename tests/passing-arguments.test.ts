@@ -56,7 +56,7 @@ describe("Test passing arguments", () => {
     public static createWithArguments<
       C extends BaseElementTestWraplet<typeof childrenMap>,
     >(selectorAttribute: string, someString: string): C | null {
-      const wraplets = this.createWraplets(document, `[${selectorAttribute}]`, [
+      const wraplets = this.createWraplets(document, selectorAttribute, [
         someString,
       ]);
 

@@ -20,11 +20,7 @@ export abstract class BaseElementTestWraplet<
     args: unknown[] = [],
     element: ParentNode = document,
   ): C | null {
-    const wraplets = this.createWraplets(
-      element,
-      `[${selectorAttribute}]`,
-      args,
-    );
+    const wraplets = this.createWraplets(element, selectorAttribute, args);
     if (wraplets.length === 0) {
       return null;
     }
@@ -35,10 +31,6 @@ export abstract class BaseElementTestWraplet<
   public static createAll<C extends BaseElementTestWraplet>(
     selectorAttribute: string,
   ): C[] {
-    return this.createWraplets<Element>(
-      document,
-      `[${selectorAttribute}]`,
-      [],
-    ) as C[];
+    return this.createWraplets<Element>(document, selectorAttribute, []) as C[];
   }
 }
