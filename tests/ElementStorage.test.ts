@@ -22,8 +22,8 @@ it("Test element storage", () => {
   const storage = new ElementStorage<Options>(
     element,
     attribute,
-    validators,
     { option1: "default value" },
+    validators,
     { keepFresh: true },
   );
 
@@ -127,8 +127,8 @@ it("Test element storage fresh data", () => {
   const storage = new ElementStorage<Options>(
     element,
     attribute,
-    validators,
     { option1: "default value" },
+    validators,
     { keepFresh: true },
   );
 
@@ -155,8 +155,8 @@ it("Test element storage non-fresh data", () => {
   const storage = new ElementStorage<Options>(
     element,
     attribute,
-    validators,
     { option1: "default value" },
+    validators,
     { keepFresh: false },
   );
 
@@ -182,9 +182,14 @@ it("Test element storage fresh data by default", () => {
     option1: (value) => typeof value === "string",
   };
 
-  const storage = new ElementStorage<Options>(element, attribute, validators, {
-    option1: "default value",
-  });
+  const storage = new ElementStorage<Options>(
+    element,
+    attribute,
+    {
+      option1: "default value",
+    },
+    validators,
+  );
 
   // Test if data is fresh.
   element.setAttribute(attribute, '{"option1":"fresh data"}');
@@ -205,9 +210,14 @@ it("Test element storage data has to be an object", () => {
   };
 
   const func = () => {
-    new ElementStorage<Options>(element, attribute, validators, {
-      option1: "default value",
-    });
+    new ElementStorage<Options>(
+      element,
+      attribute,
+      {
+        option1: "default value",
+      },
+      validators,
+    );
   };
   expect(func).toThrow(StorageValidationError);
 });
@@ -226,9 +236,14 @@ it("Test element storage data validator returned false", () => {
   };
 
   const func = () => {
-    new ElementStorage<Options>(element, attribute, validators, {
-      option1: "default value",
-    });
+    new ElementStorage<Options>(
+      element,
+      attribute,
+      {
+        option1: "default value",
+      },
+      validators,
+    );
   };
   expect(func).toThrow(StorageValidationError);
 });

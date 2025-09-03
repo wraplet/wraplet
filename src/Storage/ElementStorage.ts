@@ -14,8 +14,8 @@ export class ElementStorage<D extends Record<string, unknown>>
   constructor(
     private element: Element,
     private attribute: string,
-    private validators: StorageValidators<D>,
     private defaults: D,
+    private validators: StorageValidators<D>,
     private options: ElementStorageOptions = {},
   ) {
     this.options = {
