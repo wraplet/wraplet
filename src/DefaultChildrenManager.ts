@@ -27,6 +27,7 @@ import { DestroyListener } from "./types/DestroyListener";
 import { isWrapletSet, WrapletSet } from "./types/Set/WrapletSet";
 import { DefaultWrapletSet } from "./Set/DefaultWrapletSet";
 import {
+  SelectorCallback,
   WrapletChildDefinition,
   WrapletChildDefinitionWithDefaults,
 } from "./types/WrapletChildDefinition";
@@ -165,7 +166,8 @@ export class DefaultChildrenManager<
     const selector = mapItem.selector;
 
     // Find children elements based on the map.
-    const childElements = node.querySelectorAll(selector);
+    const childElements = this.findChildren(selector, node);
+
     this.validateElements(id, childElements, mapItem);
 
     if (childElements.length === 0) {
@@ -219,7 +221,7 @@ export class DefaultChildrenManager<
     }
 
     // Find children elements based on the map.
-    const childElements = node.querySelectorAll(selector);
+    const childElements = this.findChildren(selector, node);
     this.validateElements(id, childElements, mapItem);
 
     const items: WrapletSet =
@@ -299,6 +301,23 @@ export class DefaultChildrenManager<
 
     this.isGettingDestroyed = false;
     this.isDestroyed = true;
+  }
+
+  private findChildren<PN extends ParentNode>(
+    selector: string | SelectorCallback<PN>,
+    node: PN,
+  ): Node[] {
+    const defaultSelectorCallback = (
+      selector: string,
+      node: ParentNode,
+    ): Node[] => {
+      return Array.from(node.querySelectorAll(selector));
+    };
+
+    // Find children elements based on the map.
+    return typeof selector === "string"
+      ? defaultSelectorCallback(selector, node)
+      : selector(node);
   }
 
   private fillMapWithDefaults(map: M): WrapletChildrenMapWithDefaults<M> {
@@ -399,7 +418,7 @@ export class DefaultChildrenManager<
 
   private validateElements(
     id: Extract<keyof M, string>,
-    elements: NodeListOf<Element>,
+    elements: Node[],
     mapItem: WrapletChildDefinitionWithDefaults<M[keyof M]>,
   ): void {
     if (elements.length === 0 && mapItem.required) {

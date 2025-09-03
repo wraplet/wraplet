@@ -11,5 +11,6 @@ export { isWraplet } from "./types/Wraplet";
 
 export type { WrapletChildrenMap } from "./types/WrapletChildrenMap";
 export type { Wraplet } from "./types/Wraplet";
+export type { SelectorCallback } from "./types/WrapletChildDefinition";
 
 import "./types/global";

@@ -80,24 +80,15 @@ describe("Wraplet initialization", () => {
   });
 
   it("Test wraplet's element is accessible", () => {
-    document.body.innerHTML = `
-<div ${testWrapletSelectorAttribute}>
-    <div data-js-wraplet-collection--item="" class="nested-item">
-        <div data-js-wraplet-collection--item--handle=""></div>
-    </div
-</div>`;
+    document.body.innerHTML = `<div ${testWrapletSelectorAttribute}></div>`;
     const wraplet = TestWraplet.create(testWrapletSelectorAttribute);
     if (!wraplet) {
       throw Error("Wraplet not initialized.");
     }
-    const callback = jest.fn();
+    const callback = jest.fn((element: Element) => element);
 
     wraplet.accessNode((element) => {
-      callback();
-      const selector =
-        ":scope [data-js-wraplet-collection--item--handle]:not(:scope [data-js-wraplet-collection--item] [data-js-wraplet-collection--item] [data-js-wraplet-collection--item--handle])";
-      const results = element.querySelectorAll(selector);
-      console.log(results.length);
+      callback(element);
     });
 
     expect(callback).toHaveBeenCalledTimes(1);

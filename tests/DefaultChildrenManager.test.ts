@@ -391,4 +391,27 @@ describe("Test DefaultChildrenManager", () => {
 
     expect(func).toThrow("Child has not been found.");
   });
+
+  it("Test DefaultChildrenManager with selector callback", () => {
+    const attribute = "data-test-selector";
+    const node = document.createElement("div");
+    node.innerHTML = `<div ${attribute}></div><div ${attribute}></div>`;
+
+    const map = {
+      children: {
+        selector: (node: ParentNode) => {
+          return Array.from(node.querySelectorAll(`[${attribute}]`));
+        },
+        Class: TestWrapletClass,
+        multiple: true,
+        required: false,
+      },
+    } as const satisfies WrapletChildrenMap;
+
+    const childrenManager: ChildrenManager<typeof map> =
+      new DefaultChildrenManager(node, map);
+
+    childrenManager.init();
+    expect(childrenManager.children["children"].size).toBe(2);
+  });
 });
