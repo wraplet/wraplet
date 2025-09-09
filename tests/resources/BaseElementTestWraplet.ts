@@ -1,10 +1,15 @@
 /* istanbul ignore file */
 import { AbstractWraplet, WrapletChildrenMap } from "../../src";
 import { WrapletChildren } from "../../src/types/WrapletChildren";
+import { Core } from "../../src/types/Core";
 
 export abstract class BaseElementTestWraplet<
   M extends WrapletChildrenMap = WrapletChildrenMap,
 > extends AbstractWraplet<M, Element> {
+  constructor(core: Core<M, Element>) {
+    super(core);
+  }
+
   public getChild<C extends keyof M>(name: C): WrapletChildren<M>[C] {
     return this.children[name];
   }
@@ -14,13 +19,15 @@ export abstract class BaseElementTestWraplet<
   }
 
   public static create<
-    C extends BaseElementTestWraplet<any> = BaseElementTestWraplet<any>,
+    M extends WrapletChildrenMap,
+    C extends BaseElementTestWraplet<M> = BaseElementTestWraplet<M>,
   >(
     selectorAttribute: string,
-    args: unknown[] = [],
+    map: WrapletChildrenMap,
     element: ParentNode = document,
+    args: unknown[] = [],
   ): C | null {
-    const wraplets = this.createWraplets(element, selectorAttribute, args);
+    const wraplets = this.createWraplets(element, map, selectorAttribute, args);
     if (wraplets.length === 0) {
       return null;
     }
@@ -30,7 +37,14 @@ export abstract class BaseElementTestWraplet<
 
   public static createAll<C extends BaseElementTestWraplet>(
     selectorAttribute: string,
+    map: WrapletChildrenMap = {},
+    node: ParentNode = document,
   ): C[] {
-    return this.createWraplets<Element>(document, selectorAttribute, []) as C[];
+    return this.createWraplets<Element>(
+      node,
+      map,
+      selectorAttribute,
+      [],
+    ) as C[];
   }
 }

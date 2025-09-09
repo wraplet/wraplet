@@ -14,15 +14,12 @@ import {
   WrapletChildrenMap,
   WrapletChildrenMapWithDefaults,
 } from "./types/WrapletChildrenMap";
-import { getWrapletsFromNode, isParentNode } from "./utils";
+import { isParentNode } from "./utils";
 import { InstantiateChildListener } from "./types/InstantiateChildListener";
 import { ChildInstance } from "./types/ChildInstance";
 import { DestroyChildListener } from "./types/DestroyChildListener";
 import { CoreInitOptions } from "./types/CoreInitOptions";
-import {
-  ChildrenManager,
-  ChildrenManagerSymbol,
-} from "./types/ChildrenManager";
+import { Core, CoreSymbol } from "./types/Core";
 import { DestroyListener } from "./types/DestroyListener";
 import { isWrapletSet, WrapletSet } from "./types/Set/WrapletSet";
 import { DefaultWrapletSet } from "./Set/DefaultWrapletSet";
@@ -39,17 +36,17 @@ type ListenerData = {
   options?: AddEventListenerOptions | boolean;
 };
 
-export class DefaultChildrenManager<
+export class DefaultCore<
   M extends WrapletChildrenMap = {},
   N extends Node = Node,
-> implements ChildrenManager<M, N>
+> implements Core<M, N>
 {
-  public [ChildrenManagerSymbol]: true = true;
+  public [CoreSymbol]: true = true;
   public isDestroyed: boolean = false;
   public isGettingDestroyed: boolean = false;
   public isInitialized: boolean = false;
   public map: WrapletChildrenMapWithDefaults<M>;
-  private instantiatedChildren: Partial<WrapletChildren<M>>;
+  private instantiatedChildren: Partial<WrapletChildren<M>> = {};
 
   private destroyChildListeners: DestroyChildListener<M, keyof M>[] = [];
   private instantiateChildListeners: InstantiateChildListener<M, keyof M>[] =
@@ -57,7 +54,7 @@ export class DefaultChildrenManager<
   private listeners: ListenerData[] = [];
 
   constructor(
-    private node: N,
+    public node: N,
     map: M,
     initOptions: Partial<CoreInitOptions<M>> = {},
   ) {
@@ -128,7 +125,6 @@ export class DefaultChildrenManager<
       return null;
     }
     const existingChild = this.instantiatedChildren[id];
-    const existingWrapletsOnNode = getWrapletsFromNode(childElement);
     // Handle multiple.
     if (this.map[id]["multiple"]) {
       if (!isWrapletSet<Wraplet<N>>(existingChild)) {
@@ -136,19 +132,30 @@ export class DefaultChildrenManager<
           "Internal logic error. Expected a WrapletSet.",
         );
       }
-      const intersection = this.intersect(
-        existingChild,
-        existingWrapletsOnNode,
-      );
-      if (intersection.length === 0) {
+
+      const existingWraplets = existingChild.find((wraplet) => {
+        let result = false;
+
+        wraplet.accessNode((node) => {
+          if (node === childElement) {
+            result = true;
+          }
+        });
+
+        return result;
+      });
+
+      if (existingWraplets.length === 0) {
         return null;
-      } else if (intersection.length === 1) {
-        return intersection[0];
       }
 
-      throw new InternalLogicError(
-        "Internal logic error. Multiple instances of the same child found on a single node.",
-      );
+      if (existingWraplets.length > 1) {
+        throw new InternalLogicError(
+          "Internal logic error. Multiple instances wrapping the same element found in the core.",
+        );
+      }
+
+      return existingWraplets[0];
     }
 
     // Handle single.
@@ -200,7 +207,13 @@ export class DefaultChildrenManager<
 
     const wrapletClass = mapItem.Class;
     const args = mapItem.args;
-    const wraplet = this.createIndividualWraplet(wrapletClass, node, args);
+    const wraplet = this.createIndividualWraplet(
+      wrapletClass,
+      node,
+      mapItem.map,
+      mapItem.coreOptions,
+      args,
+    );
     this.prepareIndividualWraplet(id, wraplet);
 
     for (const listener of this.instantiateChildListeners) {
@@ -252,12 +265,17 @@ export class DefaultChildrenManager<
     this.instantiateChildListeners.push(callback);
   }
 
-  private createIndividualWraplet(
+  private createIndividualWraplet<
+    M extends WrapletChildrenMap = WrapletChildrenMap,
+  >(
     wrapletClass: new (...args: any[]) => Wraplet<N>,
     childElement: Node,
+    map: M,
+    initOptions: CoreInitOptions<M>,
     args: unknown[],
   ): Wraplet<N> {
-    return new wrapletClass(...[...[childElement], ...args]);
+    const core = new (this.constructor as any)(childElement, map, initOptions);
+    return new wrapletClass(...[...[core], ...args]);
   }
 
   private prepareIndividualWraplet<K extends Extract<keyof M, string>>(
@@ -335,6 +353,8 @@ export class DefaultChildrenManager<
       ...{
         args: [],
         destructible: true,
+        map: {},
+        coreOptions: {},
       },
       ...definition,
     };
@@ -397,10 +417,6 @@ export class DefaultChildrenManager<
     this.instantiatedChildren[id] = null;
   }
 
-  private intersect<T>(a: Set<T>, b: Set<T>): T[] {
-    return [...a].filter((x) => b.has(x));
-  }
-
   private validateMapItem(
     id: string,
     item: WrapletChildDefinitionWithDefaults<M[keyof M]>,
@@ -456,10 +472,6 @@ export class DefaultChildrenManager<
       this.defaultInitOptions(),
       initOptionsPartial,
     );
-
-    if (initOptions.mapAlterCallback) {
-      initOptions.mapAlterCallback(this.map);
-    }
 
     for (const listener of initOptions.instantiateChildListeners) {
       this.instantiateChildListeners.push(listener);

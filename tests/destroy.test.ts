@@ -4,6 +4,7 @@ import { AbstractWraplet, WrapletChildrenMap } from "../src";
 import { BaseElementTestWraplet } from "./resources/BaseElementTestWraplet";
 import { RequiredChildDestroyedError } from "../src/errors";
 import { ChildInstance } from "../src/types/ChildInstance";
+import { Core } from "../src/types/Core";
 
 const testWrapletSelectorAttribute = "data-test-selector";
 const testWrapletChildSelectorSingleAttribute =
@@ -18,9 +19,6 @@ const testWrapletChildSelectorMultipleAttribute =
 class TestWrapletChild extends AbstractWraplet<{}, Node> {
   public static counter: number = 0;
 
-  protected defineChildrenMap(): {} {
-    return {};
-  }
   destroy() {
     this.constructor.prototype.constructor.counter++;
     super.destroy();
@@ -55,11 +53,7 @@ const childrenMap = {
   },
 } as const satisfies WrapletChildrenMap;
 
-class TestWraplet extends BaseElementTestWraplet<typeof childrenMap> {
-  protected defineChildrenMap(): typeof childrenMap {
-    return childrenMap;
-  }
-}
+class TestWraplet extends BaseElementTestWraplet<typeof childrenMap> {}
 
 it("Test that 'destroy' is invoked on all children", () => {
   document.body.innerHTML = `
@@ -72,7 +66,7 @@ it("Test that 'destroy' is invoked on all children", () => {
     <div ${testWrapletChildSelectorMultipleAttribute} class="c5"></div>
 </div>
 `;
-  const wraplet = TestWraplet.create(testWrapletSelectorAttribute);
+  const wraplet = TestWraplet.create(testWrapletSelectorAttribute, childrenMap);
   if (!wraplet) {
     throw new Error("Wraplet not initialized.");
   }
@@ -92,7 +86,7 @@ it("Test that children are removed from the nodes after being destroyed", () => 
     <div ${testWrapletChildSelectorMultipleAttribute}></div>
 </div>
 `;
-  const wraplet = TestWraplet.create(testWrapletSelectorAttribute);
+  const wraplet = TestWraplet.create(testWrapletSelectorAttribute, childrenMap);
   if (!wraplet) {
     throw new Error("Wraplet not initialized.");
   }
@@ -114,15 +108,12 @@ it("Test that children are removed from the nodes after being destroyed", () => 
 it("Test that listeneres are being detached during destruction", () => {
   const listener = jest.fn();
   class TestWrapletChild extends AbstractWraplet {
-    constructor(node: Element) {
-      super(node);
+    constructor(core: Core) {
+      super(core);
 
-      this.childrenManager.addEventListener(node, "click", () => {
+      this.core.addEventListener(this.node, "click", () => {
         listener();
       });
-    }
-    protected defineChildrenMap(): {} {
-      return {};
     }
   }
   const mainAttribute = "data-test-main";
@@ -136,11 +127,7 @@ it("Test that listeneres are being detached during destruction", () => {
     },
   } as const satisfies WrapletChildrenMap;
 
-  class TestWraplet extends BaseElementTestWraplet<typeof childrenMap> {
-    protected defineChildrenMap(): typeof childrenMap {
-      return childrenMap;
-    }
-  }
+  class TestWraplet extends BaseElementTestWraplet<typeof childrenMap> {}
 
   document.body.innerHTML = `
 <div ${mainAttribute}>
@@ -148,7 +135,10 @@ it("Test that listeneres are being detached during destruction", () => {
 </div>
 `;
 
-  const main = TestWraplet.create<TestWraplet>(mainAttribute);
+  const main = TestWraplet.create<typeof childrenMap, TestWraplet>(
+    mainAttribute,
+    childrenMap,
+  );
 
   if (!main) {
     throw new Error("Wraplet not initialized.");
@@ -172,9 +162,6 @@ it("Test that if the required child has been destroyed then throw exception", ()
   const childAttribute = "data-test-child";
 
   class TestWrapletChild extends AbstractWraplet {
-    protected defineChildrenMap(): {} {
-      return {};
-    }
     public destroy() {
       super.destroy();
     }
@@ -189,11 +176,7 @@ it("Test that if the required child has been destroyed then throw exception", ()
     },
   } as const satisfies WrapletChildrenMap;
 
-  class TestWraplet extends BaseElementTestWraplet<typeof childrenMap> {
-    protected defineChildrenMap(): typeof childrenMap {
-      return childrenMap;
-    }
-  }
+  class TestWraplet extends BaseElementTestWraplet<typeof childrenMap> {}
 
   document.body.innerHTML = `
 <div ${mainAttribute}>
@@ -201,7 +184,10 @@ it("Test that if the required child has been destroyed then throw exception", ()
 </div>
 `;
 
-  const wraplet = TestWraplet.create<TestWraplet>(mainAttribute);
+  const wraplet = TestWraplet.create<typeof childrenMap, TestWraplet>(
+    mainAttribute,
+    childrenMap,
+  );
   if (!wraplet) {
     throw new Error("Wraplet not initialized.");
   }
@@ -223,9 +209,6 @@ it("Destroy child listener", () => {
   const func = jest.fn();
 
   class TestWrapletChild extends AbstractWraplet {
-    protected defineChildrenMap(): {} {
-      return {};
-    }
     public destroy() {
       super.destroy();
     }
@@ -241,9 +224,6 @@ it("Destroy child listener", () => {
   } as const satisfies WrapletChildrenMap;
 
   class TestWraplet extends BaseElementTestWraplet<typeof childrenMap> {
-    protected defineChildrenMap(): typeof childrenMap {
-      return childrenMap;
-    }
     protected onChildDestroyed<K extends keyof typeof childrenMap>(
       child: ChildInstance<typeof childrenMap, K>,
       id: K,
@@ -260,7 +240,10 @@ it("Destroy child listener", () => {
 </div>
 `;
 
-  const wraplet = TestWraplet.create<TestWraplet>(mainAttribute);
+  const wraplet = TestWraplet.create<typeof childrenMap, TestWraplet>(
+    mainAttribute,
+    childrenMap,
+  );
   if (!wraplet) {
     throw new Error("Wraplet not initialized.");
   }
@@ -277,11 +260,7 @@ it("Test isDestroyed values", () => {
   const mainAttribute = "data-test-main";
   const childAttribute = "data-test-child";
 
-  class TestWrapletChild extends AbstractWraplet {
-    protected defineChildrenMap(): {} {
-      return {};
-    }
-  }
+  class TestWrapletChild extends AbstractWraplet {}
 
   const childrenMap = {
     child: {
@@ -293,10 +272,6 @@ it("Test isDestroyed values", () => {
   } as const satisfies WrapletChildrenMap;
 
   class TestWraplet extends BaseElementTestWraplet<typeof childrenMap> {
-    protected defineChildrenMap(): typeof childrenMap {
-      return childrenMap;
-    }
-
     protected onChildDestroyed() {
       expect(this.isDestroyed()).toBe(true);
       expect(this.isDestroyed(true)).toBe(false);
@@ -309,7 +284,10 @@ it("Test isDestroyed values", () => {
 </div>
 `;
 
-  const wraplet = TestWraplet.create<TestWraplet>(mainAttribute);
+  const wraplet = TestWraplet.create<typeof childrenMap, TestWraplet>(
+    mainAttribute,
+    childrenMap,
+  );
   if (!wraplet) {
     throw new Error("Wraplet not initialized.");
   }

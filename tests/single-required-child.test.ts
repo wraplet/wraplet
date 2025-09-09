@@ -7,11 +7,7 @@ describe("Test wraplet single child required", () => {
   const testWrapletSelectorAttribute = "data-test-selector";
   const testWrapletChildSelectorAttribute = `${testWrapletSelectorAttribute}-child`;
 
-  class TestWrapletChild extends AbstractWraplet<any> {
-    protected defineChildrenMap(): {} {
-      return {};
-    }
-  }
+  class TestWrapletChild extends AbstractWraplet<any> {}
 
   const childrenMap = {
     child: {
@@ -22,15 +18,14 @@ describe("Test wraplet single child required", () => {
     },
   } as const satisfies WrapletChildrenMap;
 
-  class TestWraplet extends BaseElementTestWraplet<typeof childrenMap> {
-    protected defineChildrenMap(): typeof childrenMap {
-      return childrenMap;
-    }
-  }
+  class TestWraplet extends BaseElementTestWraplet<typeof childrenMap> {}
 
   it("Test wraplet single child required succeeded", () => {
     document.body.innerHTML = `<div ${testWrapletSelectorAttribute}><div ${testWrapletChildSelectorAttribute}></div></div>`;
-    const wraplet = TestWraplet.create(testWrapletSelectorAttribute);
+    const wraplet = TestWraplet.create(
+      testWrapletSelectorAttribute,
+      childrenMap,
+    );
     if (!wraplet) {
       throw Error("Wraplet not initialized.");
     }
@@ -40,7 +35,7 @@ describe("Test wraplet single child required", () => {
   it("Test wraplet single child required failed", () => {
     document.body.innerHTML = `<div ${testWrapletSelectorAttribute}></div>`;
     const createWraplet = () => {
-      TestWraplet.create(testWrapletSelectorAttribute);
+      TestWraplet.create(testWrapletSelectorAttribute, childrenMap);
     };
     expect(createWraplet).toThrow(MissingRequiredChildError);
   });

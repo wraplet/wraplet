@@ -1,4 +1,4 @@
-export { DefaultChildrenManager } from "./DefaultChildrenManager";
+export { DefaultCore } from "./DefaultCore";
 export { AbstractWraplet } from "./AbstractWraplet";
 export { destroyWrapletsRecursively, getWrapletsFromNode } from "./utils";
 

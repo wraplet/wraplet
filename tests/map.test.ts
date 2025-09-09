@@ -1,17 +1,12 @@
 import "./setup";
-import { AbstractWraplet, WrapletChildrenMap } from "../src";
+import { AbstractWraplet, DefaultCore, WrapletChildrenMap } from "../src";
 import { BaseElementTestWraplet } from "./resources/BaseElementTestWraplet";
 import { MapError } from "../src/errors";
-import { CoreInitOptions } from "../src/types/CoreInitOptions";
 
 describe("Test wraplet map", () => {
   const testWrapletSelectorAttribute = "data-test-selector";
 
-  class TestWrapletChild extends AbstractWraplet<any> {
-    protected defineChildrenMap(): {} {
-      return {};
-    }
-  }
+  class TestWrapletChild extends AbstractWraplet<any> {}
 
   const childrenMap = {
     children: {
@@ -21,15 +16,11 @@ describe("Test wraplet map", () => {
     },
   } as const satisfies WrapletChildrenMap;
 
-  class TestWraplet extends BaseElementTestWraplet<typeof childrenMap> {
-    protected defineChildrenMap(): typeof childrenMap {
-      return childrenMap;
-    }
-  }
+  class TestWraplet extends BaseElementTestWraplet<typeof childrenMap> {}
 
   class TestNodeWraplet extends AbstractWraplet<typeof childrenMap> {
-    protected defineChildrenMap(): typeof childrenMap {
-      return childrenMap;
+    constructor(node: Node) {
+      super(new DefaultCore(node, childrenMap));
     }
   }
 
@@ -38,7 +29,7 @@ describe("Test wraplet map", () => {
   it("Test that 'required' and missing selector are mutually exclusive", () => {
     document.body.innerHTML = `<div ${testWrapletSelectorAttribute}></div>`;
     const createWraplet = () => {
-      TestWraplet.create(testWrapletSelectorAttribute);
+      TestWraplet.create(testWrapletSelectorAttribute, childrenMap);
     };
     expect(createWraplet).toThrow(MapError);
   });
@@ -49,49 +40,5 @@ describe("Test wraplet map", () => {
       new TestNodeWraplet(textNode);
     };
     expect(createNodeWraplet).toThrow(MapError);
-  });
-
-  it("Test map altering", () => {
-    const mapAlterChildrenMap = {
-      child: {
-        selector: ".something",
-        Class: TestWrapletChild,
-        multiple: false,
-        required: true,
-      },
-    } as const satisfies WrapletChildrenMap;
-
-    class TestAlterMapWraplet extends AbstractWraplet<
-      typeof mapAlterChildrenMap
-    > {
-      protected defineChildrenMap(): typeof mapAlterChildrenMap {
-        return mapAlterChildrenMap;
-      }
-
-      public getAlteredMap() {
-        return this.childrenManager.map;
-      }
-    }
-
-    const mainAttribute = "data-main";
-    const alteredClass = "altered";
-
-    document.body.innerHTML = `
-  <div ${mainAttribute}>
-      <div class="${alteredClass}"></div>
-  </div>`;
-
-    const element = document.querySelector(`[${mainAttribute}]`) as Element;
-    const alteredSelector = `.${alteredClass}`;
-    const initOptions: Partial<CoreInitOptions<typeof mapAlterChildrenMap>> = {
-      mapAlterCallback: (map) => {
-        (map["child"]["selector"] as string) = alteredSelector;
-      },
-    };
-
-    const wraplet = new TestAlterMapWraplet(element, initOptions);
-
-    const alteredMap = wraplet.getAlteredMap();
-    expect(alteredMap["child"]["selector"]).toBe(alteredSelector);
   });
 });

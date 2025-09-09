@@ -1,10 +1,8 @@
 import { WrapletChildrenMap } from "./types/WrapletChildrenMap";
 import { WrapletChildren } from "./types/WrapletChildren";
 import { Wraplet, WrapletSymbol } from "./types/Wraplet";
-import { DefaultChildrenManager } from "./DefaultChildrenManager";
 import { DestroyListener } from "./types/DestroyListener";
 import { ChildInstance } from "./types/ChildInstance";
-import { CoreInitOptions } from "./types/CoreInitOptions";
 import {
   defaultGroupableAttribute,
   Groupable,
@@ -12,9 +10,9 @@ import {
   GroupExtractor,
 } from "./types/Groupable";
 import { NodeTreeParent, NodeTreeParentSymbol } from "./types/NodeTreeParent";
-import { ChildrenManager } from "./types/ChildrenManager";
-import { addWrapletToNode, removeWrapletFromNode } from "./utils";
+import { Core, isCore } from "./types/Core";
 import { isWrapletSet } from "./types/Set/WrapletSet";
+import { DefaultCore } from "./DefaultCore";
 
 export abstract class AbstractWraplet<
     M extends WrapletChildrenMap = {},
@@ -26,7 +24,6 @@ export abstract class AbstractWraplet<
   public [GroupableSymbol]: true = true;
   public [NodeTreeParentSymbol]: true = true;
 
-  protected childrenManager: ChildrenManager<M, N>;
   private groupsExtractor: GroupExtractor = (node: Node) => {
     if (node instanceof Element) {
       const groupsString = node.getAttribute(defaultGroupableAttribute);
@@ -44,21 +41,14 @@ export abstract class AbstractWraplet<
    */
   private __debugNodeAccessors: ((element: N) => void)[] = [];
 
-  constructor(
-    protected node: N,
-    initOptions: Partial<CoreInitOptions<M>> = {},
-  ) {
-    if (!node) {
-      throw new Error("Node is required to create a wraplet.");
+  constructor(protected core: Core<M, N>) {
+    if (!isCore(core)) {
+      throw new Error("AbstractWraplet requires a Core instance.");
     }
-    const map = this.defineChildrenMap();
 
-    initOptions.instantiateChildListeners = [
-      this.onChildInstantiated.bind(this),
-    ];
-    initOptions.destroyChildListeners = [this.onChildDestroyed.bind(this)];
+    core.addDestroyChildListener(this.onChildDestroyed.bind(this));
+    core.addInstantiateChildListener(this.onChildInstantiated.bind(this));
 
-    this.childrenManager = new DefaultChildrenManager(node, map, initOptions);
     this.initialize();
   }
 
@@ -93,7 +83,7 @@ export abstract class AbstractWraplet<
   }
 
   protected get children(): WrapletChildren<M> {
-    return this.childrenManager.children;
+    return this.core.children;
   }
 
   public accessNode(callback: (node: N) => void) {
@@ -106,19 +96,17 @@ export abstract class AbstractWraplet<
       listener(this);
     }
     this.destroyListeners.length = 0;
-    removeWrapletFromNode(this, this.node);
-    this.childrenManager.destroy();
+    this.core.destroy();
   }
 
   public isDestroyed(completely: boolean = false): boolean {
     return completely
-      ? this.childrenManager.isDestroyed
-      : this.childrenManager.isGettingDestroyed ||
-          this.childrenManager.isDestroyed;
+      ? this.core.isDestroyed
+      : this.core.isGettingDestroyed || this.core.isDestroyed;
   }
 
   public get isInitialized(): boolean {
-    return this.childrenManager.isInitialized;
+    return this.core.isInitialized;
   }
 
   public addDestroyListener(callback: DestroyListener<N>): void {
@@ -132,8 +120,11 @@ export abstract class AbstractWraplet<
   protected onChildDestroyed(child: ChildInstance<M, keyof M>, id: keyof M) {}
 
   protected initialize(): void {
-    this.childrenManager.init();
-    addWrapletToNode(this, this.node);
+    this.core.init();
+  }
+
+  protected get node(): N {
+    return this.core.node;
   }
 
   /**
@@ -165,11 +156,16 @@ export abstract class AbstractWraplet<
   ): item is ChildInstance<M, K> {
     return (
       actualUnknownId === (onlyId || actualUnknownId) &&
-      item instanceof this.childrenManager.map[actualUnknownId]["Class"]
+      item instanceof this.core.map[actualUnknownId]["Class"]
     );
   }
 
-  protected abstract defineChildrenMap(): M;
+  protected static createCore<N extends Node, M extends WrapletChildrenMap>(
+    node: N,
+    map: M,
+  ): Core<M, N> {
+    return new DefaultCore(node, map);
+  }
 
   // We can afford "any" here because this method is only for the external usage, and external
   // callers don't need to know what map is the current wraplet using, as it's its internal
@@ -177,7 +173,12 @@ export abstract class AbstractWraplet<
   protected static createWraplets<
     N extends Node,
     T extends AbstractWraplet<any, N> = never,
-  >(node: ParentNode, attribute: string, additional_args: unknown[] = []): T[] {
+  >(
+    node: ParentNode,
+    map: WrapletChildrenMap,
+    attribute: string,
+    additional_args: unknown[] = [],
+  ): T[] {
     if (this === AbstractWraplet) {
       throw new Error("You cannot instantiate an abstract class.");
     }
@@ -185,12 +186,14 @@ export abstract class AbstractWraplet<
     const result: T[] = [];
 
     if (node instanceof Element && node.hasAttribute(attribute)) {
-      result.push(new (this as any)(node, ...additional_args));
+      const core = AbstractWraplet.createCore(node, map);
+      result.push(new (this as any)(core, ...additional_args));
     }
 
     const foundElements = node.querySelectorAll(`[${attribute}]`);
     for (const element of foundElements) {
-      result.push(new (this as any)(element, ...additional_args));
+      const core = AbstractWraplet.createCore(element, map);
+      result.push(new (this as any)(core, ...additional_args));
     }
 
     return result;

@@ -8,9 +8,6 @@ describe("Test default wraplet set", () => {
     public getValue(): number | null {
       return Number(this.node.getAttribute("data-value")) || null;
     }
-    protected defineChildrenMap(): {} {
-      return {};
-    }
   }
 
   it("Test default wraplet set readonly item storage", () => {

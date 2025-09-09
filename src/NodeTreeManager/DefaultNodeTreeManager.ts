@@ -1,4 +1,4 @@
-import { destroyWrapletsRecursively } from "../utils";
+import { addWrapletToNode, destroyWrapletsRecursively } from "../utils";
 import { NodeTreeManager } from "./NodeTreeManager";
 import { Wraplet } from "../types/Wraplet";
 import { WrapletSet } from "../types/Set/WrapletSet";
@@ -20,10 +20,16 @@ export default class DefaultNodeTreeManager implements NodeTreeManager {
     for (const initializer of this.initializers) {
       const wraplets = initializer(node);
       for (const wraplet of wraplets) {
+        wraplet.accessNode((wrapletsNode) => {
+          addWrapletToNode(wraplet, wrapletsNode);
+        });
         this.items.add(wraplet);
         if (isNodeTreeParent(wraplet)) {
           const children = wraplet.getNodeTreeChildren();
           for (const child of children) {
+            child.accessNode((childNode) => {
+              addWrapletToNode(child, childNode);
+            });
             this.items.add(child);
           }
         }

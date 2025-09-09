@@ -15,10 +15,6 @@ it("Test default node tree manager destroy tree", () => {
   const func = jest.fn();
 
   class TestWraplet extends BaseElementTestWraplet {
-    protected defineChildrenMap(): {} {
-      return {};
-    }
-
     public destroy() {
       func();
       super.destroy();
@@ -32,8 +28,17 @@ it("Test default node tree manager destroy tree", () => {
     <div ${attribute}></div>
 </div>`;
 
-  TestWraplet.create(attribute);
   const manager: NodeTreeManager = new DefaultNodeTreeManager();
+
+  manager.addWrapletInitializer((node) => {
+    if (!isParentNode(node)) {
+      return [];
+    }
+
+    return TestWraplet.createAll(attribute, {}, node);
+  });
+
+  manager.initializeNodeTree(document);
 
   const element = document.querySelector(`[${attribute}]`) as Element;
   manager.destroyNodeTree(element);
@@ -42,11 +47,7 @@ it("Test default node tree manager destroy tree", () => {
 });
 
 it("Test default node tree manager initialize tree", () => {
-  class TestWraplet extends BaseElementTestWraplet {
-    protected defineChildrenMap(): {} {
-      return {};
-    }
-  }
+  class TestWraplet extends BaseElementTestWraplet {}
 
   document.body.innerHTML = `
 <div></div>
@@ -64,7 +65,7 @@ it("Test default node tree manager initialize tree", () => {
       throw new Error("Node is not parent node.");
     }
     func();
-    const wraplet = TestWraplet.create(attribute, [], node);
+    const wraplet = TestWraplet.create(attribute, {}, node);
     if (!wraplet) {
       throw new Error("Wraplet not created.");
     }
@@ -83,11 +84,7 @@ it("Test default node tree manager initialize tree", () => {
 });
 
 it("Test wraplet tree manager initialization performance", () => {
-  class TestWrapletChild extends AbstractWraplet {
-    protected defineChildrenMap(): {} {
-      return {};
-    }
-  }
+  class TestWrapletChild extends AbstractWraplet {}
 
   const map = {
     child: {
@@ -99,12 +96,8 @@ it("Test wraplet tree manager initialization performance", () => {
   } as const satisfies WrapletChildrenMap;
 
   class TestWraplet extends AbstractWraplet<typeof map> {
-    protected defineChildrenMap(): typeof map {
-      return map;
-    }
-
     public static create(node: ParentNode, attribute: string): TestWraplet[] {
-      return TestWraplet.createWraplets(node, attribute);
+      return TestWraplet.createWraplets(node, map, attribute);
     }
   }
 
@@ -141,10 +134,6 @@ it("Test searching for wraplets in the node tree manager", () => {
     public getValue(): string | null {
       return this.node.getAttribute("data-value");
     }
-
-    protected defineChildrenMap(): {} {
-      return {};
-    }
   }
 
   const map = {
@@ -169,12 +158,8 @@ it("Test searching for wraplets in the node tree manager", () => {
   } as const satisfies WrapletChildrenMap;
 
   class TestWraplet extends AbstractWraplet<typeof map> {
-    protected defineChildrenMap(): typeof map {
-      return map;
-    }
-
     public static create(node: ParentNode, attribute: string): TestWraplet[] {
-      return TestWraplet.createWraplets(node, attribute);
+      return TestWraplet.createWraplets(node, map, attribute);
     }
   }
 

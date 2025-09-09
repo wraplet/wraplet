@@ -6,11 +6,7 @@ describe("Test wraplet multiple optional children", () => {
   const testWrapletSelectorAttribute = "data-test-selector";
   const testWrapletChildSelectorAttribute = `${testWrapletSelectorAttribute}-child`;
 
-  class TestWrapletChild extends AbstractWraplet<any> {
-    protected defineChildrenMap(): {} {
-      return {};
-    }
-  }
+  class TestWrapletChild extends AbstractWraplet<any> {}
 
   const childrenMap = {
     children: {
@@ -21,19 +17,16 @@ describe("Test wraplet multiple optional children", () => {
     },
   } as const satisfies WrapletChildrenMap;
 
-  class TestWraplet extends BaseElementTestWraplet<typeof childrenMap> {
-    protected defineChildrenMap(): typeof childrenMap {
-      return childrenMap;
-    }
-  }
+  class TestWraplet extends BaseElementTestWraplet<typeof childrenMap> {}
 
   // TESTS START HERE
 
   it("Test wraplet optional children initialization empty children", () => {
     document.body.innerHTML = `<div ${testWrapletSelectorAttribute}></div>`;
 
-    const wraplet = TestWraplet.create<TestWraplet>(
+    const wraplet = TestWraplet.create<typeof childrenMap, TestWraplet>(
       testWrapletSelectorAttribute,
+      childrenMap,
     );
     if (!wraplet) {
       throw new Error("Wraplet not initialized.");
@@ -45,8 +38,9 @@ describe("Test wraplet multiple optional children", () => {
   it("Test wraplet optional children initialization", () => {
     document.body.innerHTML = `<div ${testWrapletSelectorAttribute}><div ${testWrapletChildSelectorAttribute}></div><div ${testWrapletChildSelectorAttribute}></div></div>`;
 
-    const wraplet = TestWraplet.create<TestWraplet>(
+    const wraplet = TestWraplet.create<typeof childrenMap, TestWraplet>(
       testWrapletSelectorAttribute,
+      childrenMap,
     );
     if (!wraplet) {
       throw new Error("Wraplet not initialized.");

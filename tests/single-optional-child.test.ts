@@ -7,10 +7,6 @@ describe("Test wraplet single optional child", () => {
   const testWrapletChildSelectorAttribute = `${testWrapletSelectorAttribute}-child`;
 
   class TestWrapletChild extends AbstractWraplet<any> {
-    protected defineChildrenMap(): {} {
-      return {};
-    }
-
     public hasElement(): boolean {
       return !!this.node;
     }
@@ -25,15 +21,14 @@ describe("Test wraplet single optional child", () => {
     },
   } as const satisfies WrapletChildrenMap;
 
-  class TestWraplet extends BaseElementTestWraplet<typeof childrenMap> {
-    protected defineChildrenMap(): typeof childrenMap {
-      return childrenMap;
-    }
-  }
+  class TestWraplet extends BaseElementTestWraplet<typeof childrenMap> {}
 
   it("Test wraplet optional single child initialization", () => {
     document.body.innerHTML = `<div ${testWrapletSelectorAttribute}><div ${testWrapletChildSelectorAttribute}></div></div>`;
-    const wraplet = TestWraplet.create(testWrapletSelectorAttribute);
+    const wraplet = TestWraplet.create(
+      testWrapletSelectorAttribute,
+      childrenMap,
+    );
     if (!wraplet) {
       throw Error("Wraplet not initialized.");
     }
@@ -42,8 +37,9 @@ describe("Test wraplet single optional child", () => {
 
   it("Test wraplet child has element", () => {
     document.body.innerHTML = `<div ${testWrapletSelectorAttribute}><div ${testWrapletChildSelectorAttribute}></div></div>`;
-    const wraplet = TestWraplet.create<TestWraplet>(
+    const wraplet = TestWraplet.create<typeof childrenMap, TestWraplet>(
       testWrapletSelectorAttribute,
+      childrenMap,
     );
     if (!wraplet) {
       throw Error("Wraplet not initialized.");

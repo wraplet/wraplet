@@ -56,7 +56,10 @@ export function destroyWrapletsRecursively(node: Node): void {
   actOnNodesRecursively(node, (node) => {
     const wraplets = getWrapletsFromNode(node);
     for (const wraplet of wraplets) {
-      wraplet.destroy();
+      if (!wraplet.isDestroyed(false)) {
+        wraplet.destroy();
+      }
+      removeWrapletFromNode(wraplet, node);
     }
   });
 }

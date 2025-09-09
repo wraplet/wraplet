@@ -1,5 +1,5 @@
 import "./setup";
-import { AbstractWraplet, WrapletChildrenMap } from "../src";
+import { AbstractWraplet, DefaultCore, WrapletChildrenMap } from "../src";
 import { BaseElementTestWraplet } from "./resources/BaseElementTestWraplet";
 import { ChildInstance } from "../src/types/ChildInstance";
 import { ChildrenAreNotAvailableError } from "../src/errors";
@@ -7,15 +7,12 @@ import {
   defaultGroupableAttribute,
   GroupExtractor,
 } from "../src/types/Groupable";
+import { Core } from "../src/types/Core";
 
 const testWrapletSelectorAttribute = "data-test-selector";
 const testWrapletChildSelectorAttribute = `${testWrapletSelectorAttribute}-child`;
 
-class TestWrapletChild extends AbstractWraplet<any> {
-  protected defineChildrenMap(): {} {
-    return {};
-  }
-}
+class TestWrapletChild extends AbstractWraplet<any> {}
 
 const childrenMap = {
   child: {
@@ -27,10 +24,6 @@ const childrenMap = {
 } as const satisfies WrapletChildrenMap;
 
 class TestWraplet extends BaseElementTestWraplet<typeof childrenMap> {
-  protected defineChildrenMap(): typeof childrenMap {
-    return childrenMap;
-  }
-
   public hasNode(): boolean {
     return !!this.node;
   }
@@ -38,11 +31,7 @@ class TestWraplet extends BaseElementTestWraplet<typeof childrenMap> {
 
 describe("Wraplet initialization", () => {
   it("Test wraplet node is required", () => {
-    class TestWraplet extends AbstractWraplet {
-      protected defineChildrenMap(): {} {
-        return {};
-      }
-    }
+    class TestWraplet extends AbstractWraplet {}
     const func = () => {
       new TestWraplet(undefined as any);
     };
@@ -58,7 +47,10 @@ describe("Wraplet initialization", () => {
 
   it("Test wraplet initialization", () => {
     document.body.innerHTML = `<div ${testWrapletSelectorAttribute}><div ${testWrapletChildSelectorAttribute}></div></div>`;
-    const wraplet = TestWraplet.create(testWrapletSelectorAttribute);
+    const wraplet = TestWraplet.create(
+      testWrapletSelectorAttribute,
+      childrenMap,
+    );
     expect(wraplet).toBeTruthy();
   });
 
@@ -70,8 +62,9 @@ describe("Wraplet initialization", () => {
 
   it("Test wraplet has element", () => {
     document.body.innerHTML = `<div ${testWrapletSelectorAttribute}></div>`;
-    const wraplet = TestWraplet.create<TestWraplet>(
+    const wraplet = TestWraplet.create<typeof childrenMap, TestWraplet>(
       testWrapletSelectorAttribute,
+      childrenMap,
     );
     if (!wraplet) {
       throw Error("Wraplet not initialized.");
@@ -81,7 +74,10 @@ describe("Wraplet initialization", () => {
 
   it("Test wraplet's element is accessible", () => {
     document.body.innerHTML = `<div ${testWrapletSelectorAttribute}></div>`;
-    const wraplet = TestWraplet.create(testWrapletSelectorAttribute);
+    const wraplet = TestWraplet.create(
+      testWrapletSelectorAttribute,
+      childrenMap,
+    );
     if (!wraplet) {
       throw Error("Wraplet not initialized.");
     }
@@ -98,13 +94,10 @@ describe("Wraplet initialization", () => {
     const attribute = "data-test-selector";
 
     class TestWraplet extends AbstractWraplet {
-      protected defineChildrenMap(): {} {
-        return {};
-      }
-
       public static create(node: ParentNode): TestWraplet {
         const wraplets = this.createWraplets<Node, TestWraplet>(
           node,
+          {},
           attribute,
         );
         expect(wraplets.length).toEqual(1);
@@ -131,17 +124,11 @@ describe("Wraplet initialization", () => {
         instatiatedFunc();
         return true;
       }
-      protected defineChildrenMap(): {} {
-        return {};
-      }
     }
 
     class TestWrapletChild2 extends AbstractWraplet {
       public testMethod2(): boolean {
         return true;
-      }
-      protected defineChildrenMap(): {} {
-        return {};
       }
     }
 
@@ -161,9 +148,6 @@ describe("Wraplet initialization", () => {
     } as const satisfies WrapletChildrenMap;
 
     class TestWraplet extends BaseElementTestWraplet<typeof map> {
-      protected defineChildrenMap(): typeof map {
-        return map;
-      }
       protected onChildInstantiated<K extends keyof typeof map>(
         child: ChildInstance<typeof map, K>,
         id: K,
@@ -184,7 +168,7 @@ describe("Wraplet initialization", () => {
 </div>
 `;
 
-    TestWraplet.create<TestWraplet>(attribute);
+    TestWraplet.create<typeof map, TestWraplet>(attribute, map);
 
     expect(instatiatedFunc).toHaveBeenCalledTimes(1);
   });
@@ -199,9 +183,6 @@ describe("Wraplet initialization", () => {
       public testMethod1(): boolean {
         return true;
       }
-      protected defineChildrenMap(): {} {
-        return {};
-      }
     }
 
     const map = {
@@ -214,13 +195,6 @@ describe("Wraplet initialization", () => {
     } as const satisfies WrapletChildrenMap;
 
     class TestWraplet extends BaseElementTestWraplet<typeof map> {
-      constructor(element: Element) {
-        super(element);
-      }
-      protected defineChildrenMap(): typeof map {
-        return map;
-      }
-
       protected onChildInstantiated() {
         defaultStatus = this.isInitialized;
       }
@@ -232,7 +206,7 @@ describe("Wraplet initialization", () => {
 </div>
 `;
 
-    const wraplet = TestWraplet.create<TestWraplet>(attribute);
+    const wraplet = TestWraplet.create(attribute, map);
     if (!wraplet) {
       throw Error("Wraplet not initialized.");
     }
@@ -249,9 +223,6 @@ describe("Wraplet initialization", () => {
       public testMethod1(): boolean {
         return true;
       }
-      protected defineChildrenMap(): {} {
-        return {};
-      }
     }
 
     const map = {
@@ -264,11 +235,8 @@ describe("Wraplet initialization", () => {
     } as const satisfies WrapletChildrenMap;
 
     class TestWraplet extends BaseElementTestWraplet<typeof map> {
-      protected defineChildrenMap(): typeof map {
-        return map;
-      }
       public getChildrenUninitialized() {
-        return this.childrenManager.uninitializedChildren;
+        return this.core.uninitializedChildren;
       }
       public getChildrenInitialized() {
         return this.children;
@@ -277,7 +245,7 @@ describe("Wraplet initialization", () => {
         // Disable default initialization.
       }
       public init() {
-        this.childrenManager.init();
+        this.core.init();
       }
     }
 
@@ -287,7 +255,7 @@ describe("Wraplet initialization", () => {
 </div>
 `;
 
-    const wraplet = TestWraplet.create<TestWraplet>(attribute);
+    const wraplet = TestWraplet.create<typeof map, TestWraplet>(attribute, map);
     if (!wraplet) {
       throw new Error("Wraplet not initialized.");
     }
@@ -316,22 +284,16 @@ it("Test wraplet syncing children", () => {
   const funcInstantiateSingleChild = jest.fn();
 
   class TestWrapletChild extends AbstractWraplet {
-    constructor(element: Element) {
+    constructor(core: Core) {
       funcInstantiateChildren();
-      super(element);
-    }
-    protected defineChildrenMap() {
-      return {};
+      super(core);
     }
   }
 
   class TestWrapletSingleChild extends AbstractWraplet {
-    constructor(element: Element) {
+    constructor(core: Core) {
       funcInstantiateSingleChild();
-      super(element);
-    }
-    protected defineChildrenMap() {
-      return {};
+      super(core);
     }
   }
 
@@ -352,10 +314,7 @@ it("Test wraplet syncing children", () => {
 
   class TestWraplet extends BaseElementTestWraplet<typeof childrenMap> {
     public syncChildren(): void {
-      this.childrenManager.syncChildren();
-    }
-    protected defineChildrenMap(): typeof childrenMap {
-      return childrenMap;
+      this.core.syncChildren();
     }
     public getChildrenArray() {
       return this.children;
@@ -373,10 +332,19 @@ it("Test wraplet syncing children", () => {
     throw Error("The main element has not been found.");
   }
 
-  const wraplet = TestWraplet.create<TestWraplet>(mainAttribute);
+  const wraplet = TestWraplet.create<typeof childrenMap, TestWraplet>(
+    mainAttribute,
+    childrenMap,
+  );
   if (!wraplet) {
     throw new Error("The main wraplet has not been created.");
   }
+
+  // Test if syncing is idempotent.
+  wraplet.syncChildren();
+  expect(wraplet.getChild("children").size).toBe(1);
+  wraplet.syncChildren();
+  expect(wraplet.getChild("children").size).toBe(1);
 
   const newChildElement = document.createElement("div");
   newChildElement.setAttribute(childrenAttribute, "");
@@ -418,9 +386,6 @@ describe("Test wraplet groupable", () => {
     public getValue(): string | null {
       return this.node.getAttribute("data-value");
     }
-    protected defineChildrenMap(): {} {
-      return {};
-    }
   }
 
   const map = {
@@ -444,11 +409,7 @@ describe("Test wraplet groupable", () => {
     },
   } as const satisfies WrapletChildrenMap;
 
-  class TestWraplet extends BaseElementTestWraplet<typeof map> {
-    protected defineChildrenMap(): typeof map {
-      return map;
-    }
-  }
+  class TestWraplet extends BaseElementTestWraplet<typeof map> {}
   document.body.innerHTML = `
 <div data-parent>
     <div data-child-1 ${defaultGroupableAttribute}="group1,group2" ${customGroupableAttribute}="group1"></div>
@@ -457,7 +418,10 @@ describe("Test wraplet groupable", () => {
 </div>
 `;
 
-  const wraplet = TestWraplet.create<TestWraplet>("data-parent", [], document);
+  const wraplet = TestWraplet.create<typeof map, TestWraplet>(
+    "data-parent",
+    map,
+  );
   if (!wraplet) {
     throw new Error("Wraplets not created.");
   }
@@ -496,11 +460,7 @@ describe("Test wraplet groupable", () => {
 
 it("Test wraplet NodeTreeParent interface", () => {
   const attribute = "data-test-wraplet";
-  class TestWrapletChild extends AbstractWraplet<{}, Element> {
-    protected defineChildrenMap(): {} {
-      return {};
-    }
-  }
+  class TestWrapletChild extends AbstractWraplet<{}, Element> {}
 
   const map = {
     child1: {
@@ -523,11 +483,7 @@ it("Test wraplet NodeTreeParent interface", () => {
     },
   } as const satisfies WrapletChildrenMap;
 
-  class TestWraplet extends BaseElementTestWraplet<typeof map> {
-    protected defineChildrenMap(): typeof map {
-      return map;
-    }
-  }
+  class TestWraplet extends BaseElementTestWraplet<typeof map> {}
 
   document.body.innerHTML = `
 <div ${attribute}>
@@ -537,7 +493,7 @@ it("Test wraplet NodeTreeParent interface", () => {
   <div data-children></div>
 </div>
 `;
-  const wraplet = TestWraplet.create<TestWraplet>(attribute);
+  const wraplet = TestWraplet.create<typeof map, TestWraplet>(attribute, map);
   if (!wraplet) {
     throw new Error("Wraplets not created.");
   }
@@ -548,8 +504,8 @@ it("Test wraplet NodeTreeParent interface", () => {
 
 it("Test wraplet groupable when node is not an element", () => {
   class TestWraplet extends AbstractWraplet {
-    protected defineChildrenMap(): {} {
-      return {};
+    constructor(node: Node) {
+      super(new DefaultCore(node, {}));
     }
   }
 
@@ -566,10 +522,7 @@ it("Test wraplet map children args", () => {
       node: Node,
       public arg1: string,
     ) {
-      super(node);
-    }
-    protected defineChildrenMap(): {} {
-      return {};
+      super(new DefaultCore(node, {}));
     }
   }
 
@@ -586,10 +539,6 @@ it("Test wraplet map children args", () => {
   } as const satisfies WrapletChildrenMap;
 
   class TestWraplet extends BaseElementTestWraplet<typeof map> {
-    protected defineChildrenMap(): typeof map {
-      return map;
-    }
-
     public getChildArg1Value(): string {
       return this.children.child.arg1;
     }
@@ -601,7 +550,10 @@ it("Test wraplet map children args", () => {
 </div>
 `;
 
-  const wraplet = TestWraplet.create<TestWraplet>("data-wraplet");
+  const wraplet = TestWraplet.create<typeof map, TestWraplet>(
+    "data-wraplet",
+    map,
+  );
   if (!wraplet) {
     throw new Error("Wraplet not created.");
   }

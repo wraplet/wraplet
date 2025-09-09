@@ -1,9 +1,7 @@
 import "./setup";
 import {
-  DefaultChildrenManager,
+  DefaultCore,
   DefaultWrapletSet,
-  destroyWrapletsRecursively,
-  getWrapletsFromNode,
   Wraplet,
   WrapletChildrenMap,
 } from "../src";
@@ -12,12 +10,12 @@ import {
   ChildrenTooManyFoundError,
   MapError,
 } from "../src/errors";
-import { ChildrenManager } from "../src/types/ChildrenManager";
+import { Core } from "../src/types/Core";
 import { DestroyListener } from "../src/types/DestroyListener";
 import { addWrapletToNode } from "../src/utils";
 import { WrapletSymbol } from "../src/types/Wraplet";
 
-describe("Test DefaultChildrenManager", () => {
+describe("Test DefaultCore", () => {
   class TestWrapletClass implements Wraplet {
     [WrapletSymbol]: true = true;
     isInitialized: boolean = false;
@@ -25,12 +23,12 @@ describe("Test DefaultChildrenManager", () => {
     private destroyListeners: DestroyListener<Node>[] = [];
     private _isDestroyed: boolean = false;
 
-    constructor(private node: Node) {
-      addWrapletToNode(this, node);
+    constructor(private core: Core) {
+      addWrapletToNode(this, core.node);
     }
 
     accessNode(callback: (node: Node) => void): void {
-      callback(this.node);
+      callback(this.core.node);
     }
 
     addDestroyListener(callback: DestroyListener<Node>): void {
@@ -50,7 +48,7 @@ describe("Test DefaultChildrenManager", () => {
     }
   }
 
-  it("Test DefaultChildrenManager not allowing children if provided node is not a ParentNode", () => {
+  it("Test DefaultCore not allowing children if provided node is not a ParentNode", () => {
     const map = {
       children: {
         selector: "[data-something]",
@@ -63,21 +61,21 @@ describe("Test DefaultChildrenManager", () => {
     const node = document.createTextNode("test");
 
     const func1 = () => {
-      const childrenManager = new DefaultChildrenManager(node, map);
+      const childrenManager = new DefaultCore(node, map);
       childrenManager.instantiateChildren();
     };
 
     expect(func1).toThrow(MapError);
 
     const func2 = () => {
-      const childrenManager = new DefaultChildrenManager(node, {});
+      const childrenManager = new DefaultCore(node, {});
       childrenManager.instantiateChildren();
     };
 
     expect(func2).not.toThrow(MapError);
   });
 
-  it("Test DefaultChildrenManager internal error children expected a wraplet set", () => {
+  it("Test DefaultCore internal error children expected a wraplet set", () => {
     const node = document.createElement("div");
     node.innerHTML = `
   <div data-something></div>
@@ -93,58 +91,21 @@ describe("Test DefaultChildrenManager", () => {
       },
     } as const satisfies WrapletChildrenMap;
 
-    const childrenManager: ChildrenManager<typeof map> =
-      new DefaultChildrenManager(node, map);
+    const core: Core<typeof map> = new DefaultCore(node, map);
 
     const func = () => {
-      childrenManager.init();
+      core.init();
       // For an unexplained reason "children" child turned out to be not an array.
-      (childrenManager.children as any)["children"] = {
+      (core.children as any)["children"] = {
         isDestroyed: () => false,
       };
-      childrenManager.syncChildren();
+      core.syncChildren();
     };
 
     expect(func).toThrow("Internal logic error. Expected a WrapletSet.");
   });
 
-  it("Test DefaultChildrenManager internal error multiple child instances on a single node", () => {
-    const node = document.createElement("div");
-    node.innerHTML = `
-  <div data-something></div>
-  <div data-something></div>
-`;
-
-    const map = {
-      children: {
-        selector: "[data-something]",
-        Class: TestWrapletClass,
-        multiple: true,
-        required: false,
-      },
-    } as const satisfies WrapletChildrenMap;
-
-    const childrenManager: ChildrenManager<typeof map> =
-      new DefaultChildrenManager(node, map);
-
-    const func = () => {
-      childrenManager.init();
-
-      // For an unexplained reason one element has two instances of the "children" child.
-      const elements = Array.from(node.querySelectorAll("[data-something]"));
-      const wraplets = getWrapletsFromNode(elements[0]);
-
-      addWrapletToNode(Array.from(wraplets)[0], elements[1]);
-
-      childrenManager.syncChildren();
-    };
-
-    expect(func).toThrow(
-      "Internal logic error. Multiple instances of the same child found on a single node.",
-    );
-  });
-
-  it("Test DefaultChildrenManager child without selector", () => {
+  it("Test DefaultCore child without selector", () => {
     const node = document.createElement("div");
     node.innerHTML = "<div></div>";
 
@@ -156,18 +117,17 @@ describe("Test DefaultChildrenManager", () => {
       },
     } as const satisfies WrapletChildrenMap;
 
-    const childrenManager: ChildrenManager<typeof map> =
-      new DefaultChildrenManager(node, map);
+    const core: Core<typeof map> = new DefaultCore(node, map);
 
     const func = () => {
-      childrenManager.init();
+      core.init();
     };
 
     expect(func).not.toThrow();
-    expect(childrenManager.children["children"]).toBeNull();
+    expect(core.children["children"]).toBeNull();
   });
 
-  it("Test DefaultChildrenManager too many elements found", () => {
+  it("Test DefaultCore too many elements found", () => {
     const node = document.createElement("div");
     node.innerHTML = "<div data-something></div><div data-something></div>";
 
@@ -180,17 +140,16 @@ describe("Test DefaultChildrenManager", () => {
       },
     } as const satisfies WrapletChildrenMap;
 
-    const childrenManager: ChildrenManager<typeof map> =
-      new DefaultChildrenManager(node, map);
+    const core: Core<typeof map> = new DefaultCore(node, map);
 
     const func = () => {
-      childrenManager.init();
+      core.init();
     };
 
     expect(func).toThrow(ChildrenTooManyFoundError);
   });
 
-  it("Test DefaultChildrenManager multiple without selector", () => {
+  it("Test DefaultCore multiple without selector", () => {
     const node = document.createElement("div");
     node.innerHTML = "<div data-something></div><div data-something></div>";
 
@@ -202,16 +161,13 @@ describe("Test DefaultChildrenManager", () => {
       },
     } as const satisfies WrapletChildrenMap;
 
-    const childrenManager: ChildrenManager<typeof map> =
-      new DefaultChildrenManager(node, map);
+    const core: Core<typeof map> = new DefaultCore(node, map);
 
-    childrenManager.init();
-    expect(childrenManager.children["children"]).toBeInstanceOf(
-      DefaultWrapletSet,
-    );
+    core.init();
+    expect(core.children["children"]).toBeInstanceOf(DefaultWrapletSet);
   });
 
-  it("Test DefaultChildrenManager destroy children listeners", () => {
+  it("Test DefaultCore destroy children listeners", () => {
     const node = document.createElement("div");
     node.innerHTML =
       "<div data-children></div><div data-children><div data-child></div>";
@@ -231,20 +187,25 @@ describe("Test DefaultChildrenManager", () => {
       },
     } as const satisfies WrapletChildrenMap;
 
-    const childrenManager: ChildrenManager<typeof map> =
-      new DefaultChildrenManager(node, map);
+    const core: Core<typeof map> = new DefaultCore(node, map);
 
     const func = jest.fn();
-    childrenManager.addDestroyChildListener(() => {
+    core.addDestroyChildListener(() => {
       func();
     });
 
-    childrenManager.init();
-    destroyWrapletsRecursively(node);
+    core.init();
+
+    for (const child of core.children.children.values()) {
+      child.destroy();
+    }
+
+    core.children.child?.destroy();
+
     expect(func).toHaveBeenCalledTimes(3);
   });
 
-  it("Test DefaultChildrenManager instantiate children listeners", () => {
+  it("Test DefaultCore instantiate children listeners", () => {
     const node = document.createElement("div");
     node.innerHTML = "<div data-children></div><div data-children></div>";
 
@@ -263,32 +224,30 @@ describe("Test DefaultChildrenManager", () => {
       },
     } as const satisfies WrapletChildrenMap;
 
-    const childrenManager: ChildrenManager<typeof map> =
-      new DefaultChildrenManager(node, map);
-
     const func = jest.fn();
-    childrenManager.addInstantiateChildListener(() => {
+
+    const core: Core<typeof map> = new DefaultCore(node, map);
+    core.addInstantiateChildListener(() => {
       func();
     });
 
-    childrenManager.init();
+    core.init();
     expect(func).toHaveBeenCalledTimes(2);
     const newChildrenItem = document.createElement("div");
     newChildrenItem.setAttribute("data-children", "");
     node.appendChild(newChildrenItem);
-
-    childrenManager.syncChildren();
+    core.syncChildren();
     expect(func).toHaveBeenCalledTimes(3);
 
     const newChildItem = document.createElement("div");
     newChildrenItem.setAttribute("data-child", "");
     node.appendChild(newChildItem);
 
-    childrenManager.syncChildren();
+    core.syncChildren();
     expect(func).toHaveBeenCalledTimes(4);
   });
 
-  it("Test DefaultChildrenManager cannot be destroyed twice", () => {
+  it("Test DefaultCore cannot be destroyed twice", () => {
     const node = document.createElement("div");
     node.innerHTML =
       "<div data-children></div><div data-children></div><div data-child></div>";
@@ -308,20 +267,19 @@ describe("Test DefaultChildrenManager", () => {
       },
     } as const satisfies WrapletChildrenMap;
 
-    const childrenManager: ChildrenManager<typeof map> =
-      new DefaultChildrenManager(node, map);
+    const core: Core<typeof map> = new DefaultCore(node, map);
 
-    childrenManager.init();
+    core.init();
 
     const func = () => {
-      childrenManager.destroy();
-      childrenManager.destroy();
+      core.destroy();
+      core.destroy();
     };
 
     expect(func).toThrow(ChildrenAreAlreadyDestroyedError);
   });
 
-  it("Test DefaultChildrenManager child disappeared from parent before being destroyed", () => {
+  it("Test DefaultCore child disappeared from parent before being destroyed", () => {
     const node = document.createElement("div");
     node.innerHTML =
       "<div data-children></div><div data-children></div><div data-child></div>";
@@ -341,13 +299,12 @@ describe("Test DefaultChildrenManager", () => {
       },
     } as const satisfies WrapletChildrenMap;
 
-    const childrenManager: ChildrenManager<typeof map> =
-      new DefaultChildrenManager(node, map);
+    const core: Core<typeof map> = new DefaultCore(node, map);
 
-    childrenManager.init();
+    core.init();
 
-    const child = childrenManager.children["child"];
-    (childrenManager.children as any)["child"] = null;
+    const child = core.children["child"];
+    (core.children as any)["child"] = null;
 
     const func1 = () => {
       child?.destroy();
@@ -358,10 +315,10 @@ describe("Test DefaultChildrenManager", () => {
     );
 
     // Re-sync children to fix an issue.
-    childrenManager.syncChildren();
-    expect(childrenManager.children["child"]).not.toBeNull();
+    core.syncChildren();
+    expect(core.children["child"]).not.toBeNull();
 
-    const childrenItems = childrenManager.children["children"];
+    const childrenItems = core.children["children"];
     const childrenItem = Array.from(childrenItems)[0];
     childrenItems.delete(childrenItem);
 
@@ -374,25 +331,24 @@ describe("Test DefaultChildrenManager", () => {
     );
   });
 
-  it("Test DefaultChildrenManager user accessing non-existing children", () => {
+  it("Test DefaultCore user accessing non-existing children", () => {
     const node = document.createElement("div");
 
     const map = {} as const satisfies WrapletChildrenMap;
 
-    const childrenManager: ChildrenManager<typeof map> =
-      new DefaultChildrenManager(node, map);
+    const core: Core<typeof map> = new DefaultCore(node, map);
 
-    childrenManager.init();
+    core.init();
 
     const func = () => {
       // eslint-disable-next-line @typescript-eslint/no-unused-expressions
-      (childrenManager.children as any)["child"];
+      (core.children as any)["child"];
     };
 
     expect(func).toThrow("Child has not been found.");
   });
 
-  it("Test DefaultChildrenManager with selector callback", () => {
+  it("Test DefaultCore with selector callback", () => {
     const attribute = "data-test-selector";
     const node = document.createElement("div");
     node.innerHTML = `<div ${attribute}></div><div ${attribute}></div>`;
@@ -408,10 +364,84 @@ describe("Test DefaultChildrenManager", () => {
       },
     } as const satisfies WrapletChildrenMap;
 
-    const childrenManager: ChildrenManager<typeof map> =
-      new DefaultChildrenManager(node, map);
+    const core: Core<typeof map> = new DefaultCore(node, map);
 
-    childrenManager.init();
-    expect(childrenManager.children["children"].size).toBe(2);
+    core.init();
+    expect(core.children["children"].size).toBe(2);
+  });
+
+  it("Test DefaultCore multiple instances wrapping the same element error", () => {
+    const attribute = "data-test-selector";
+    const node = document.createElement("div");
+    node.innerHTML = `<div ${attribute}></div>`;
+
+    const map = {
+      children: {
+        selector: (node: ParentNode) => {
+          return Array.from(node.querySelectorAll(`[${attribute}]`));
+        },
+        Class: TestWrapletClass,
+        multiple: true,
+        required: false,
+      },
+    } as const satisfies WrapletChildrenMap;
+
+    const core: Core<typeof map> = new DefaultCore(node, map);
+    core.init();
+
+    const childElement = node.querySelector(`[${attribute}]`) as Element;
+
+    const secondWraplet = new TestWrapletClass(
+      new DefaultCore(childElement, {}),
+    );
+    core.children["children"].add(secondWraplet);
+
+    const func = () => {
+      core.syncChildren();
+    };
+
+    expect(func).toThrow(
+      "Internal logic error. Multiple instances wrapping the same element found in the core.",
+    );
+  });
+
+  it("Test DefaultCore initOptions", () => {
+    const attribute = "data-test-selector";
+    const node = document.createElement("div");
+    node.innerHTML = `<div ${attribute}></div>`;
+
+    const map = {
+      children: {
+        selector: (node: ParentNode) => {
+          return Array.from(node.querySelectorAll(`[${attribute}]`));
+        },
+        Class: TestWrapletClass,
+        multiple: true,
+        required: false,
+      },
+    } as const satisfies WrapletChildrenMap;
+
+    const funcInstantiate = jest.fn();
+    const funcDestroy = jest.fn();
+    const core: Core<typeof map> = new DefaultCore(node, map, {
+      instantiateChildListeners: [
+        (child) => {
+          funcInstantiate();
+          expect(child).toBeInstanceOf(TestWrapletClass);
+        },
+      ],
+      destroyChildListeners: [
+        (child) => {
+          funcDestroy();
+          expect(child).toBeInstanceOf(TestWrapletClass);
+        },
+      ],
+    });
+    core.init();
+
+    core.destroy();
+
+    expect(funcInstantiate).toHaveBeenCalledTimes(1);
+    expect(funcDestroy).toHaveBeenCalledTimes(1);
   });
 });
