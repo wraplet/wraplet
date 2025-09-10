@@ -18,10 +18,12 @@ import { WrapletSymbol } from "../src/types/Wraplet";
 describe("Test DefaultCore", () => {
   class TestWrapletClass implements Wraplet {
     [WrapletSymbol]: true = true;
-    isInitialized: boolean = false;
+    public isGettingInitialized: boolean = false;
+    public isInitialized: boolean = false;
+    public isGettingDestroyed: boolean = false;
+    public isDestroyed: boolean = false;
 
     private destroyListeners: DestroyListener<Node>[] = [];
-    private _isDestroyed: boolean = false;
 
     constructor(private core: Core) {
       addWrapletToNode(this, core.node);
@@ -39,12 +41,7 @@ describe("Test DefaultCore", () => {
       for (const listener of this.destroyListeners) {
         listener(this);
       }
-      this._isDestroyed = true;
-    }
-
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    isDestroyed(completely: boolean): boolean {
-      return this._isDestroyed;
+      this.isDestroyed = true;
     }
   }
 

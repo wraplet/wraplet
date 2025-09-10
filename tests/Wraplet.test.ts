@@ -10,17 +10,16 @@ it("Test isWraplet", () => {
 
   class WrapletClass implements Wraplet {
     [WrapletSymbol]: true = true;
-    isInitialized: boolean = true;
+    public isGettingInitialized: boolean = false;
+    public isInitialized: boolean = true;
+    public isGettingDestroyed: boolean = false;
+    public isDestroyed: boolean = false;
 
-    accessNode(): void {}
+    public accessNode(): void {}
 
-    addDestroyListener(): void {}
+    public addDestroyListener(): void {}
 
-    destroy(): void {}
-
-    isDestroyed(): boolean {
-      return false;
-    }
+    public destroy(): void {}
   }
 
   const wraplet = new WrapletClass();

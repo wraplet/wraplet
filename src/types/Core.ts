@@ -31,6 +31,11 @@ export interface Core<
   isGettingDestroyed: boolean;
 
   /**
+   * Indicates whether the core is in the process of being initialized.
+   */
+  isGettingInitialized: boolean;
+
+  /**
    * Indicates whether the core has been initialized.
    */
   isInitialized: boolean;

@@ -24,6 +24,11 @@ export abstract class AbstractWraplet<
   public [GroupableSymbol]: true = true;
   public [NodeTreeParentSymbol]: true = true;
 
+  public isGettingDestroyed: boolean = false;
+  public isDestroyed: boolean = false;
+  public isGettingInitialized: boolean = false;
+  public isInitialized: boolean = false;
+
   private groupsExtractor: GroupExtractor = (node: Node) => {
     if (node instanceof Element) {
       const groupsString = node.getAttribute(defaultGroupableAttribute);
@@ -92,21 +97,14 @@ export abstract class AbstractWraplet<
   }
 
   public destroy() {
+    this.isGettingDestroyed = true;
     for (const listener of this.destroyListeners) {
       listener(this);
     }
     this.destroyListeners.length = 0;
     this.core.destroy();
-  }
-
-  public isDestroyed(completely: boolean = false): boolean {
-    return completely
-      ? this.core.isDestroyed
-      : this.core.isGettingDestroyed || this.core.isDestroyed;
-  }
-
-  public isInitialized(): boolean {
-    return this.core.isInitialized;
+    this.isDestroyed = true;
+    this.isGettingDestroyed = false;
   }
 
   public addDestroyListener(callback: DestroyListener<N>): void {
@@ -120,7 +118,10 @@ export abstract class AbstractWraplet<
   protected onChildDestroyed(child: ChildInstance<M, keyof M>, id: keyof M) {}
 
   protected initialize(): void {
+    this.isGettingInitialized = true;
     this.core.init();
+    this.isInitialized = true;
+    this.isGettingInitialized = false;
   }
 
   protected get node(): N {

@@ -216,10 +216,10 @@ it("Test searching for wraplets in the node tree manager", () => {
 it("Test initializing non-tree-parent wraplet", () => {
   class TestWraplet implements Wraplet {
     [WrapletSymbol]: true = true;
+    isGettingInitialized: boolean = false;
     isInitialized: boolean = true;
-    isDestroyed(): boolean {
-      throw new Error("Method not implemented.");
-    }
+    isDestroyed: boolean = false;
+    isGettingDestroyed: boolean = false;
     accessNode(): void {}
     destroy(): void {}
     addDestroyListener(): void {}

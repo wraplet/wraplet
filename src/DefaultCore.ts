@@ -44,6 +44,7 @@ export class DefaultCore<
   public [CoreSymbol]: true = true;
   public isDestroyed: boolean = false;
   public isGettingDestroyed: boolean = false;
+  public isGettingInitialized: boolean = false;
   public isInitialized: boolean = false;
   public map: WrapletChildrenMapWithDefaults<M>;
   private instantiatedChildren: Partial<WrapletChildren<M>> = {};
@@ -72,10 +73,12 @@ export class DefaultCore<
    * so the children manager has to exist already.
    */
   public init() {
+    this.isGettingInitialized = true;
     const children = this.instantiateChildren();
     this.instantiatedChildren = this.wrapChildren(children);
 
     this.isInitialized = true;
+    this.isGettingInitialized = false;
   }
 
   public instantiateChildren(): WrapletChildren<M> {
