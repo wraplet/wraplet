@@ -105,7 +105,7 @@ export abstract class AbstractWraplet<
       : this.core.isGettingDestroyed || this.core.isDestroyed;
   }
 
-  public get isInitialized(): boolean {
+  public isInitialized(): boolean {
     return this.core.isInitialized;
   }
 

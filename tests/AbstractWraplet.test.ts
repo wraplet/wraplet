@@ -196,7 +196,7 @@ describe("Wraplet initialization", () => {
 
     class TestWraplet extends BaseElementTestWraplet<typeof map> {
       protected onChildInstantiated() {
-        defaultStatus = this.isInitialized;
+        defaultStatus = this.isInitialized();
       }
     }
 
@@ -212,7 +212,7 @@ describe("Wraplet initialization", () => {
     }
 
     expect(defaultStatus).toEqual(false);
-    expect(wraplet.isInitialized).toEqual(true);
+    expect(wraplet.isInitialized()).toEqual(true);
   });
 
   it("Test that proper errors are thrown when accessing children when they are instantiated or not", () => {

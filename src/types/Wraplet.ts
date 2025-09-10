@@ -6,7 +6,7 @@ export { WrapletSymbol };
 
 export interface Wraplet<N extends Node = Node> {
   [WrapletSymbol]: true;
-  isInitialized: boolean;
+  isInitialized(): boolean;
   isDestroyed(completely: boolean): boolean;
   accessNode(callback: (node: N) => void): void;
   destroy(): void;
