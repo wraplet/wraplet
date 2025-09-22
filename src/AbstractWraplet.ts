@@ -11,7 +11,6 @@ import {
 } from "./types/Groupable";
 import { NodeTreeParent, NodeTreeParentSymbol } from "./types/NodeTreeParent";
 import { Core, isCore } from "./types/Core";
-import { isWrapletSet } from "./types/Set/WrapletSet";
 import { DefaultCore } from "./DefaultCore";
 
 export abstract class AbstractWraplet<
@@ -58,25 +57,7 @@ export abstract class AbstractWraplet<
   }
 
   public getNodeTreeChildren(): Wraplet[] {
-    const children: Wraplet[] = [];
-    for (const child of Object.values(this.children)) {
-      if (isWrapletSet(child)) {
-        for (const item of child) {
-          children.push(item);
-        }
-      } else {
-        children.push(child);
-      }
-    }
-
-    // Return only descendants.
-    return children.filter((child) => {
-      let result = false;
-      child.accessNode((childsNode) => {
-        result = this.node.contains(childsNode);
-      });
-      return result;
-    });
+    return this.core.getNodeTreeChildren();
   }
 
   public setGroupsExtractor(callback: GroupExtractor): void {

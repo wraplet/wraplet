@@ -2,6 +2,9 @@ export { DefaultCore } from "./DefaultCore";
 export { AbstractWraplet } from "./AbstractWraplet";
 export { destroyWrapletsRecursively, getWrapletsFromNode } from "./utils";
 
+// Map.
+export { MapRepeat } from "./Map/MapRepeat";
+
 // WrapletSet.
 export type { WrapletSetReadonly } from "./types/Set/WrapletSetReadonly";
 export type { WrapletSet } from "./types/Set/WrapletSet";

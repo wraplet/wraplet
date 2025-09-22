@@ -342,7 +342,7 @@ describe("Test DefaultCore", () => {
       (core.children as any)["child"];
     };
 
-    expect(func).toThrow("Child has not been found.");
+    expect(func).toThrow("Child 'child' has not been found.");
   });
 
   it("Test DefaultCore with selector callback", () => {
@@ -440,5 +440,15 @@ describe("Test DefaultCore", () => {
 
     expect(funcInstantiate).toHaveBeenCalledTimes(1);
     expect(funcDestroy).toHaveBeenCalledTimes(1);
+  });
+
+  it("Test DefaultCore invalid map error", () => {
+    class SomeClass {}
+    const node = document.createElement("div");
+    const classInstance = new SomeClass() as any;
+    const func = () => {
+      new DefaultCore(node, classInstance);
+    };
+    expect(func).toThrow("The map provided to the Core is not a valid map.");
   });
 });

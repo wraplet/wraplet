@@ -6,6 +6,8 @@ import {
 import { DestroyChildListener } from "./DestroyChildListener";
 import { InstantiateChildListener } from "./InstantiateChildListener";
 import { is } from "./Utils";
+import { NodeTreeParent, NodeTreeParentSymbol } from "./NodeTreeParent";
+import { Wraplet } from "./Wraplet";
 
 const CoreSymbol = Symbol("ChildrenManager");
 export { CoreSymbol };
@@ -14,12 +16,10 @@ export { CoreSymbol };
  * Children manager interface that defines the public API for managing wraplet relationships
  * and lifecycles.
  */
-export interface Core<
-  M extends WrapletChildrenMap = {},
-  N extends Node = Node,
-> {
+export interface Core<M extends WrapletChildrenMap = {}, N extends Node = Node>
+  extends NodeTreeParent {
   [CoreSymbol]: true;
-
+  [NodeTreeParentSymbol]: true;
   /**
    * Indicates whether the core is destroyed.
    */
@@ -92,6 +92,8 @@ export interface Core<
     callback: EventListenerOrEventListenerObject,
     options?: AddEventListenerOptions | boolean,
   ): void;
+
+  getNodeTreeChildren(): Wraplet[];
 
   /**
    * Get the instantiated children.

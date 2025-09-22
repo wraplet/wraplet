@@ -11,6 +11,7 @@ import {
 } from "./errors";
 import { Wraplet } from "./types/Wraplet";
 import {
+  isWrapletChildrenMapWithDefaults,
   WrapletChildrenMap,
   WrapletChildrenMapWithDefaults,
 } from "./types/WrapletChildrenMap";
@@ -25,9 +26,10 @@ import { isWrapletSet, WrapletSet } from "./types/Set/WrapletSet";
 import { DefaultWrapletSet } from "./Set/DefaultWrapletSet";
 import {
   SelectorCallback,
-  WrapletChildDefinition,
   WrapletChildDefinitionWithDefaults,
 } from "./types/WrapletChildDefinition";
+import { NodeTreeParentSymbol } from "./types/NodeTreeParent";
+import { MapWrapper } from "./Map/MapWrapper";
 
 type ListenerData = {
   node: Node;
@@ -42,11 +44,12 @@ export class DefaultCore<
 > implements Core<M, N>
 {
   public [CoreSymbol]: true = true;
+  public [NodeTreeParentSymbol]: true = true;
   public isDestroyed: boolean = false;
   public isGettingDestroyed: boolean = false;
   public isGettingInitialized: boolean = false;
   public isInitialized: boolean = false;
-  public map: WrapletChildrenMapWithDefaults<M>;
+  public mapWrapper: MapWrapper<M>;
   private instantiatedChildren: Partial<WrapletChildren<M>> = {};
 
   private destroyChildListeners: DestroyChildListener<M, keyof M>[] = [];
@@ -56,10 +59,16 @@ export class DefaultCore<
 
   constructor(
     public node: N,
-    map: M,
+    map: M | MapWrapper<M>,
     initOptions: Partial<CoreInitOptions<M>> = {},
   ) {
-    this.map = this.fillMapWithDefaults(map);
+    if (isWrapletChildrenMapWithDefaults(map)) {
+      this.mapWrapper = new MapWrapper(map);
+    } else if (map instanceof MapWrapper) {
+      this.mapWrapper = map;
+    } else {
+      throw new MapError("The map provided to the Core is not a valid map.");
+    }
 
     this.processInitOptions(initOptions);
     this.instantiatedChildren = {};
@@ -81,6 +90,10 @@ export class DefaultCore<
     this.isGettingInitialized = false;
   }
 
+  public get map(): WrapletChildrenMapWithDefaults<M> {
+    return this.mapWrapper.getStartingMap() as WrapletChildrenMapWithDefaults<M>;
+  }
+
   public instantiateChildren(): WrapletChildren<M> {
     const children: Partial<Nullable<WrapletChildren<M>>> =
       this.instantiatedChildren;
@@ -94,21 +107,29 @@ export class DefaultCore<
       return children as WrapletChildren<M>;
     }
     for (const id in this.map) {
-      const item = this.map[id];
-      const multiple = item.multiple;
+      const childDefinition = this.map[id];
+      const multiple = childDefinition.multiple;
 
-      this.validateMapItem(id, item);
+      const mapWrapper = this.mapWrapper.clone([...this.mapWrapper.path, id]);
+
+      this.validateMapItem(id, childDefinition);
       if (multiple) {
         // We can assert as much because items
         children[id] = this.instantiateMultipleWrapletsChild(
-          item,
+          childDefinition,
+          mapWrapper,
           this.node,
           id,
         );
         continue;
       }
 
-      children[id] = this.instantiateSingleWrapletChild(item, this.node, id);
+      children[id] = this.instantiateSingleWrapletChild(
+        childDefinition,
+        mapWrapper,
+        this.node,
+        id,
+      );
     }
 
     // Now we should have all properties set, so let's assert the final form.
@@ -117,6 +138,28 @@ export class DefaultCore<
 
   public syncChildren(): void {
     this.instantiatedChildren = this.instantiateChildren();
+  }
+
+  public getNodeTreeChildren(): Wraplet[] {
+    const children: Wraplet[] = [];
+    for (const child of Object.values(this.children)) {
+      if (isWrapletSet(child)) {
+        for (const item of child) {
+          children.push(item);
+        }
+      } else {
+        children.push(child);
+      }
+    }
+
+    // Return only descendants.
+    return children.filter((child) => {
+      let result = false;
+      child.accessNode((childsNode) => {
+        result = this.node.contains(childsNode);
+      });
+      return result;
+    });
   }
 
   private findExistingWraplet(id: keyof M, childElement: Node): Wraplet | null {
@@ -166,19 +209,20 @@ export class DefaultCore<
   }
 
   private instantiateSingleWrapletChild<T extends keyof M>(
-    mapItem: WrapletChildDefinitionWithDefaults<M[T]>,
+    childDefinition: WrapletChildDefinitionWithDefaults<M[T]>,
+    childMap: MapWrapper<WrapletChildrenMapWithDefaults>,
     node: ParentNode,
     id: Extract<T, string>,
   ): WrapletChildren<M>[T] | null {
-    if (!mapItem.selector) {
+    if (!childDefinition.selector) {
       return null;
     }
-    const selector = mapItem.selector;
+    const selector = childDefinition.selector;
 
     // Find children elements based on the map.
     const childElements = this.findChildren(selector, node);
 
-    this.validateElements(id, childElements, mapItem);
+    this.validateElements(id, childElements, childDefinition);
 
     if (childElements.length === 0) {
       return null;
@@ -192,14 +236,18 @@ export class DefaultCore<
 
     const childElement = childElements[0];
 
-    return this.instantiateWrapletItem<T>(id, mapItem, childElement) as
-      | WrapletChildren<M>[T]
-      | null;
+    return this.instantiateWrapletItem<T>(
+      id,
+      childDefinition,
+      childMap,
+      childElement,
+    ) as WrapletChildren<M>[T] | null;
   }
 
   private instantiateWrapletItem<T extends keyof M>(
     id: Extract<T, string>,
-    mapItem: WrapletChildDefinitionWithDefaults<M[T]>,
+    childDefinition: WrapletChildDefinitionWithDefaults<M[T]>,
+    childMap: MapWrapper<WrapletChildrenMapWithDefaults>,
     node: Node,
   ): Wraplet {
     // Re-use existing wraplet.
@@ -208,13 +256,13 @@ export class DefaultCore<
       return existingWraplet;
     }
 
-    const wrapletClass = mapItem.Class;
-    const args = mapItem.args;
+    const wrapletClass = childDefinition.Class;
+    const args = childDefinition.args;
     const wraplet = this.createIndividualWraplet(
       wrapletClass,
       node,
-      mapItem.map,
-      mapItem.coreOptions,
+      childMap,
+      childDefinition.coreOptions,
       args,
     );
     this.prepareIndividualWraplet(id, wraplet);
@@ -227,18 +275,19 @@ export class DefaultCore<
   }
 
   private instantiateMultipleWrapletsChild<T extends keyof M>(
-    mapItem: WrapletChildDefinitionWithDefaults<M[T]>,
+    childDefinition: WrapletChildDefinitionWithDefaults<M[T]>,
+    childMap: MapWrapper<WrapletChildrenMapWithDefaults>,
     node: ParentNode,
     id: Extract<T, string>,
   ): WrapletChildren<M>[keyof WrapletChildren<M>] {
-    const selector = mapItem.selector;
+    const selector = childDefinition.selector;
     if (!selector) {
       return new DefaultWrapletSet() as WrapletChildren<M>[keyof WrapletChildren<M>];
     }
 
     // Find children elements based on the map.
     const childElements = this.findChildren(selector, node);
-    this.validateElements(id, childElements, mapItem);
+    this.validateElements(id, childElements, childDefinition);
 
     const items: WrapletSet =
       this.instantiatedChildren && this.instantiatedChildren[id]
@@ -249,7 +298,12 @@ export class DefaultCore<
       if (existingWraplet) {
         continue;
       }
-      const wraplet = this.instantiateWrapletItem(id, mapItem, childElement);
+      const wraplet = this.instantiateWrapletItem(
+        id,
+        childDefinition,
+        childMap,
+        childElement,
+      );
       items.add(wraplet);
     }
 
@@ -273,12 +327,12 @@ export class DefaultCore<
   >(
     wrapletClass: new (...args: any[]) => Wraplet<N>,
     childElement: Node,
-    map: M,
+    map: MapWrapper<WrapletChildrenMapWithDefaults>,
     initOptions: CoreInitOptions<M>,
     args: unknown[],
   ): Wraplet<N> {
     const core = new (this.constructor as any)(childElement, map, initOptions);
-    return new wrapletClass(...[...[core], ...args]);
+    return new wrapletClass(...[core, ...args]);
   }
 
   private prepareIndividualWraplet<K extends Extract<keyof M, string>>(
@@ -339,28 +393,6 @@ export class DefaultCore<
     return typeof selector === "string"
       ? defaultSelectorCallback(selector, node)
       : selector(node);
-  }
-
-  private fillMapWithDefaults(map: M): WrapletChildrenMapWithDefaults<M> {
-    const newMap: Partial<WrapletChildrenMapWithDefaults<M>> = {};
-    for (const id in map) {
-      newMap[id] = this.addDefaultsToChildDefinition(map[id]);
-    }
-    return newMap as WrapletChildrenMapWithDefaults<M>;
-  }
-
-  private addDefaultsToChildDefinition<T extends WrapletChildDefinition>(
-    definition: T,
-  ): WrapletChildDefinitionWithDefaults<T> {
-    return {
-      ...{
-        args: [],
-        destructible: true,
-        map: {},
-        coreOptions: {},
-      },
-      ...definition,
-    };
   }
 
   public addEventListener(
@@ -454,7 +486,7 @@ export class DefaultCore<
     return new Proxy(children, {
       get: function get(target, name: string) {
         if (!(name in target)) {
-          throw new Error("Child has not been found.");
+          throw new Error(`Child '${name}' has not been found.`);
         }
         return target[name];
       },
