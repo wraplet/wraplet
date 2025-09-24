@@ -1,8 +1,11 @@
+export type { Core } from "./types/Core";
 export { DefaultCore } from "./DefaultCore";
+
 export { AbstractWraplet } from "./AbstractWraplet";
 export { destroyWrapletsRecursively, getWrapletsFromNode } from "./utils";
 
 // Map.
+export type { DynamicMap } from "./types/Map/DynamicMap";
 export { MapRepeat } from "./Map/MapRepeat";
 
 // WrapletSet.
