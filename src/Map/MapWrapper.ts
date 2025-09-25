@@ -15,7 +15,7 @@ type RecursiveMapKeys<T extends WrapletChildrenMap> = {
 export class MapWrapper<M extends WrapletChildrenMap> {
   private readonly fullMap: WrapletChildrenMapWithDefaults<M>;
   private startingPath: string[];
-  private currentMap: WrapletChildrenMapWithDefaults | null = null;
+  private currentMap: WrapletChildrenMapWithDefaults<M> | null = null;
   public path: string[];
   private currentPath: string[] = [];
 
@@ -40,11 +40,11 @@ export class MapWrapper<M extends WrapletChildrenMap> {
     }
   }
 
-  public getStartingMap(): WrapletChildrenMapWithDefaults {
+  public getStartingMap(): WrapletChildrenMapWithDefaults<M> {
     return this.resolve(this.startingPath);
   }
 
-  public getCurrentMap(): WrapletChildrenMapWithDefaults {
+  public getCurrentMap(): WrapletChildrenMapWithDefaults<M> {
     if (!this.currentMap || this.currentPath != this.path) {
       this.currentMap = this.resolve(this.path);
       this.currentPath = this.path;
@@ -57,8 +57,8 @@ export class MapWrapper<M extends WrapletChildrenMap> {
    * @param path
    * @private
    */
-  private findCurrentMap(path: string[]): WrapletChildrenMapWithDefaults {
-    let resultMap: WrapletChildrenMapWithDefaults = this.fullMap;
+  private findCurrentMap(path: string[]): WrapletChildrenMapWithDefaults<M> {
+    let resultMap: WrapletChildrenMapWithDefaults<M> = this.fullMap;
 
     for (const pathPart of path) {
       if (!resultMap[pathPart]) {
@@ -125,11 +125,15 @@ export class MapWrapper<M extends WrapletChildrenMap> {
   public clone(
     path: string[],
     resolveImmediately: boolean = true,
-  ): MapWrapper<M> {
-    return new MapWrapper<M>(this.fullMap, path, resolveImmediately);
+  ): MapWrapper<WrapletChildrenMapWithDefaults<M>> {
+    return new MapWrapper<WrapletChildrenMapWithDefaults<M>>(
+      this.fullMap,
+      path,
+      resolveImmediately,
+    );
   }
 
-  public resolve(path: string[]): WrapletChildrenMapWithDefaults {
+  public resolve(path: string[]): WrapletChildrenMapWithDefaults<M> {
     return this.findCurrentMap(path);
   }
 }

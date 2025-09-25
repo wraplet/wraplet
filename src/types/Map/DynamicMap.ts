@@ -12,7 +12,7 @@ export interface DynamicMap {
   [DynamicMapSymbol]: true;
   create<M extends WrapletChildrenMap>(
     parentMapClone: MapWrapper<M>,
-  ): WrapletChildrenMapWithDefaults;
+  ): WrapletChildrenMapWithDefaults<M>;
 }
 
 export function isDynamicMap(object: unknown): object is DynamicMap {

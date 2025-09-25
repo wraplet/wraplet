@@ -104,9 +104,13 @@ describe("Test recursive wraplets", () => {
     const attribute = "data-item";
     const childAttribute = `${attribute}-child`;
 
-    class TestWrapletChild extends BaseElementTestWraplet {}
+    class TestWrapletChild<
+      M extends WrapletChildrenMap = WrapletChildrenMap,
+    > extends BaseElementTestWraplet<M> {}
 
-    class TestWraplet extends BaseElementTestWraplet {}
+    class TestWraplet<
+      M extends WrapletChildrenMap = WrapletChildrenMap,
+    > extends BaseElementTestWraplet<M> {}
 
     // The circular dependency between the map and the TestWrapletChild confuses TypeScript. That's
     // why we need to clarify the map's type.
@@ -151,7 +155,9 @@ describe("Test recursive wraplets", () => {
 </div>
   `;
 
-    function getParent(child: TestWrapletChild): TestWraplet {
+    function getParent<M extends WrapletChildrenMap>(
+      child: TestWrapletChild<M>,
+    ): TestWraplet {
       const parent = child.getChild("childParent");
       if (!parent) {
         throw new Error("Parent not found.");
@@ -163,7 +169,9 @@ describe("Test recursive wraplets", () => {
       return parent;
     }
 
-    function getChild(parent: TestWraplet): TestWrapletChild {
+    function getChild<M extends WrapletChildrenMap>(
+      parent: TestWraplet<M>,
+    ): TestWrapletChild {
       const child = parent.getChild("child");
       if (!child) {
         throw new Error("Child not found.");

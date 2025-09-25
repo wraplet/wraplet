@@ -10,7 +10,7 @@ export type WrapletChildrenMap = {
 export type WrapletChildrenMapWithDefaults<
   M extends WrapletChildrenMap = WrapletChildrenMap,
 > = {
-  [key in keyof M]: WrapletChildDefinitionWithDefaults<M[key]>;
+  [key in keyof M]: WrapletChildDefinitionWithDefaults<M[key], M>;
 };
 
 export function isWrapletChildrenMapWithDefaults(

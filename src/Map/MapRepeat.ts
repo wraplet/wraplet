@@ -16,7 +16,7 @@ export class MapRepeat implements DynamicMap {
 
   public create<M extends WrapletChildrenMap>(
     parentMapClone: MapWrapper<M>,
-  ): WrapletChildrenMapWithDefaults {
+  ): WrapletChildrenMapWithDefaults<M> {
     for (let i = 0; i < this.levels; i++) {
       parentMapClone.down();
     }

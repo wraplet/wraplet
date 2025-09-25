@@ -1,4 +1,6 @@
+// Core
 export type { Core } from "./types/Core";
+export type { WrapletCreator } from "./types/WrapletCreator";
 export { DefaultCore } from "./DefaultCore";
 
 export { AbstractWraplet } from "./AbstractWraplet";

@@ -30,6 +30,7 @@ import {
 } from "./types/WrapletChildDefinition";
 import { NodeTreeParentSymbol } from "./types/NodeTreeParent";
 import { MapWrapper } from "./Map/MapWrapper";
+import { WrapletCreator, WrapletCreatorArgs } from "./types/WrapletCreator";
 
 type ListenerData = {
   node: Node;
@@ -56,6 +57,19 @@ export class DefaultCore<
   private instantiateChildListeners: InstantiateChildListener<M, keyof M>[] =
     [];
   private listeners: ListenerData[] = [];
+
+  private defaultWrapletCreator: WrapletCreator<N, M> = (
+    args: WrapletCreatorArgs<N, M>,
+  ): Wraplet<N> => {
+    const core = new (this.constructor as any)(
+      args.element,
+      args.map,
+      args.initOptions,
+    );
+    return new args.Class(core, ...args.args);
+  };
+
+  private wrapletCreator: WrapletCreator<N, M> = this.defaultWrapletCreator;
 
   constructor(
     public node: N,
@@ -209,8 +223,8 @@ export class DefaultCore<
   }
 
   private instantiateSingleWrapletChild<T extends keyof M>(
-    childDefinition: WrapletChildDefinitionWithDefaults<M[T]>,
-    childMap: MapWrapper<WrapletChildrenMapWithDefaults>,
+    childDefinition: WrapletChildDefinitionWithDefaults<M[T], M>,
+    childMap: MapWrapper<WrapletChildrenMapWithDefaults<M>>,
     node: ParentNode,
     id: Extract<T, string>,
   ): WrapletChildren<M>[T] | null {
@@ -246,8 +260,8 @@ export class DefaultCore<
 
   private instantiateWrapletItem<T extends keyof M>(
     id: Extract<T, string>,
-    childDefinition: WrapletChildDefinitionWithDefaults<M[T]>,
-    childMap: MapWrapper<WrapletChildrenMapWithDefaults>,
+    childDefinition: WrapletChildDefinitionWithDefaults<M[T], M>,
+    childMap: MapWrapper<WrapletChildrenMapWithDefaults<M>>,
     node: Node,
   ): Wraplet {
     // Re-use existing wraplet.
@@ -258,13 +272,15 @@ export class DefaultCore<
 
     const wrapletClass = childDefinition.Class;
     const args = childDefinition.args;
-    const wraplet = this.createIndividualWraplet(
-      wrapletClass,
-      node,
-      childMap,
-      childDefinition.coreOptions,
-      args,
-    );
+    const wraplet = this.wrapletCreator({
+      id: id,
+      Class: wrapletClass,
+      element: node,
+      map: childMap,
+      initOptions: childDefinition.coreOptions,
+      args: args,
+      defaultCreator: this.defaultWrapletCreator,
+    });
     this.prepareIndividualWraplet(id, wraplet);
 
     for (const listener of this.instantiateChildListeners) {
@@ -275,8 +291,8 @@ export class DefaultCore<
   }
 
   private instantiateMultipleWrapletsChild<T extends keyof M>(
-    childDefinition: WrapletChildDefinitionWithDefaults<M[T]>,
-    childMap: MapWrapper<WrapletChildrenMapWithDefaults>,
+    childDefinition: WrapletChildDefinitionWithDefaults<M[T], M>,
+    childMap: MapWrapper<WrapletChildrenMapWithDefaults<M>>,
     node: ParentNode,
     id: Extract<T, string>,
   ): WrapletChildren<M>[keyof WrapletChildren<M>] {
@@ -322,17 +338,8 @@ export class DefaultCore<
     this.instantiateChildListeners.push(callback);
   }
 
-  private createIndividualWraplet<
-    M extends WrapletChildrenMap = WrapletChildrenMap,
-  >(
-    wrapletClass: new (...args: any[]) => Wraplet<N>,
-    childElement: Node,
-    map: MapWrapper<WrapletChildrenMapWithDefaults>,
-    initOptions: CoreInitOptions<M>,
-    args: unknown[],
-  ): Wraplet<N> {
-    const core = new (this.constructor as any)(childElement, map, initOptions);
-    return new wrapletClass(...[core, ...args]);
+  public setWrapletCreator(wrapletCreator: WrapletCreator<N, M>): void {
+    this.wrapletCreator = wrapletCreator;
   }
 
   private prepareIndividualWraplet<K extends Extract<keyof M, string>>(
@@ -454,7 +461,7 @@ export class DefaultCore<
 
   private validateMapItem(
     id: string,
-    item: WrapletChildDefinitionWithDefaults<M[keyof M]>,
+    item: WrapletChildDefinitionWithDefaults<M[keyof M], M>,
   ): void {
     const selector = item.selector;
     const isRequired = item.required;
@@ -470,7 +477,7 @@ export class DefaultCore<
   private validateElements(
     id: Extract<keyof M, string>,
     elements: Node[],
-    mapItem: WrapletChildDefinitionWithDefaults<M[keyof M]>,
+    mapItem: WrapletChildDefinitionWithDefaults<M[keyof M], M>,
   ): void {
     if (elements.length === 0 && mapItem.required) {
       throw new MissingRequiredChildError(

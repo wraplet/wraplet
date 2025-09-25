@@ -8,9 +8,10 @@ import {
   WrapletChildrenMapWithDefaults,
 } from "./types/WrapletChildrenMap";
 
-export function addDefaultsToChildDefinition<T extends WrapletChildDefinition>(
-  definition: T,
-): WrapletChildDefinitionWithDefaults<T> {
+export function addDefaultsToChildDefinition<
+  M extends WrapletChildrenMap,
+  T extends WrapletChildDefinition<M>,
+>(definition: T): WrapletChildDefinitionWithDefaults<T, M> {
   return {
     ...{
       args: [],
@@ -22,16 +23,18 @@ export function addDefaultsToChildDefinition<T extends WrapletChildDefinition>(
   };
 }
 
-export function fillMapWithDefaults<T extends WrapletChildrenMap>(
-  map: T,
-): WrapletChildrenMapWithDefaults<T> {
-  const newMap: Partial<WrapletChildrenMapWithDefaults<T>> = {};
+export function fillMapWithDefaults<M extends WrapletChildrenMap>(
+  map: M,
+): WrapletChildrenMapWithDefaults<M> {
+  const newMap: Partial<WrapletChildrenMapWithDefaults> = {};
   for (const id in map) {
-    newMap[id] = addDefaultsToChildDefinition(map[id]);
-    const subMap = map[id]["map"];
+    const def = map[id];
+    newMap[id] = addDefaultsToChildDefinition(def);
+
+    const subMap = def["map"];
     if (subMap && isWrapletChildrenMapWithDefaults(subMap)) {
       newMap[id]["map"] = fillMapWithDefaults(subMap);
     }
   }
-  return newMap as WrapletChildrenMapWithDefaults<T>;
+  return newMap as WrapletChildrenMapWithDefaults<M>;
 }

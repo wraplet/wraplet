@@ -10,10 +10,11 @@ import {
   ChildrenTooManyFoundError,
   MapError,
 } from "../src/errors";
-import { Core } from "../src/types/Core";
+import { Core } from "../src";
 import { DestroyListener } from "../src/types/DestroyListener";
 import { addWrapletToNode } from "../src/utils";
 import { WrapletSymbol } from "../src/types/Wraplet";
+import { WrapletCreator } from "../src/types/WrapletCreator";
 
 describe("Test DefaultCore", () => {
   class TestWrapletClass implements Wraplet {
@@ -450,5 +451,55 @@ describe("Test DefaultCore", () => {
       new DefaultCore(node, classInstance);
     };
     expect(func).toThrow("The map provided to the Core is not a valid map.");
+  });
+
+  it("Test DefaultCore custom wraplet creator", () => {
+    const attributeChildren = "data-test-wraplet-children";
+    const attributeChild = "data-test-wraplet-child";
+
+    const map = {
+      children: {
+        selector: `[${attributeChildren}]`,
+        Class: TestWrapletClass,
+        multiple: true,
+        required: true,
+      },
+      child: {
+        selector: `[${attributeChild}]`,
+        Class: TestWrapletClass,
+        multiple: false,
+        required: true,
+      },
+    } as const satisfies WrapletChildrenMap;
+
+    const element = document.createElement("div");
+
+    const elementChildrenItem = document.createElement("div");
+    elementChildrenItem.setAttribute(attributeChildren, "");
+    element.appendChild(elementChildrenItem);
+
+    const elementChildItem = document.createElement("div");
+    elementChildItem.setAttribute(attributeChild, "");
+    element.appendChild(elementChildItem);
+
+    const core = new DefaultCore(element, map);
+
+    const func = jest.fn();
+
+    const creator: WrapletCreator<HTMLDivElement, typeof map> = (args) => {
+      expect(["child", "children"]).toContain(args.id);
+      func();
+      const core = new DefaultCore(args.element, map, args.initOptions);
+      return new args.Class(core, ...args.args);
+    };
+
+    core.setWrapletCreator(creator);
+
+    core.init();
+
+    expect(core.children.child).toBeInstanceOf(TestWrapletClass);
+    expect(core.children.children.size).toBe(1);
+
+    expect(func).toHaveBeenCalledTimes(2);
   });
 });

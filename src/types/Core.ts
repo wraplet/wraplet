@@ -8,6 +8,7 @@ import { InstantiateChildListener } from "./InstantiateChildListener";
 import { is } from "./Utils";
 import { NodeTreeParent, NodeTreeParentSymbol } from "./NodeTreeParent";
 import { Wraplet } from "./Wraplet";
+import { WrapletCreator } from "./WrapletCreator";
 
 const CoreSymbol = Symbol("ChildrenManager");
 export { CoreSymbol };
@@ -94,6 +95,11 @@ export interface Core<M extends WrapletChildrenMap = {}, N extends Node = Node>
   ): void;
 
   getNodeTreeChildren(): Wraplet[];
+
+  /**
+   * Allows for overriding the default wraplet creation process.
+   */
+  setWrapletCreator(wrapletCreator: WrapletCreator<N, M>): void;
 
   /**
    * Get the instantiated children.
