@@ -18,9 +18,6 @@ export { DefaultWrapletSetReadonly } from "./Set/DefaultWrapletSetReadonly";
 export { DefaultWrapletSet } from "./Set/DefaultWrapletSet";
 export { isWraplet } from "./types/Wraplet";
 
-// Storage.
-export type { StorageValidators } from "./types/Storage/StorageValidators";
-
 // WrapletChildrenMap.
 export type { WrapletChildrenMap } from "./types/WrapletChildrenMap";
 export type { Wraplet } from "./types/Wraplet";

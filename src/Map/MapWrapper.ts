@@ -57,7 +57,7 @@ export class MapWrapper<M extends WrapletChildrenMap> {
    * @param path
    * @private
    */
-  private findCurrentMap(path: string[]): WrapletChildrenMapWithDefaults<M> {
+  private findMap(path: string[]): WrapletChildrenMapWithDefaults<M> {
     let resultMap: WrapletChildrenMapWithDefaults<M> = this.fullMap;
 
     for (const pathPart of path) {
@@ -134,6 +134,6 @@ export class MapWrapper<M extends WrapletChildrenMap> {
   }
 
   public resolve(path: string[]): WrapletChildrenMapWithDefaults<M> {
-    return this.findCurrentMap(path);
+    return this.findMap(path);
   }
 }
