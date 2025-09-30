@@ -1,3 +1,5 @@
+export type Constructable<T> = { new (...args: any[]): T };
+
 export type InstantiableReturnType<T> = T extends {
   new (...args: any[]): infer R;
 }
@@ -5,10 +7,6 @@ export type InstantiableReturnType<T> = T extends {
   : never;
 
 export type Nullable<T> = { [K in keyof T]: T[K] | null };
-
-export type DeepWriteable<T> = {
-  -readonly [P in keyof T]: DeepWriteable<T[P]>;
-};
 
 /* istanbul ignore next */
 /**

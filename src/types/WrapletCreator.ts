@@ -5,6 +5,7 @@ import {
   WrapletChildrenMapWithDefaults,
 } from "./WrapletChildrenMap";
 import { CoreInitOptions } from "./CoreInitOptions";
+import { Constructable } from "./Utils";
 
 export type WrapletCreator<N extends Node, M extends WrapletChildrenMap> = (
   args: WrapletCreatorArgs<N, M>,
@@ -12,7 +13,7 @@ export type WrapletCreator<N extends Node, M extends WrapletChildrenMap> = (
 
 export type WrapletCreatorArgs<N extends Node, M extends WrapletChildrenMap> = {
   id: keyof M;
-  Class: new (...args: any[]) => Wraplet<N>;
+  Class: Constructable<Wraplet<N>>;
   element: Node;
   map: MapWrapper<WrapletChildrenMapWithDefaults>;
   initOptions: CoreInitOptions<M>;
