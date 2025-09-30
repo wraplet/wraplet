@@ -247,3 +247,35 @@ it("Test element storage data validator returned false", () => {
   };
   expect(func).toThrow(StorageValidationError);
 });
+
+it("Test ElementStorage custom elementOptions merger", () => {
+  const attribute = "data-test-wraplet";
+  type Options = {
+    option1: string;
+  };
+
+  const element = document.createElement("div");
+  element.setAttribute(attribute, '{"option1":"initial value"}');
+
+  const validators: Record<keyof Options, (value: unknown) => boolean> = {
+    option1: (value) => typeof value === "string",
+  };
+
+  const storage = new ElementStorage<Options>(
+    element,
+    attribute,
+    { option1: "default value" },
+    validators,
+    {
+      elementOptionsMerger: (defaultOptions, elementOptions) => {
+        return {
+          ...defaultOptions,
+          ...elementOptions,
+          ...{ option1: "overridden" },
+        };
+      },
+    },
+  );
+
+  expect(storage.get("option1")).toEqual("overridden");
+});

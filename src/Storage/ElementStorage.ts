@@ -1,25 +1,31 @@
 import { Storage } from "../types/Storage/Storage";
 import { StorageValidationError } from "../errors";
 import { StorageValidators } from "../types/Storage/StorageValidators";
+import { ElementOptionsMerger } from "./ElementOptionsMerger";
 
-export type ElementStorageOptions = {
-  keepFresh?: boolean;
+export type ElementStorageOptions<D extends Record<string, unknown>> = {
+  keepFresh: boolean;
+  elementOptionsMerger: ElementOptionsMerger<D>;
 };
 
 export class ElementStorage<D extends Record<string, unknown>>
   implements Storage<D>
 {
   private data;
+  private options: ElementStorageOptions<D>;
 
   constructor(
     private element: Element,
     private attribute: string,
     private defaults: D,
     private validators: StorageValidators<D>,
-    private options: ElementStorageOptions = {},
+    options: Partial<ElementStorageOptions<D>> = {},
   ) {
     this.options = {
       keepFresh: true,
+      elementOptionsMerger: (defaultOptions, elementOptions) => {
+        return { ...defaultOptions, ...elementOptions };
+      },
       ...options,
     };
     this.data = this.fetchFreshData();
@@ -112,7 +118,7 @@ export class ElementStorage<D extends Record<string, unknown>>
       if (!this.validateData(data)) {
         throw new StorageValidationError("Invalid storage value.");
       }
-      return { ...this.defaults, ...data };
+      return this.options.elementOptionsMerger(this.defaults, data);
     }
     return { ...this.defaults };
   }
