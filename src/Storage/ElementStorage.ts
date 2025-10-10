@@ -60,12 +60,13 @@ export class ElementStorage<D extends Record<string, unknown>>
   }
 
   public set<T extends keyof D>(key: T, value: D[T]): void {
-    const data = this.getAll();
     if (!this.validators[key](value)) {
       throw new StorageValidationError(
         `Attempted to set an invalid value for the key ${String(key)}.`,
       );
     }
+    const attributeValue = this.getAttributeValue(this.attribute);
+    const data: D = JSON.parse(attributeValue);
     data[key] = value;
     this.setAll(data);
   }
@@ -98,7 +99,7 @@ export class ElementStorage<D extends Record<string, unknown>>
   }
 
   public deleteAll(): void {
-    this.element.setAttribute(this.attribute, "");
+    this.element.removeAttribute(this.attribute);
     this.refresh();
   }
 
@@ -108,19 +109,14 @@ export class ElementStorage<D extends Record<string, unknown>>
 
   private fetchFreshData(): D {
     const dataString = this.getAttributeValue(this.attribute);
-    if (dataString) {
-      if (dataString.charAt(0) !== "{") {
-        throw new StorageValidationError(
-          `Data has to be defined as an object.`,
-        );
-      }
-      const data: Record<string, unknown> = JSON.parse(dataString);
-      if (!this.validateData(data)) {
-        throw new StorageValidationError("Invalid storage value.");
-      }
-      return this.options.elementOptionsMerger(this.defaults, data);
+    if (dataString.charAt(0) !== "{") {
+      throw new StorageValidationError(`Data has to be defined as an object.`);
     }
-    return { ...this.defaults };
+    const data: Record<string, unknown> = JSON.parse(dataString);
+    if (!this.validateData(data)) {
+      throw new StorageValidationError("Invalid storage value.");
+    }
+    return this.options.elementOptionsMerger(this.defaults, data);
   }
 
   private validateData(data: Record<string, unknown>): data is D {
@@ -132,7 +128,7 @@ export class ElementStorage<D extends Record<string, unknown>>
     return true;
   }
 
-  private getAttributeValue(attribute: string): string | null {
-    return this.element.getAttribute(attribute);
+  private getAttributeValue(attribute: string): string {
+    return this.element.getAttribute(attribute) ?? "{}";
   }
 }

@@ -56,7 +56,7 @@ it("Test element storage", () => {
   storage.setAll({ option1: "new value" });
   expect(element.getAttribute(attribute)).toEqual('{"option1":"new value"}');
   storage.deleteAll();
-  expect(element.getAttribute(attribute)).toEqual("");
+  expect(element.hasAttribute(attribute)).toBe(false);
 
   // Test if the default value is still available.
   expect(storage.get("option1")).toEqual("default value");
@@ -278,4 +278,36 @@ it("Test ElementStorage custom elementOptions merger", () => {
   );
 
   expect(storage.get("option1")).toEqual("overridden");
+});
+
+it("Test ElementStorage only single option is saved to element when set", () => {
+  const attribute = "data-test-wraplet";
+  type Options = {
+    option1: string;
+    option2?: string;
+  };
+
+  const element = document.createElement("div");
+  element.setAttribute(attribute, '{"option1":"test"}');
+
+  const validators: Record<keyof Options, (value: unknown) => boolean> = {
+    option1: (value) => typeof value === "string",
+    option2: (value) => typeof value === "string",
+  };
+
+  const option2DefaultValue = "option2 default value";
+
+  const storage = new ElementStorage<Options>(
+    element,
+    attribute,
+    {
+      option1: "default value",
+      option2: option2DefaultValue,
+    },
+    validators,
+  );
+
+  storage.set("option1", "updated");
+
+  expect(element.getAttribute(attribute)).not.toContain(option2DefaultValue);
 });
