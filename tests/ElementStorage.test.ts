@@ -311,3 +311,19 @@ it("Test ElementStorage only single option is saved to element when set", () => 
 
   expect(element.getAttribute(attribute)).not.toContain(option2DefaultValue);
 });
+
+it("Test ElementStorage properly handling default empty options attribute", () => {
+  const attribute = "data-test-wraplet";
+  type Options = {};
+
+  const element = document.createElement("div");
+  element.setAttribute(attribute, "");
+
+  const validators: Record<keyof Options, (value: unknown) => boolean> = {};
+
+  const func = () => {
+    new ElementStorage<Options>(element, attribute, {}, validators);
+  };
+
+  expect(func).not.toThrow(StorageValidationError);
+});

@@ -129,6 +129,6 @@ export class ElementStorage<D extends Record<string, unknown>>
   }
 
   private getAttributeValue(attribute: string): string {
-    return this.element.getAttribute(attribute) ?? "{}";
+    return this.element.getAttribute(attribute) || "{}";
   }
 }
