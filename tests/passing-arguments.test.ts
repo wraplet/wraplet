@@ -32,7 +32,7 @@ describe("Test passing arguments", () => {
     typeof childrenMap
   > {
     private readonly someString: string;
-    constructor(core: Core<typeof childrenMap, E>, stringArgument: string) {
+    constructor(core: Core<E, typeof childrenMap>, stringArgument: string) {
       super(core);
       this.someString = stringArgument;
     }

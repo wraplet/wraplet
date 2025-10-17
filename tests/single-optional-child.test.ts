@@ -6,7 +6,7 @@ describe("Test wraplet single optional child", () => {
   const testWrapletSelectorAttribute = "data-test-selector";
   const testWrapletChildSelectorAttribute = `${testWrapletSelectorAttribute}-child`;
 
-  class TestWrapletChild extends AbstractWraplet<any> {
+  class TestWrapletChild extends AbstractWraplet {
     public hasElement(): boolean {
       return !!this.node;
     }

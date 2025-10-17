@@ -5,8 +5,8 @@ import { Core } from "../../src";
 
 export abstract class BaseElementTestWraplet<
   M extends WrapletChildrenMap = WrapletChildrenMap,
-> extends AbstractWraplet<M, Element> {
-  constructor(core: Core<M, Element>) {
+> extends AbstractWraplet<Element, M> {
+  constructor(core: Core<Element, M>) {
     super(core);
   }
 

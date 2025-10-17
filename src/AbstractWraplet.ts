@@ -14,8 +14,8 @@ import { Core, isCore } from "./types/Core";
 import { DefaultCore } from "./DefaultCore";
 
 export abstract class AbstractWraplet<
-    M extends WrapletChildrenMap = {},
     N extends Node = Node,
+    M extends WrapletChildrenMap = {},
   >
   implements Wraplet<N>, Groupable, NodeTreeParent
 {
@@ -45,7 +45,7 @@ export abstract class AbstractWraplet<
    */
   private __debugNodeAccessors: ((element: N) => void)[] = [];
 
-  constructor(protected core: Core<M, N>) {
+  constructor(protected core: Core<N, M>) {
     if (!isCore(core)) {
       throw new Error("AbstractWraplet requires a Core instance.");
     }
@@ -145,7 +145,7 @@ export abstract class AbstractWraplet<
   protected static createCore<N extends Node, M extends WrapletChildrenMap>(
     node: N,
     map: M,
-  ): Core<M, N> {
+  ): Core<N, M> {
     return new DefaultCore(node, map);
   }
 
@@ -154,7 +154,7 @@ export abstract class AbstractWraplet<
   // matter.
   protected static createWraplets<
     N extends Node,
-    T extends AbstractWraplet<any, N> = never,
+    T extends AbstractWraplet<N, any> = never,
   >(
     node: ParentNode,
     map: WrapletChildrenMap,

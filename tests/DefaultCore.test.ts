@@ -89,7 +89,7 @@ describe("Test DefaultCore", () => {
       },
     } as const satisfies WrapletChildrenMap;
 
-    const core: Core<typeof map> = new DefaultCore(node, map);
+    const core: Core<Node, typeof map> = new DefaultCore(node, map);
 
     const func = () => {
       core.init();
@@ -115,7 +115,7 @@ describe("Test DefaultCore", () => {
       },
     } as const satisfies WrapletChildrenMap;
 
-    const core: Core<typeof map> = new DefaultCore(node, map);
+    const core: Core<Node, typeof map> = new DefaultCore(node, map);
 
     const func = () => {
       core.init();
@@ -138,7 +138,7 @@ describe("Test DefaultCore", () => {
       },
     } as const satisfies WrapletChildrenMap;
 
-    const core: Core<typeof map> = new DefaultCore(node, map);
+    const core: Core<Node, typeof map> = new DefaultCore(node, map);
 
     const func = () => {
       core.init();
@@ -159,7 +159,7 @@ describe("Test DefaultCore", () => {
       },
     } as const satisfies WrapletChildrenMap;
 
-    const core: Core<typeof map> = new DefaultCore(node, map);
+    const core: Core<Node, typeof map> = new DefaultCore(node, map);
 
     core.init();
     expect(core.children["children"]).toBeInstanceOf(DefaultWrapletSet);
@@ -185,7 +185,7 @@ describe("Test DefaultCore", () => {
       },
     } as const satisfies WrapletChildrenMap;
 
-    const core: Core<typeof map> = new DefaultCore(node, map);
+    const core: Core<Node, typeof map> = new DefaultCore(node, map);
 
     const func = jest.fn();
     core.addDestroyChildListener(() => {
@@ -224,7 +224,7 @@ describe("Test DefaultCore", () => {
 
     const func = jest.fn();
 
-    const core: Core<typeof map> = new DefaultCore(node, map);
+    const core: Core<Node, typeof map> = new DefaultCore(node, map);
     core.addInstantiateChildListener(() => {
       func();
     });
@@ -265,7 +265,7 @@ describe("Test DefaultCore", () => {
       },
     } as const satisfies WrapletChildrenMap;
 
-    const core: Core<typeof map> = new DefaultCore(node, map);
+    const core: Core<Node, typeof map> = new DefaultCore(node, map);
 
     core.init();
 
@@ -297,7 +297,7 @@ describe("Test DefaultCore", () => {
       },
     } as const satisfies WrapletChildrenMap;
 
-    const core: Core<typeof map> = new DefaultCore(node, map);
+    const core: Core<Node, typeof map> = new DefaultCore(node, map);
 
     core.init();
 
@@ -334,7 +334,7 @@ describe("Test DefaultCore", () => {
 
     const map = {} as const satisfies WrapletChildrenMap;
 
-    const core: Core<typeof map> = new DefaultCore(node, map);
+    const core: Core<Node, typeof map> = new DefaultCore(node, map);
 
     core.init();
 
@@ -362,7 +362,7 @@ describe("Test DefaultCore", () => {
       },
     } as const satisfies WrapletChildrenMap;
 
-    const core: Core<typeof map> = new DefaultCore(node, map);
+    const core: Core<Node, typeof map> = new DefaultCore(node, map);
 
     core.init();
     expect(core.children["children"].size).toBe(2);
@@ -384,7 +384,7 @@ describe("Test DefaultCore", () => {
       },
     } as const satisfies WrapletChildrenMap;
 
-    const core: Core<typeof map> = new DefaultCore(node, map);
+    const core: Core<Node, typeof map> = new DefaultCore(node, map);
     core.init();
 
     const childElement = node.querySelector(`[${attribute}]`) as Element;
@@ -421,7 +421,7 @@ describe("Test DefaultCore", () => {
 
     const funcInstantiate = jest.fn();
     const funcDestroy = jest.fn();
-    const core: Core<typeof map> = new DefaultCore(node, map, {
+    const core: Core<Node, typeof map> = new DefaultCore(node, map, {
       instantiateChildListeners: [
         (child) => {
           funcInstantiate();

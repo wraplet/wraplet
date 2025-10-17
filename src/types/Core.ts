@@ -17,7 +17,7 @@ export { CoreSymbol };
  * Children manager interface that defines the public API for managing wraplet relationships
  * and lifecycles.
  */
-export interface Core<M extends WrapletChildrenMap = {}, N extends Node = Node>
+export interface Core<N extends Node = Node, M extends WrapletChildrenMap = {}>
   extends NodeTreeParent {
   [CoreSymbol]: true;
   [NodeTreeParentSymbol]: true;

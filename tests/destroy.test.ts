@@ -16,7 +16,7 @@ const testWrapletChildSelectorIndestructibleAttribute =
 const testWrapletChildSelectorMultipleAttribute =
   "data-test-child-selector-multiple";
 
-class TestWrapletChild extends AbstractWraplet<{}, Node> {
+class TestWrapletChild extends AbstractWraplet {
   public static counter: number = 0;
 
   destroy() {

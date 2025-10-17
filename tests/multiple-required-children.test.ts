@@ -7,7 +7,7 @@ describe("Test wraplet multiple required children", () => {
   const testWrapletSelectorAttribute = "data-test-selector";
   const testWrapletChildSelectorAttribute = `${testWrapletSelectorAttribute}-child`;
 
-  class TestWrapletChild extends AbstractWraplet<any> {}
+  class TestWrapletChild extends AbstractWraplet {}
 
   const childrenMap = {
     children: {

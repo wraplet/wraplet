@@ -12,7 +12,7 @@ import { Core } from "../src/types/Core";
 const testWrapletSelectorAttribute = "data-test-selector";
 const testWrapletChildSelectorAttribute = `${testWrapletSelectorAttribute}-child`;
 
-class TestWrapletChild extends AbstractWraplet<any> {}
+class TestWrapletChild extends AbstractWraplet {}
 
 const childrenMap = {
   child: {
@@ -382,7 +382,7 @@ it("Test wraplet syncing children", () => {
 describe("Test wraplet groupable", () => {
   const customGroupableAttribute = "data-custom-groupable";
 
-  class TestWrapletChild extends AbstractWraplet<{}, Element> {
+  class TestWrapletChild extends AbstractWraplet<Element> {
     public getValue(): string | null {
       return this.node.getAttribute("data-value");
     }
@@ -460,7 +460,7 @@ describe("Test wraplet groupable", () => {
 
 it("Test wraplet NodeTreeParent interface", () => {
   const attribute = "data-test-wraplet";
-  class TestWrapletChild extends AbstractWraplet<{}, Element> {}
+  class TestWrapletChild extends AbstractWraplet<Element> {}
 
   const map = {
     child1: {

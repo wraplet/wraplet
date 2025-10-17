@@ -84,7 +84,7 @@ it("Test default node tree manager initialize tree", () => {
 });
 
 it("Test wraplet tree manager initialization performance", () => {
-  class TestWrapletChild extends AbstractWraplet {}
+  class TestWrapletChild extends AbstractWraplet<Element> {}
 
   const map = {
     child: {
@@ -95,7 +95,7 @@ it("Test wraplet tree manager initialization performance", () => {
     },
   } as const satisfies WrapletChildrenMap;
 
-  class TestWraplet extends AbstractWraplet<typeof map> {
+  class TestWraplet extends AbstractWraplet<Node, typeof map> {
     public static create(node: ParentNode, attribute: string): TestWraplet[] {
       return TestWraplet.createWraplets(node, map, attribute);
     }
@@ -130,7 +130,7 @@ it("Test wraplet tree manager initialization performance", () => {
 });
 
 it("Test searching for wraplets in the node tree manager", () => {
-  class TestWrapletChild extends AbstractWraplet<{}, Element> {
+  class TestWrapletChild extends AbstractWraplet<Element> {
     public getValue(): string | null {
       return this.node.getAttribute("data-value");
     }
@@ -157,7 +157,7 @@ it("Test searching for wraplets in the node tree manager", () => {
     },
   } as const satisfies WrapletChildrenMap;
 
-  class TestWraplet extends AbstractWraplet<typeof map> {
+  class TestWraplet extends AbstractWraplet<Node, typeof map> {
     public static create(node: ParentNode, attribute: string): TestWraplet[] {
       return TestWraplet.createWraplets(node, map, attribute);
     }

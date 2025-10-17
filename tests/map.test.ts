@@ -18,7 +18,7 @@ describe("Test wraplet map", () => {
 
   class TestWraplet extends BaseElementTestWraplet<typeof childrenMap> {}
 
-  class TestNodeWraplet extends AbstractWraplet<typeof childrenMap> {
+  class TestNodeWraplet extends AbstractWraplet<Node, typeof childrenMap> {
     constructor(node: Node) {
       super(new DefaultCore(node, childrenMap));
     }
