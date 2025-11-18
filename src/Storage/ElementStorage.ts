@@ -121,7 +121,13 @@ export class ElementStorage<D extends Record<string, unknown>>
 
   private validateData(data: Record<string, unknown>): data is D {
     for (const key in data) {
-      if (!this.validators[key](data[key])) {
+      if (!(key in this.validators)) {
+        console.warn(`Option ${key} doesn't have a validator.`);
+        return false;
+      } else if (typeof this.validators[key] !== "function") {
+        console.warn(`Validator for option ${key} is not a function.`);
+        return false;
+      } else if (!this.validators[key](data[key])) {
         return false;
       }
     }

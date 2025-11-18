@@ -327,3 +327,76 @@ it("Test ElementStorage properly handling default empty options attribute", () =
 
   expect(func).not.toThrow(StorageValidationError);
 });
+
+it("Test ElementStorage warns and throws when option has no validator", () => {
+  const attribute = "data-test-wraplet";
+  type Options = {
+    option1: string;
+    // option2 is intentionally omitted from validators to trigger the branch
+    option2?: string;
+  };
+
+  const element = document.createElement("div");
+  element.setAttribute(
+    attribute,
+    '{"option1":"ok","option2":"missing validator"}',
+  );
+
+  const validators: Record<keyof Options, (value: unknown) => boolean> = {
+    option1: (value: unknown) => typeof value === "string",
+    // Note: no validator for option2 on purpose
+  } as any;
+
+  const warnSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
+
+  const func = () => {
+    new ElementStorage<Options>(
+      element,
+      attribute,
+      { option1: "default" },
+      validators,
+    );
+  };
+
+  expect(func).toThrow(StorageValidationError);
+  expect(warnSpy).toHaveBeenCalledWith(
+    "Option option2 doesn't have a validator.",
+  );
+
+  warnSpy.mockRestore();
+});
+
+it("Test ElementStorage warns and throws when validator is not a function", () => {
+  const attribute = "data-test-wraplet";
+  type Options = {
+    option1: string;
+    option2?: string;
+  };
+
+  const element = document.createElement("div");
+  element.setAttribute(attribute, '{"option1":"ok","option2":"bad validator"}');
+
+  const validators: Record<keyof Options, (value: unknown) => boolean> = {
+    option1: (value: unknown) => typeof value === "string",
+    // Intentionally set to a non-function to hit lines 128-129
+    option2: "not-a-function" as any,
+  } as any;
+
+  const warnSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
+
+  const func = () => {
+    new ElementStorage<Options>(
+      element,
+      attribute,
+      { option1: "default" },
+      validators as any,
+    );
+  };
+
+  expect(func).toThrow(StorageValidationError);
+  expect(warnSpy).toHaveBeenCalledWith(
+    "Validator for option option2 is not a function.",
+  );
+
+  warnSpy.mockRestore();
+});
