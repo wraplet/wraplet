@@ -55,7 +55,7 @@ export interface Core<N extends Node = Node, M extends WrapletChildrenMap = {}>
    * Initialize the core.
    * This must be called after construction to fully initialize the core.
    */
-  init(): void;
+  initialize(): Promise<void>;
 
   /**
    * Instantiate children based on the map and the current node.
@@ -82,7 +82,7 @@ export interface Core<N extends Node = Node, M extends WrapletChildrenMap = {}>
   /**
    * Destroy all children.
    */
-  destroy(): void;
+  destroy(): Promise<void>;
 
   /**
    * Add an event listener to a node and track it for cleanup.

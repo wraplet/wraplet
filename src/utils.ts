@@ -41,23 +41,23 @@ export function addWrapletToNode<N extends Node>(
   node.wraplets.add(wraplet);
 }
 
-export function actOnNodesRecursively(
+export async function actOnNodesRecursively(
   node: Node,
-  callback: (node: Node) => void,
-): void {
-  callback(node);
+  callback: (node: Node) => Promise<void>,
+): Promise<void> {
+  await callback(node);
   const children = node.childNodes;
   for (const child of children) {
-    actOnNodesRecursively(child, callback);
+    await actOnNodesRecursively(child, callback);
   }
 }
 
-export function destroyWrapletsRecursively(node: Node): void {
-  actOnNodesRecursively(node, (node) => {
+export async function destroyWrapletsRecursively(node: Node): Promise<void> {
+  await actOnNodesRecursively(node, async (node) => {
     const wraplets = getWrapletsFromNode(node);
     for (const wraplet of wraplets) {
       if (!wraplet.isGettingDestroyed && !wraplet.isDestroyed) {
-        wraplet.destroy();
+        await wraplet.destroy();
       }
       removeWrapletFromNode(wraplet, node);
     }

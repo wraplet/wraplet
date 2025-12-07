@@ -4,7 +4,12 @@ import { AbstractWraplet, WrapletChildrenMap } from "../src";
 import { BaseElementTestWraplet } from "./resources/BaseElementTestWraplet";
 import { RequiredChildDestroyedError } from "../src/errors";
 import { ChildInstance } from "../src/types/ChildInstance";
-import { Core } from "../src/types/Core";
+import { Core } from "../src";
+
+const funcCounter = jest.fn();
+beforeEach(() => {
+  funcCounter.mockClear();
+});
 
 const testWrapletSelectorAttribute = "data-test-selector";
 const testWrapletChildSelectorSingleAttribute =
@@ -15,13 +20,10 @@ const testWrapletChildSelectorIndestructibleAttribute =
   "data-test-child-indestructible";
 const testWrapletChildSelectorMultipleAttribute =
   "data-test-child-selector-multiple";
-
 class TestWrapletChild extends AbstractWraplet {
-  public static counter: number = 0;
-
-  destroy() {
-    this.constructor.prototype.constructor.counter++;
-    super.destroy();
+  async destroy() {
+    funcCounter();
+    await super.destroy();
   }
 }
 
@@ -55,7 +57,7 @@ const childrenMap = {
 
 class TestWraplet extends BaseElementTestWraplet<typeof childrenMap> {}
 
-it("Test that 'destroy' is invoked on all children", () => {
+it("Test that 'destroy' is invoked on all children", async () => {
   document.body.innerHTML = `
 <div ${testWrapletSelectorAttribute}>
     <div ${testWrapletChildSelectorSingleAttribute}  class="c1"></div>
@@ -68,14 +70,14 @@ it("Test that 'destroy' is invoked on all children", () => {
 `;
   const wraplet = TestWraplet.create(testWrapletSelectorAttribute, childrenMap);
   if (!wraplet) {
-    throw new Error("Wraplet not initialized.");
+    throw new Error("Wraplet not created.");
   }
-  wraplet.destroy();
-  expect(TestWrapletChild.counter).toEqual(5);
-  TestWrapletChild.counter = 0;
+  await wraplet.initialize();
+  await wraplet.destroy();
+  expect(funcCounter).toHaveBeenCalledTimes(5);
 });
 
-it("Test that children are removed from the nodes after being destroyed", () => {
+it("Test that children are removed from the nodes after being destroyed", async () => {
   document.body.innerHTML = `
 <div ${testWrapletSelectorAttribute}>
     <div ${testWrapletChildSelectorSingleAttribute}></div>
@@ -90,7 +92,8 @@ it("Test that children are removed from the nodes after being destroyed", () => 
   if (!wraplet) {
     throw new Error("Wraplet not initialized.");
   }
-  wraplet.destroy();
+  await wraplet.initialize();
+  await wraplet.destroy();
   const elements = document.querySelectorAll("*");
 
   for (const element of elements) {
@@ -105,7 +108,7 @@ it("Test that children are removed from the nodes after being destroyed", () => 
   }
 });
 
-it("Test that listeneres are being detached during destruction", () => {
+it("Test that listeneres are being detached during destruction", async () => {
   const listener = jest.fn();
   class TestWrapletChild extends AbstractWraplet {
     constructor(core: Core) {
@@ -141,8 +144,10 @@ it("Test that listeneres are being detached during destruction", () => {
   );
 
   if (!main) {
-    throw new Error("Wraplet not initialized.");
+    throw new Error("Wraplet not created.");
   }
+
+  await main.initialize();
 
   const child = main.getChild("child");
   if (!child) {
@@ -151,21 +156,17 @@ it("Test that listeneres are being detached during destruction", () => {
 
   const childNode = document.querySelector(`[${childAttribute}]`) as Element;
   childNode.dispatchEvent(new Event("click"));
-  main.destroy();
+  await main.destroy();
   childNode.dispatchEvent(new Event("click"));
 
   expect(listener).toHaveBeenCalledTimes(1);
 });
 
-it("Test that if the required child has been destroyed then throw exception", () => {
+it("Test that if the required child has been destroyed then throw exception", async () => {
   const mainAttribute = "data-test-main";
   const childAttribute = "data-test-child";
 
-  class TestWrapletChild extends AbstractWraplet {
-    public destroy() {
-      super.destroy();
-    }
-  }
+  class TestWrapletChild extends AbstractWraplet {}
 
   const childrenMap = {
     child: {
@@ -189,30 +190,28 @@ it("Test that if the required child has been destroyed then throw exception", ()
     childrenMap,
   );
   if (!wraplet) {
-    throw new Error("Wraplet not initialized.");
+    throw new Error("Wraplet not created.");
   }
+
+  await wraplet.initialize();
 
   const child = wraplet.getChild("child");
   if (!child) {
     throw new Error("Child not found.");
   }
 
-  expect(() => {
-    child.destroy();
-  }).toThrow(RequiredChildDestroyedError);
+  await expect(async () => {
+    await child.destroy();
+  }).rejects.toThrow(RequiredChildDestroyedError);
 });
 
-it("Destroy child listener", () => {
+it("Destroy child listener", async () => {
   const mainAttribute = "data-test-main";
   const childAttribute = "data-test-child";
 
   const func = jest.fn();
 
-  class TestWrapletChild extends AbstractWraplet {
-    public destroy() {
-      super.destroy();
-    }
-  }
+  class TestWrapletChild extends AbstractWraplet {}
 
   const childrenMap = {
     child: {
@@ -245,18 +244,20 @@ it("Destroy child listener", () => {
     childrenMap,
   );
   if (!wraplet) {
-    throw new Error("Wraplet not initialized.");
+    throw new Error("Wraplet not created.");
   }
+  await wraplet.initialize();
+
   const child = wraplet.getChild("child");
   if (!child) {
     throw new Error("Child not found.");
   }
-  child.destroy();
+  await child.destroy();
 
   expect(func).toHaveBeenCalledTimes(1);
 });
 
-it("Test isDestroyed values", () => {
+it("Test isDestroyed values", async () => {
   const mainAttribute = "data-test-main";
   const childAttribute = "data-test-child";
 
@@ -289,10 +290,11 @@ it("Test isDestroyed values", () => {
     childrenMap,
   );
   if (!wraplet) {
-    throw new Error("Wraplet not initialized.");
+    throw new Error("Wraplet not created.");
   }
+  await wraplet.initialize();
   expect(wraplet.isGettingDestroyed).toBe(false);
   expect(wraplet.isDestroyed).toBe(false);
-  wraplet.destroy();
+  await wraplet.destroy();
   expect(wraplet.isDestroyed).toBe(true);
 });

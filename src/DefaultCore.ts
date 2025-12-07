@@ -95,10 +95,19 @@ export class DefaultCore<
    * processing occurs (instantiate child listeners) that needs access to the children manager,
    * so the children manager has to exist already.
    */
-  public init() {
+  public async initialize() {
     this.isGettingInitialized = true;
     const children = this.instantiateChildren();
     this.instantiatedChildren = this.wrapChildren(children);
+
+    const childInstances: Wraplet[] = Object.values(
+      this.instantiatedChildren,
+    ).flatMap((child) => {
+      if (!child) return [];
+      return isWrapletSet(child) ? Array.from(child) : [child];
+    });
+
+    await Promise.all(childInstances.map((child) => child.initialize()));
 
     this.isInitialized = true;
     this.isGettingInitialized = false;
@@ -362,7 +371,7 @@ export class DefaultCore<
   /**
    * This method removes from nodes references to this wraplet and its children recursively.
    */
-  public destroy(): void {
+  public async destroy(): Promise<void> {
     if (this.isDestroyed) {
       throw new ChildrenAreAlreadyDestroyedError(
         "Children are already destroyed.",
@@ -379,7 +388,7 @@ export class DefaultCore<
       node.removeEventListener(eventName, callback, options);
     }
 
-    this.destroyChildren();
+    await this.destroyChildren();
 
     this.isGettingDestroyed = false;
     this.isDestroyed = true;
@@ -524,17 +533,17 @@ export class DefaultCore<
     }
   }
 
-  private destroyChildren(): void {
+  private async destroyChildren(): Promise<void> {
     for (const [key, child] of Object.entries(this.children)) {
       if (!child || !this.map[key]["destructible"]) {
         continue;
       }
       if (isWrapletSet(child)) {
         for (const item of child) {
-          item.destroy();
+          await item.destroy();
         }
       } else {
-        child.destroy();
+        await child.destroy();
       }
     }
   }

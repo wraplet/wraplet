@@ -11,7 +11,8 @@ export interface Wraplet<N extends Node = Node> {
   isDestroyed: boolean;
   isGettingDestroyed: boolean;
   accessNode(callback: (node: N) => void): void;
-  destroy(): void;
+  destroy(): Promise<void>;
+  initialize(): Promise<void>;
   addDestroyListener(callback: DestroyListener<N>): void;
 }
 

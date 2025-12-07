@@ -1,5 +1,13 @@
 import "./setup";
-import { DefaultWrapletSet, getWrapletsFromNode, Wraplet } from "../src";
+import {
+  AbstractWraplet,
+  DefaultCore,
+  DefaultWrapletSet,
+  destroyWrapletsRecursively,
+  getWrapletsFromNode,
+  Wraplet,
+  WrapletSet,
+} from "../src";
 import { addWrapletToNode, removeWrapletFromNode } from "../src/utils";
 
 it("Test removing and adding wraplets to nodes", () => {
@@ -21,4 +29,51 @@ it("Test removing and adding wraplets to nodes", () => {
   removeWrapletFromNode(mock, node);
 
   expect(wraplets.size).toBe(0);
+});
+
+it("addWrapletToNode", () => {
+  const element = document.createElement("div");
+  class TestWraplet extends AbstractWraplet {}
+
+  const core = new DefaultCore(element, {});
+  const wraplet = new TestWraplet(core);
+
+  addWrapletToNode(wraplet, element);
+
+  expect(element.wraplets).toBeInstanceOf(DefaultWrapletSet);
+
+  // Make sure that wraplet has been added only once.
+  addWrapletToNode(wraplet, element);
+  expect((element.wraplets as WrapletSet).size).toBe(1);
+  expect((element.wraplets as WrapletSet).has(wraplet)).toBe(true);
+});
+
+it("destroyWrapletsRecursively", async () => {
+  const element = document.createElement("div");
+
+  const counter = jest.fn();
+
+  class TestWraplet extends AbstractWraplet {
+    async destroy() {
+      counter();
+      await super.destroy();
+    }
+  }
+
+  const core = new DefaultCore(element, {});
+  const wraplet = new TestWraplet(core);
+
+  addWrapletToNode(wraplet, element);
+
+  expect((element.wraplets as WrapletSet).size).toBe(1);
+  await destroyWrapletsRecursively(element);
+  expect((element.wraplets as WrapletSet).size).toBe(0);
+  expect(counter).toHaveBeenCalledTimes(1);
+
+  // Re-add an already destroyed wraplet to the node.
+  addWrapletToNode(wraplet, element);
+
+  // Now destruction should not be invoked, so the counter shouldn't change.
+  await destroyWrapletsRecursively(element);
+  expect(counter).toHaveBeenCalledTimes(1);
 });

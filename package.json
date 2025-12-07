@@ -32,7 +32,7 @@
     "dev:watch": "tsx ./node_modules/.bin/webpack --mode development --watch --config ./webpack.config.ts",
     "lint": "tsc --noemit && npx eslint './src/**/*.ts' './tests/**/*.ts'",
     "lint:fix": "npx eslint './src/**/*.ts' './tests/**/*.ts' --fix",
-    "tests": "jest --coverage"
+    "tests": "node --unhandled-rejections=throw node_modules/.bin/jest --coverage --detectOpenHandles"
   },
   "dependencies": {},
   "devDependencies": {

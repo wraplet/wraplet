@@ -23,7 +23,7 @@ describe("Test wraplet single optional child", () => {
 
   class TestWraplet extends BaseElementTestWraplet<typeof childrenMap> {}
 
-  it("Test wraplet optional single child initialization", () => {
+  it("Test wraplet optional single child initialization", async () => {
     document.body.innerHTML = `<div ${testWrapletSelectorAttribute}><div ${testWrapletChildSelectorAttribute}></div></div>`;
     const wraplet = TestWraplet.create(
       testWrapletSelectorAttribute,
@@ -32,10 +32,11 @@ describe("Test wraplet single optional child", () => {
     if (!wraplet) {
       throw Error("Wraplet not initialized.");
     }
+    await wraplet.initialize();
     expect(wraplet.getChild("child")).toBeInstanceOf(TestWrapletChild);
   });
 
-  it("Test wraplet child has element", () => {
+  it("Test wraplet child has element", async () => {
     document.body.innerHTML = `<div ${testWrapletSelectorAttribute}><div ${testWrapletChildSelectorAttribute}></div></div>`;
     const wraplet = TestWraplet.create<typeof childrenMap, TestWraplet>(
       testWrapletSelectorAttribute,
@@ -44,6 +45,7 @@ describe("Test wraplet single optional child", () => {
     if (!wraplet) {
       throw Error("Wraplet not initialized.");
     }
+    await wraplet.initialize();
     expect(wraplet.getChild("child")?.hasElement()).toBeTruthy();
   });
 });

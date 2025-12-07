@@ -21,7 +21,7 @@ describe("Test wraplet multiple optional children", () => {
 
   // TESTS START HERE
 
-  it("Test wraplet optional children initialization empty children", () => {
+  it("Test wraplet optional children initialization empty children", async () => {
     document.body.innerHTML = `<div ${testWrapletSelectorAttribute}></div>`;
 
     const wraplet = TestWraplet.create<typeof childrenMap, TestWraplet>(
@@ -31,11 +31,12 @@ describe("Test wraplet multiple optional children", () => {
     if (!wraplet) {
       throw new Error("Wraplet not initialized.");
     }
+    await wraplet.initialize();
     const children = wraplet.getChild("children");
     expect(children.size).toBe(0);
   });
 
-  it("Test wraplet optional children initialization", () => {
+  it("Test wraplet optional children initialization", async () => {
     document.body.innerHTML = `<div ${testWrapletSelectorAttribute}><div ${testWrapletChildSelectorAttribute}></div><div ${testWrapletChildSelectorAttribute}></div></div>`;
 
     const wraplet = TestWraplet.create<typeof childrenMap, TestWraplet>(
@@ -45,6 +46,7 @@ describe("Test wraplet multiple optional children", () => {
     if (!wraplet) {
       throw new Error("Wraplet not initialized.");
     }
+    await wraplet.initialize();
     const children = wraplet.getChild("children");
     expect(children.size).toBe(2);
   });

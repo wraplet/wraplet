@@ -22,15 +22,22 @@ describe("Test wraplet multiple required children", () => {
 
   // TESTS START HERE
 
-  it("Test wraplet required children initialization empty children", () => {
+  it("Test wraplet required children initialization empty children", async () => {
     document.body.innerHTML = `<div ${testWrapletSelectorAttribute}></div>`;
-    const getWraplet = () => {
-      TestWraplet.create(testWrapletSelectorAttribute, childrenMap);
+    const getWraplet = async () => {
+      const wraplet = TestWraplet.create(
+        testWrapletSelectorAttribute,
+        childrenMap,
+      );
+      if (!wraplet) {
+        throw new Error("Wraplet not created.");
+      }
+      await wraplet.initialize();
     };
-    expect(getWraplet).toThrow(MissingRequiredChildError);
+    await expect(getWraplet).rejects.toThrow(MissingRequiredChildError);
   });
 
-  it("Test wraplet required children initialization", () => {
+  it("Test wraplet required children initialization", async () => {
     document.body.innerHTML = `<div ${testWrapletSelectorAttribute}><div ${testWrapletChildSelectorAttribute}></div><div ${testWrapletChildSelectorAttribute}></div></div>`;
 
     const wraplet = TestWraplet.create<typeof childrenMap, TestWraplet>(
@@ -40,6 +47,7 @@ describe("Test wraplet multiple required children", () => {
     if (!wraplet) {
       throw new Error("Wraplet not initialized.");
     }
+    await wraplet.initialize();
     const children = wraplet.getChild("children");
     expect(children.size).toBe(2);
   });

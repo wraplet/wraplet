@@ -26,19 +26,27 @@ describe("Test wraplet map", () => {
 
   // TESTS START HERE
 
-  it("Test that 'required' and missing selector are mutually exclusive", () => {
+  it("Test that 'required' and missing selector are mutually exclusive", async () => {
     document.body.innerHTML = `<div ${testWrapletSelectorAttribute}></div>`;
-    const createWraplet = () => {
-      TestWraplet.create(testWrapletSelectorAttribute, childrenMap);
+    const createWraplet = async () => {
+      const wraplet = TestWraplet.create(
+        testWrapletSelectorAttribute,
+        childrenMap,
+      );
+      if (!wraplet) {
+        throw new Error("Wraplet not created.");
+      }
+      await wraplet.initialize();
     };
-    expect(createWraplet).toThrow(MapError);
+    await expect(createWraplet()).rejects.toThrow(MapError);
   });
 
-  it("Test that map has to be empty if wrapped node cannot have children", () => {
+  it("Test that map has to be empty if wrapped node cannot have children", async () => {
     const textNode = document.createTextNode("test");
-    const createNodeWraplet = () => {
-      new TestNodeWraplet(textNode);
+    const createNodeWraplet = async () => {
+      const wraplet = new TestNodeWraplet(textNode);
+      await wraplet.initialize();
     };
-    expect(createNodeWraplet).toThrow(MapError);
+    await expect(createNodeWraplet()).rejects.toThrow(MapError);
   });
 });

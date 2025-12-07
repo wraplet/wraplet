@@ -52,8 +52,6 @@ export abstract class AbstractWraplet<
 
     core.addDestroyChildListener(this.onChildDestroyed.bind(this));
     core.addInstantiateChildListener(this.onChildInstantiated.bind(this));
-
-    this.initialize();
   }
 
   public getNodeTreeChildren(): Wraplet[] {
@@ -77,13 +75,35 @@ export abstract class AbstractWraplet<
     callback(this.node);
   }
 
-  public destroy() {
-    this.isGettingDestroyed = true;
-    for (const listener of this.destroyListeners) {
-      listener(this);
+  public async destroy() {
+    if (this.isDestroyed) {
+      // We are already destroyed.
+      return;
     }
+
+    this.isGettingDestroyed = true;
+    if (this.isGettingInitialized) {
+      // If we are still initializing, then postpone destruction until after
+      // initialization is finished.
+      // We are leaving this method, but with `isGettingDestroyed` set to true, so
+      // the initialization process will know to return here after it will finish.
+      return;
+    }
+
+    if (!this.isInitialized) {
+      // If we are not initialized, then we have nothing to do here.
+      this.isDestroyed = true;
+      this.isGettingDestroyed = false;
+      return;
+    }
+
+    for (const listener of this.destroyListeners) {
+      await listener(this);
+    }
+
     this.destroyListeners.length = 0;
-    this.core.destroy();
+
+    await this.core.destroy();
     this.isDestroyed = true;
     this.isGettingDestroyed = false;
   }
@@ -98,11 +118,17 @@ export abstract class AbstractWraplet<
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   protected onChildDestroyed(child: ChildInstance<M, keyof M>, id: keyof M) {}
 
-  protected initialize(): void {
+  public async initialize(): Promise<void> {
     this.isGettingInitialized = true;
-    this.core.init();
+    await this.core.initialize();
     this.isInitialized = true;
     this.isGettingInitialized = false;
+
+    // If destruction has been invoked in the meantime, we can finally do it, when initialization
+    // is finished.
+    if (this.isGettingDestroyed) {
+      await this.destroy();
+    }
   }
 
   protected get node(): N {

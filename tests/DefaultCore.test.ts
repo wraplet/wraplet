@@ -12,9 +12,8 @@ import {
 } from "../src/errors";
 import { Core } from "../src";
 import { DestroyListener } from "../src/types/DestroyListener";
-import { addWrapletToNode } from "../src/utils";
 import { WrapletSymbol } from "../src/types/Wraplet";
-import { WrapletCreator } from "../src/types/WrapletCreator";
+import { WrapletCreator } from "../src";
 
 describe("Test DefaultCore", () => {
   class TestWrapletClass implements Wraplet {
@@ -26,9 +25,7 @@ describe("Test DefaultCore", () => {
 
     private destroyListeners: DestroyListener<Node>[] = [];
 
-    constructor(private core: Core) {
-      addWrapletToNode(this, core.node);
-    }
+    constructor(private core: Core) {}
 
     accessNode(callback: (node: Node) => void): void {
       callback(this.core.node);
@@ -38,11 +35,16 @@ describe("Test DefaultCore", () => {
       this.destroyListeners.push(callback);
     }
 
-    destroy(): void {
+    async destroy() {
       for (const listener of this.destroyListeners) {
-        listener(this);
+        await listener(this);
       }
       this.isDestroyed = true;
+    }
+
+    async initialize() {
+      await this.core.initialize();
+      this.isInitialized = true;
     }
   }
 
@@ -73,7 +75,7 @@ describe("Test DefaultCore", () => {
     expect(func2).not.toThrow(MapError);
   });
 
-  it("Test DefaultCore internal error children expected a wraplet set", () => {
+  it("Test DefaultCore internal error children expected a wraplet set", async () => {
     const node = document.createElement("div");
     node.innerHTML = `
   <div data-something></div>
@@ -91,8 +93,8 @@ describe("Test DefaultCore", () => {
 
     const core: Core<Node, typeof map> = new DefaultCore(node, map);
 
-    const func = () => {
-      core.init();
+    const func = async () => {
+      await core.initialize();
       // For an unexplained reason "children" child turned out to be not an array.
       (core.children as any)["children"] = {
         isDestroyed: () => false,
@@ -100,10 +102,12 @@ describe("Test DefaultCore", () => {
       core.syncChildren();
     };
 
-    expect(func).toThrow("Internal logic error. Expected a WrapletSet.");
+    await expect(func).rejects.toThrow(
+      "Internal logic error. Expected a WrapletSet.",
+    );
   });
 
-  it("Test DefaultCore child without selector", () => {
+  it("Test DefaultCore child without selector", async () => {
     const node = document.createElement("div");
     node.innerHTML = "<div></div>";
 
@@ -117,15 +121,15 @@ describe("Test DefaultCore", () => {
 
     const core: Core<Node, typeof map> = new DefaultCore(node, map);
 
-    const func = () => {
-      core.init();
+    const func = async () => {
+      await core.initialize();
     };
 
-    expect(func).not.toThrow();
+    await expect(func).resolves.not.toThrow();
     expect(core.children["children"]).toBeNull();
   });
 
-  it("Test DefaultCore too many elements found", () => {
+  it("Test DefaultCore too many elements found", async () => {
     const node = document.createElement("div");
     node.innerHTML = "<div data-something></div><div data-something></div>";
 
@@ -140,14 +144,14 @@ describe("Test DefaultCore", () => {
 
     const core: Core<Node, typeof map> = new DefaultCore(node, map);
 
-    const func = () => {
-      core.init();
+    const func = async () => {
+      await core.initialize();
     };
 
-    expect(func).toThrow(ChildrenTooManyFoundError);
+    await expect(func).rejects.toThrow(ChildrenTooManyFoundError);
   });
 
-  it("Test DefaultCore multiple without selector", () => {
+  it("Test DefaultCore multiple without selector", async () => {
     const node = document.createElement("div");
     node.innerHTML = "<div data-something></div><div data-something></div>";
 
@@ -161,11 +165,11 @@ describe("Test DefaultCore", () => {
 
     const core: Core<Node, typeof map> = new DefaultCore(node, map);
 
-    core.init();
+    await core.initialize();
     expect(core.children["children"]).toBeInstanceOf(DefaultWrapletSet);
   });
 
-  it("Test DefaultCore destroy children listeners", () => {
+  it("Test DefaultCore destroy children listeners", async () => {
     const node = document.createElement("div");
     node.innerHTML =
       "<div data-children></div><div data-children><div data-child></div>";
@@ -192,10 +196,10 @@ describe("Test DefaultCore", () => {
       func();
     });
 
-    core.init();
+    await core.initialize();
 
     for (const child of core.children.children.values()) {
-      child.destroy();
+      await child.destroy();
     }
 
     core.children.child?.destroy();
@@ -203,7 +207,7 @@ describe("Test DefaultCore", () => {
     expect(func).toHaveBeenCalledTimes(3);
   });
 
-  it("Test DefaultCore instantiate children listeners", () => {
+  it("Test DefaultCore instantiate children listeners", async () => {
     const node = document.createElement("div");
     node.innerHTML = "<div data-children></div><div data-children></div>";
 
@@ -229,7 +233,7 @@ describe("Test DefaultCore", () => {
       func();
     });
 
-    core.init();
+    await core.initialize();
     expect(func).toHaveBeenCalledTimes(2);
     const newChildrenItem = document.createElement("div");
     newChildrenItem.setAttribute("data-children", "");
@@ -245,7 +249,7 @@ describe("Test DefaultCore", () => {
     expect(func).toHaveBeenCalledTimes(4);
   });
 
-  it("Test DefaultCore cannot be destroyed twice", () => {
+  it("Test DefaultCore cannot be destroyed twice", async () => {
     const node = document.createElement("div");
     node.innerHTML =
       "<div data-children></div><div data-children></div><div data-child></div>";
@@ -267,17 +271,17 @@ describe("Test DefaultCore", () => {
 
     const core: Core<Node, typeof map> = new DefaultCore(node, map);
 
-    core.init();
+    await core.initialize();
 
-    const func = () => {
-      core.destroy();
-      core.destroy();
+    const func = async () => {
+      await core.destroy();
+      await core.destroy();
     };
 
-    expect(func).toThrow(ChildrenAreAlreadyDestroyedError);
+    await expect(func).rejects.toThrow(ChildrenAreAlreadyDestroyedError);
   });
 
-  it("Test DefaultCore child disappeared from parent before being destroyed", () => {
+  it("Test DefaultCore child disappeared from parent before being destroyed", async () => {
     const node = document.createElement("div");
     node.innerHTML =
       "<div data-children></div><div data-children></div><div data-child></div>";
@@ -299,16 +303,16 @@ describe("Test DefaultCore", () => {
 
     const core: Core<Node, typeof map> = new DefaultCore(node, map);
 
-    core.init();
+    await core.initialize();
 
     const child = core.children["child"];
     (core.children as any)["child"] = null;
 
-    const func1 = () => {
-      child?.destroy();
+    const func1 = async () => {
+      await child?.destroy();
     };
 
-    expect(func1).toThrow(
+    await expect(func1).rejects.toThrow(
       "Internal logic error. Destroyed child couldn't be removed because it's already null.",
     );
 
@@ -320,23 +324,23 @@ describe("Test DefaultCore", () => {
     const childrenItem = Array.from(childrenItems)[0];
     childrenItems.delete(childrenItem);
 
-    const func2 = () => {
-      childrenItem?.destroy();
+    const func2 = async () => {
+      await childrenItem?.destroy();
     };
 
-    expect(func2).toThrow(
+    await expect(func2).rejects.toThrow(
       "Internal logic error. Destroyed child couldn't be removed because it's not among the children.",
     );
   });
 
-  it("Test DefaultCore user accessing non-existing children", () => {
+  it("Test DefaultCore user accessing non-existing children", async () => {
     const node = document.createElement("div");
 
     const map = {} as const satisfies WrapletChildrenMap;
 
     const core: Core<Node, typeof map> = new DefaultCore(node, map);
 
-    core.init();
+    await core.initialize();
 
     const func = () => {
       // eslint-disable-next-line @typescript-eslint/no-unused-expressions
@@ -346,7 +350,7 @@ describe("Test DefaultCore", () => {
     expect(func).toThrow("Child 'child' has not been found.");
   });
 
-  it("Test DefaultCore with selector callback", () => {
+  it("Test DefaultCore with selector callback", async () => {
     const attribute = "data-test-selector";
     const node = document.createElement("div");
     node.innerHTML = `<div ${attribute}></div><div ${attribute}></div>`;
@@ -364,11 +368,11 @@ describe("Test DefaultCore", () => {
 
     const core: Core<Node, typeof map> = new DefaultCore(node, map);
 
-    core.init();
+    await core.initialize();
     expect(core.children["children"].size).toBe(2);
   });
 
-  it("Test DefaultCore multiple instances wrapping the same element error", () => {
+  it("Test DefaultCore multiple instances wrapping the same element error", async () => {
     const attribute = "data-test-selector";
     const node = document.createElement("div");
     node.innerHTML = `<div ${attribute}></div>`;
@@ -385,7 +389,7 @@ describe("Test DefaultCore", () => {
     } as const satisfies WrapletChildrenMap;
 
     const core: Core<Node, typeof map> = new DefaultCore(node, map);
-    core.init();
+    await core.initialize();
 
     const childElement = node.querySelector(`[${attribute}]`) as Element;
 
@@ -403,7 +407,7 @@ describe("Test DefaultCore", () => {
     );
   });
 
-  it("Test DefaultCore initOptions", () => {
+  it("Test DefaultCore initOptions", async () => {
     const attribute = "data-test-selector";
     const node = document.createElement("div");
     node.innerHTML = `<div ${attribute}></div>`;
@@ -435,9 +439,9 @@ describe("Test DefaultCore", () => {
         },
       ],
     });
-    core.init();
+    await core.initialize();
 
-    core.destroy();
+    await core.destroy();
 
     expect(funcInstantiate).toHaveBeenCalledTimes(1);
     expect(funcDestroy).toHaveBeenCalledTimes(1);
@@ -453,7 +457,7 @@ describe("Test DefaultCore", () => {
     expect(func).toThrow("The map provided to the Core is not a valid map.");
   });
 
-  it("Test DefaultCore custom wraplet creator", () => {
+  it("Test DefaultCore custom wraplet creator", async () => {
     const attributeChildren = "data-test-wraplet-children";
     const attributeChild = "data-test-wraplet-child";
 
@@ -486,16 +490,16 @@ describe("Test DefaultCore", () => {
 
     const func = jest.fn();
 
-    const creator: WrapletCreator<HTMLDivElement, typeof map> = (args) => {
+    const creator: WrapletCreator<HTMLDivElement, {}> = (args) => {
       expect(["child", "children"]).toContain(args.id);
       func();
-      const core = new DefaultCore(args.element, map, args.initOptions);
+      const core = new DefaultCore(args.element, {}, args.initOptions);
       return new args.Class(core, ...args.args);
     };
 
     core.setWrapletCreator(creator);
 
-    core.init();
+    await core.initialize();
 
     expect(core.children.child).toBeInstanceOf(TestWrapletClass);
     expect(core.children.children.size).toBe(1);

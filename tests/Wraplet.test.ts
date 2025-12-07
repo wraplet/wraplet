@@ -27,7 +27,9 @@ it("Test isWraplet", () => {
 
     public addDestroyListener(): void {}
 
-    public destroy(): void {}
+    public async destroy() {}
+
+    public async initialize() {}
   }
 
   const wraplet = new WrapletClass();
@@ -36,7 +38,7 @@ it("Test isWraplet", () => {
 });
 
 describe("Test recursive wraplets", () => {
-  it("Test directly recursive wraplets", () => {
+  it("Test directly recursive wraplets", async () => {
     const attribute = "data-item";
     const childAttribute = `${attribute}-child`;
 
@@ -83,6 +85,7 @@ describe("Test recursive wraplets", () => {
     if (!wraplet) {
       throw new Error("Wraplet not created.");
     }
+    await wraplet.initialize();
     const func = jest.fn();
 
     let child = wraplet.getChild("child");
@@ -100,7 +103,7 @@ describe("Test recursive wraplets", () => {
     expect(func).toHaveBeenCalledTimes(4);
   });
 
-  it("Test two-level recursive wraplets", () => {
+  it("Test two-level recursive wraplets", async () => {
     const attribute = "data-item";
     const childAttribute = `${attribute}-child`;
 
@@ -198,6 +201,8 @@ describe("Test recursive wraplets", () => {
     if (!parent1) {
       throw new Error("Wraplet not created.");
     }
+
+    await parent1.initialize();
 
     const child1 = getChild(parent1);
     const parent2 = getParent(child1);

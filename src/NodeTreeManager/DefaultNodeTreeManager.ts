@@ -6,7 +6,7 @@ import { WrapletSetReadonly } from "../types/Set/WrapletSetReadonly";
 import { DefaultWrapletSet } from "../Set/DefaultWrapletSet";
 import { isNodeTreeParent } from "../types/NodeTreeParent";
 
-export type Initializer = (node: Node) => Wraplet[];
+export type Initializer = (node: Node) => Promise<Wraplet[]>;
 
 export default class DefaultNodeTreeManager implements NodeTreeManager {
   private initializers: Initializer[] = [];
@@ -16,9 +16,9 @@ export default class DefaultNodeTreeManager implements NodeTreeManager {
     this.initializers.push(callback);
   }
 
-  public initializeNodeTree(node: Node): void {
+  public async initializeNodeTree(node: Node): Promise<void> {
     for (const initializer of this.initializers) {
-      const wraplets = initializer(node);
+      const wraplets = await initializer(node);
       for (const wraplet of wraplets) {
         wraplet.accessNode((wrapletsNode) => {
           addWrapletToNode(wraplet, wrapletsNode);
@@ -33,15 +33,15 @@ export default class DefaultNodeTreeManager implements NodeTreeManager {
             this.items.add(child);
           }
         }
-        wraplet.addDestroyListener((wraplet) => {
+        wraplet.addDestroyListener(async (wraplet) => {
           this.items.delete(wraplet);
         });
       }
     }
   }
 
-  public destroyNodeTree(node: Node): void {
-    destroyWrapletsRecursively(node);
+  public async destroyNodeTree(node: Node): Promise<void> {
+    await destroyWrapletsRecursively(node);
   }
 
   public getSet(): WrapletSetReadonly {
