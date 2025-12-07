@@ -5,7 +5,6 @@ const WrapletSetReadonlySymbol = Symbol("WrapletSetReadonly");
 export { WrapletSetReadonlySymbol };
 
 export interface WrapletSetReadonly<T extends Wraplet = Wraplet>
-  extends BaseSet<T>,
-    ReadonlySet<T> {
+  extends BaseSet<T>, ReadonlySet<T> {
   [WrapletSetReadonlySymbol]: true;
 }

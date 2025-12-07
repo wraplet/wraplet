@@ -42,8 +42,7 @@ type ListenerData = {
 export class DefaultCore<
   N extends Node = Node,
   M extends WrapletChildrenMap = {},
-> implements Core<N, M>
-{
+> implements Core<N, M> {
   public [CoreSymbol]: true = true;
   public [NodeTreeParentSymbol]: true = true;
   public isDestroyed: boolean = false;

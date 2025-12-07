@@ -14,9 +14,9 @@ import { Core, isCore } from "./types/Core";
 import { DefaultCore } from "./DefaultCore";
 
 export abstract class AbstractWraplet<
-    N extends Node = Node,
-    M extends WrapletChildrenMap = {},
-  >
+  N extends Node = Node,
+  M extends WrapletChildrenMap = {},
+>
   implements Wraplet<N>, Groupable, NodeTreeParent
 {
   public [WrapletSymbol]: true = true;

@@ -8,9 +8,9 @@ export type ElementStorageOptions<D extends Record<string, unknown>> = {
   elementOptionsMerger: ElementOptionsMerger<D>;
 };
 
-export class ElementStorage<D extends Record<string, unknown>>
-  implements Storage<D>
-{
+export class ElementStorage<
+  D extends Record<string, unknown>,
+> implements Storage<D> {
   private data;
   private options: ElementStorageOptions<D>;
 

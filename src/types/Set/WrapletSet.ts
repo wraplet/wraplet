@@ -6,8 +6,7 @@ const WrapletSetSymbol = Symbol("WrapletSet");
 export { WrapletSetSymbol };
 
 export interface WrapletSet<W extends Wraplet = Wraplet>
-  extends BaseSet<W>,
-    Set<W> {
+  extends BaseSet<W>, Set<W> {
   [WrapletSetSymbol]: true;
 }
 
