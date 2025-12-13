@@ -1,6 +1,6 @@
-import { Wraplet } from "../Wraplet";
+import { Wraplet } from "../../types/Wraplet";
 import { BaseSet } from "./BaseSet";
-import { is } from "../Utils";
+import { is } from "../../types/Utils";
 
 const WrapletSetSymbol = Symbol("WrapletSet");
 export { WrapletSetSymbol };

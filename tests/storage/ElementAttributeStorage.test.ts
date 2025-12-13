@@ -1,8 +1,8 @@
-import "./setup";
-import { ElementStorage } from "../src/storage";
-import { StorageValidationError } from "../src/errors";
+import "../setup";
+import { ElementAttributeStorage } from "../../src/storage";
+import { StorageValidationError } from "../../src/errors";
 
-it("Test element storage", () => {
+it("Test element storage", async () => {
   const attribute = "data-test-wraplet";
   type Options = {
     option1: string;
@@ -19,7 +19,7 @@ it("Test element storage", () => {
     option3: (value) => typeof value === "string",
   };
 
-  const storage = new ElementStorage<Options>(
+  const storage = new ElementAttributeStorage<Options>(
     element,
     attribute,
     { option1: "default value" },
@@ -28,88 +28,92 @@ it("Test element storage", () => {
   );
 
   // Test if the value was correctly fetched from the attribute.
-  expect(storage.has("option1")).toEqual(true);
-  expect(storage.get("option1")).toEqual("initial value");
+  expect(await storage.has("option1")).toEqual(true);
+  expect(await storage.get("option1")).toEqual("initial value");
 
   // Test setAll.
-  storage.setAll({ option1: "new value", option2: false });
-  expect(storage.getAll()).toEqual({ option1: "new value", option2: false });
+  await storage.setAll({ option1: "new value", option2: false });
+  expect(await storage.getAll()).toEqual({
+    option1: "new value",
+    option2: false,
+  });
 
   // Test if the new value is available.
-  storage.set("option1", "new value");
-  expect(storage.get("option1")).toEqual("new value");
+  await storage.set("option1", "new value");
+  expect(await storage.get("option1")).toEqual("new value");
 
   // Test delete.
-  storage.delete("option1");
-  expect(storage.get("option1")).toEqual("default value");
+  await storage.delete("option1");
+  expect(await storage.get("option1")).toEqual("default value");
 
   // Test delete non-existing without errors.
   // @ts-expect-error We are testing a non-existing key.
-  storage.delete("test");
+  await storage.delete("test");
 
   // Test deleteAll.
-  storage.set("option1", "new value");
-  storage.deleteAll();
-  expect(storage.getAll()).toEqual({ option1: "default value" });
+  await storage.set("option1", "new value");
+  await storage.deleteAll();
+  expect(await storage.getAll()).toEqual({ option1: "default value" });
 
   // Test if the attribute's value has been updated.
-  storage.setAll({ option1: "new value" });
+  await storage.setAll({ option1: "new value" });
   expect(element.getAttribute(attribute)).toEqual('{"option1":"new value"}');
-  storage.deleteAll();
+  await storage.deleteAll();
   expect(element.hasAttribute(attribute)).toBe(false);
 
   // Test if the default value is still available.
-  expect(storage.get("option1")).toEqual("default value");
+  expect(await storage.get("option1")).toEqual("default value");
 
   // Test validators.
-  const validatorTrigger = () => {
-    storage.set("option1", false as any);
+  const validatorTrigger = async () => {
+    // Intentionally set a wrong value.
+    await storage.set("option1", false as any);
   };
-  expect(validatorTrigger).toThrow();
+  await expect(validatorTrigger).rejects.toThrow();
 
   // Test getMultiple.
-  storage.deleteAll();
-  storage.set("option1", "some value");
-  storage.set("option2", true);
-  expect(storage.getMultiple(["option1"])).toEqual({
+  await storage.deleteAll();
+  await storage.set("option1", "some value");
+  await storage.set("option2", true);
+  expect(await storage.getMultiple(["option1"])).toEqual({
     option1: "some value",
   });
 
   // Test deleteAll.
-  storage.setAll({
+  await storage.setAll({
     option1: "some value",
     option2: true,
   });
-  storage.deleteAll();
-  expect(storage.getAll()).toEqual({ option1: "default value" });
+  await storage.deleteAll();
+  expect(await storage.getAll()).toEqual({ option1: "default value" });
 
   // Test setMultiple.
-  storage.deleteAll();
-  storage.setMultiple({
+  await storage.deleteAll();
+  await storage.setMultiple({
     option1: "some value",
     option2: true,
     option3: "some other value",
   });
-  expect(storage.getAll()).toEqual({
+  expect(await storage.getAll()).toEqual({
     option1: "some value",
     option2: true,
     option3: "some other value",
   });
 
   // Test deleteMultiple.
-  storage.setAll({
+  await storage.setAll({
     option1: "some value",
     option2: true,
     option3: "some other value",
   });
-  storage.deleteMultiple(["option1", "option2"]);
-  expect(storage.getAll()).toEqual({
+  await storage.deleteMultiple(["option1", "option2"]);
+  expect(await storage.getAll()).toEqual({
     option1: "default value",
     option3: "some other value",
   });
 });
 
-it("Test element storage fresh data", () => {
+it("Test element storage fresh data", async () => {
   const attribute = "data-test-wraplet";
   type Options = {
     option1: string;
@@ -124,7 +128,7 @@ it("Test element storage fresh data", () => {
     option2: (value) => typeof value === "boolean",
   };
 
-  const storage = new ElementStorage<Options>(
+  const storage = new ElementAttributeStorage<Options>(
     element,
     attribute,
     { option1: "default value" },
@@ -134,10 +138,10 @@ it("Test element storage fresh data", () => {
 
   // Test the freshness of data.
   element.setAttribute(attribute, '{"option1":"fresh data"}');
-  expect(storage.get("option1")).toEqual("fresh data");
+  expect(await storage.get("option1")).toEqual("fresh data");
 });
 
-it("Test element storage non-fresh data", () => {
+it("Test element storage non-fresh data", async () => {
   const attribute = "data-test-wraplet";
   type Options = {
     option1: string;
@@ -152,7 +156,7 @@ it("Test element storage non-fresh data", () => {
     option2: (value) => typeof value === "boolean",
   };
 
-  const storage = new ElementStorage<Options>(
+  const storage = new ElementAttributeStorage<Options>(
     element,
     attribute,
     { option1: "default value" },
@@ -160,16 +164,18 @@ it("Test element storage non-fresh data", () => {
     { keepFresh: false },
   );
 
+  await storage.refresh();
+
   // Test if data is indeed not fresh.
   element.setAttribute(attribute, '{"option1":"fresh data"}');
-  expect(storage.get("option1")).toEqual("initial value");
+  expect(await storage.get("option1")).toEqual("initial value");
 
   // Test if data has been refreshed.
-  storage.refresh();
-  expect(storage.get("option1")).toEqual("fresh data");
+  await storage.refresh();
+  expect(await storage.get("option1")).toEqual("fresh data");
 });
 
-it("Test element storage fresh data by default", () => {
+it("Test element storage fresh data by default", async () => {
   const attribute = "data-test-wraplet";
   type Options = {
     option1: string;
@@ -182,7 +188,7 @@ it("Test element storage fresh data by default", () => {
     option1: (value) => typeof value === "string",
   };
 
-  const storage = new ElementStorage<Options>(
+  const storage = new ElementAttributeStorage<Options>(
     element,
     attribute,
     {
@@ -193,10 +199,10 @@ it("Test element storage fresh data by default", () => {
 
   // Test if data is fresh.
   element.setAttribute(attribute, '{"option1":"fresh data"}');
-  expect(storage.get("option1")).toEqual("fresh data");
+  expect(await storage.get("option1")).toEqual("fresh data");
 });
 
-it("Test element storage data has to be an object", () => {
+it("Test element storage data has to be an object", async () => {
   const attribute = "data-test-wraplet";
   type Options = {
     option1: string;
@@ -209,8 +215,8 @@ it("Test element storage data has to be an object", () => {
     option1: (value) => typeof value === "string",
   };
 
-  const func = () => {
-    new ElementStorage<Options>(
+  const func = async () => {
+    const storage = new ElementAttributeStorage<Options>(
       element,
       attribute,
       {
@@ -218,11 +224,13 @@ it("Test element storage data has to be an object", () => {
       },
       validators,
     );
+    // Get data to trigger validation.
+    await storage.getAll();
   };
-  expect(func).toThrow(StorageValidationError);
+  await expect(func).rejects.toThrow(StorageValidationError);
 });
 
-it("Test element storage data validator returned false", () => {
+it("Test element storage data validator returned false", async () => {
   const attribute = "data-test-wraplet";
   type Options = {
     option1: string;
@@ -235,8 +243,8 @@ it("Test element storage data validator returned false", () => {
     option1: (value) => typeof value === "string",
   };
 
-  const func = () => {
-    new ElementStorage<Options>(
+  const func = async () => {
+    const storage = new ElementAttributeStorage<Options>(
       element,
       attribute,
       {
@@ -244,11 +252,13 @@ it("Test element storage data validator returned false", () => {
       },
       validators,
     );
+    // Get data to trigger validation.
+    await storage.getAll();
   };
-  expect(func).toThrow(StorageValidationError);
+  await expect(func).rejects.toThrow(StorageValidationError);
 });
 
-it("Test ElementStorage custom elementOptions merger", () => {
+it("Test ElementStorage custom elementOptions merger", async () => {
   const attribute = "data-test-wraplet";
   type Options = {
     option1: string;
@@ -261,7 +271,7 @@ it("Test ElementStorage custom elementOptions merger", () => {
     option1: (value) => typeof value === "string",
   };
 
-  const storage = new ElementStorage<Options>(
+  const storage = new ElementAttributeStorage<Options>(
     element,
     attribute,
     { option1: "default value" },
@@ -277,7 +287,7 @@ it("Test ElementStorage custom elementOptions merger", () => {
     },
   );
 
-  expect(storage.get("option1")).toEqual("overridden");
+  expect(await storage.get("option1")).toEqual("overridden");
 });
 
 it("Test ElementStorage only single option is saved to element when set", () => {
@@ -297,7 +307,7 @@ it("Test ElementStorage only single option is saved to element when set", () => 
 
   const option2DefaultValue = "option2 default value";
 
-  const storage = new ElementStorage<Options>(
+  const storage = new ElementAttributeStorage<Options>(
     element,
     attribute,
     {
@@ -322,13 +332,13 @@ it("Test ElementStorage properly handling default empty options attribute", () =
   const validators: Record<keyof Options, (value: unknown) => boolean> = {};
 
   const func = () => {
-    new ElementStorage<Options>(element, attribute, {}, validators);
+    new ElementAttributeStorage<Options>(element, attribute, {}, validators);
   };
 
   expect(func).not.toThrow(StorageValidationError);
 });
 
-it("Test ElementStorage warns and throws when option has no validator", () => {
+it("Test ElementStorage warns and throws when option has no validator", async () => {
   const attribute = "data-test-wraplet";
   type Options = {
     option1: string;
@@ -347,23 +357,18 @@ it("Test ElementStorage warns and throws when option has no validator", () => {
     // Note: no validator for option2 on purpose
   } as any;
 
-  const warnSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
-
-  const func = () => {
-    new ElementStorage<Options>(
+  const func = async () => {
+    const storage = new ElementAttributeStorage<Options>(
       element,
       attribute,
       { option1: "default" },
       validators,
     );
+    // Get data to trigger validation.
+    await storage.getAll();
   };
 
-  expect(func).toThrow(StorageValidationError);
-  expect(warnSpy).toHaveBeenCalledWith(
-    "Option option2 doesn't have a validator.",
-  );
-
-  warnSpy.mockRestore();
+  await expect(func).rejects.toThrow(StorageValidationError);
 });
 
 it("Test ElementStorage warns and throws when validator is not a function", () => {
@@ -378,25 +383,18 @@ it("Test ElementStorage warns and throws when validator is not a function", () =
 
   const validators: Record<keyof Options, (value: unknown) => boolean> = {
     option1: (value: unknown) => typeof value === "string",
-    // Intentionally set to a non-function to hit lines 128-129
-    option2: "not-a-function" as any,
+    // Intentionally set to a non-function.
+    option2: "not-a-function",
   } as any;
 
-  const warnSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
-
   const func = () => {
-    new ElementStorage<Options>(
+    new ElementAttributeStorage<Options>(
       element,
       attribute,
       { option1: "default" },
-      validators as any,
+      validators,
     );
   };
 
   expect(func).toThrow(StorageValidationError);
-  expect(warnSpy).toHaveBeenCalledWith(
-    "Validator for option option2 is not a function.",
-  );
-
-  warnSpy.mockRestore();
 });

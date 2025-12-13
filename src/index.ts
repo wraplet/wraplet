@@ -7,12 +7,12 @@ export { AbstractWraplet } from "./AbstractWraplet";
 export { destroyWrapletsRecursively, getWrapletsFromNode } from "./utils";
 
 // Map.
-export type { DynamicMap } from "./types/Map/DynamicMap";
+export type { DynamicMap } from "./Map/types/DynamicMap";
 export { MapRepeat } from "./Map/MapRepeat";
 
 // WrapletSet.
-export type { WrapletSetReadonly } from "./types/Set/WrapletSetReadonly";
-export type { WrapletSet } from "./types/Set/WrapletSet";
+export type { WrapletSetReadonly } from "./Set/types/WrapletSetReadonly";
+export type { WrapletSet } from "./Set/types/WrapletSet";
 
 export { DefaultWrapletSetReadonly } from "./Set/DefaultWrapletSetReadonly";
 export { DefaultWrapletSet } from "./Set/DefaultWrapletSet";

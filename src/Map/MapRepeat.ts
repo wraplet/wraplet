@@ -3,7 +3,7 @@ import {
   WrapletChildrenMap,
   WrapletChildrenMapWithDefaults,
 } from "../types/WrapletChildrenMap";
-import { DynamicMap, DynamicMapSymbol } from "../types/Map/DynamicMap";
+import { DynamicMap, DynamicMapSymbol } from "./types/DynamicMap";
 
 export class MapRepeat implements DynamicMap {
   [DynamicMapSymbol]: true = true;

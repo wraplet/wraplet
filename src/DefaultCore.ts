@@ -22,7 +22,7 @@ import { DestroyChildListener } from "./types/DestroyChildListener";
 import { CoreInitOptions } from "./types/CoreInitOptions";
 import { Core, CoreSymbol } from "./types/Core";
 import { DestroyListener } from "./types/DestroyListener";
-import { isWrapletSet, WrapletSet } from "./types/Set/WrapletSet";
+import { isWrapletSet, WrapletSet } from "./Set/types/WrapletSet";
 import { DefaultWrapletSet } from "./Set/DefaultWrapletSet";
 import {
   SelectorCallback,

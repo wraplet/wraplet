@@ -1,6 +1,6 @@
 import { Wraplet } from "./types/Wraplet";
 import { DefaultWrapletSet } from "./Set/DefaultWrapletSet";
-import { isWrapletSet, WrapletSet } from "./types/Set/WrapletSet";
+import { isWrapletSet, WrapletSet } from "./Set/types/WrapletSet";
 
 export function isParentNode(node: Node): node is ParentNode {
   return (

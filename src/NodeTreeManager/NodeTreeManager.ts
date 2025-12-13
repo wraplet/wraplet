@@ -1,5 +1,5 @@
 import { Initializer } from "./DefaultNodeTreeManager";
-import { WrapletSetReadonly } from "../types/Set/WrapletSetReadonly";
+import { WrapletSetReadonly } from "../Set/types/WrapletSetReadonly";
 
 export interface NodeTreeManager {
   addWrapletInitializer(callback: Initializer): void;

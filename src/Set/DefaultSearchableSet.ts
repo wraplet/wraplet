@@ -1,4 +1,4 @@
-import { BaseSet } from "../types/Set/BaseSet";
+import { BaseSet } from "./types/BaseSet";
 
 export class DefaultSearchableSet<T> extends Set<T> implements BaseSet<T> {
   public find(filter: (wraplet: T) => boolean): T[] {
