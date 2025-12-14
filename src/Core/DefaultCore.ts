@@ -67,14 +67,7 @@ export class DefaultCore<
       args.initOptions,
     );
 
-    const processedArgs = args.args.map((arg) => {
-      if (isArgCreator<N, M>(arg)) {
-        return arg.createArg(args);
-      }
-      return arg;
-    });
-
-    return new args.Class(core, ...processedArgs);
+    return new args.Class(core, ...args.args);
   };
 
   private wrapletCreator: WrapletCreator<N, M> = this.defaultWrapletCreator;
@@ -288,16 +281,24 @@ export class DefaultCore<
     }
 
     const wrapletClass = childDefinition.Class;
-    const args = childDefinition.args;
-    const wraplet = this.wrapletCreator({
+    const creatorArgs = {
       id: id,
       Class: wrapletClass,
       element: node,
       map: childMap,
       initOptions: childDefinition.coreOptions,
-      args: args,
+      args: childDefinition.args,
       defaultCreator: this.defaultWrapletCreator,
+    };
+
+    creatorArgs.args = creatorArgs.args.map((arg) => {
+      if (isArgCreator<N, M>(arg)) {
+        return arg.createArg(creatorArgs);
+      }
+      return arg;
     });
+
+    const wraplet = this.wrapletCreator(creatorArgs);
     this.prepareIndividualWraplet(id, wraplet);
 
     for (const listener of this.instantiateChildListeners) {

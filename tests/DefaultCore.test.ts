@@ -316,7 +316,7 @@ describe("Test DefaultCore", () => {
     const callArg = createArgMock.mock.calls[0][0];
     expect(callArg.Class).toBe(ArgAwareWraplet);
     expect(callArg.element).toBe(node.querySelector("[data-child]"));
-    expect(callArg.args).toEqual([argCreator, 42, "plain"]);
+    expect(callArg.args).toEqual([createdValue, 42, "plain"]);
 
     // The constructed wraplet should receive the processed value instead of the ArgCreator instance
     const child = core.children.child;
