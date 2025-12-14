@@ -2,7 +2,7 @@ import { MapWrapper } from "./MapWrapper";
 import {
   WrapletChildrenMap,
   WrapletChildrenMapWithDefaults,
-} from "../types/WrapletChildrenMap";
+} from "../Core/types/WrapletChildrenMap";
 import { DynamicMap, DynamicMapSymbol } from "./types/DynamicMap";
 
 export class MapRepeat implements DynamicMap {

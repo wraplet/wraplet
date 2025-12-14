@@ -1,4 +1,4 @@
-import { is } from "./Utils";
+import { is } from "../utils/is";
 
 export type GroupExtractor = (node: Node) => string[];
 
@@ -11,7 +11,6 @@ export interface Groupable {
   getGroups(): string[];
 }
 
-/* istanbul ignore next */
 export function isGroupable(object: unknown): object is Groupable {
   return is(object, GroupableSymbol);
 }

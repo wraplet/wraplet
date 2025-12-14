@@ -1,10 +1,16 @@
 import "../setup";
 import { StorageWrapper } from "../../src/storage";
 import { StorageValidationError } from "../../src/errors";
-import type { Storage } from "../../src/Storage/types/Storage";
+import {
+  KeyValueStorage,
+  KeyValueStorageSymbol,
+} from "../../src/Storage/types/KeyValueStorage";
 
 // A simple in-memory storage to back the StorageWrapper in tests.
-class InMemoryStorage<D extends Record<string, unknown>> implements Storage<D> {
+class InMemoryStorage<
+  D extends Record<string, unknown>,
+> implements KeyValueStorage<D> {
+  [KeyValueStorageSymbol]: true = true;
   private data: Partial<D> = {};
 
   constructor(initial?: Partial<D>) {

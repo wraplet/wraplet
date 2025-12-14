@@ -1,9 +1,9 @@
 import {
   WrapletChildrenMap,
   WrapletChildrenMapWithDefaults,
-} from "../../types/WrapletChildrenMap";
-import { is } from "../../types/Utils";
+} from "../../Core/types/WrapletChildrenMap";
 import { MapWrapper } from "../MapWrapper";
+import { is } from "../../utils/is";
 
 const DynamicMapSymbol = Symbol("DynamicMap");
 export { DynamicMapSymbol };

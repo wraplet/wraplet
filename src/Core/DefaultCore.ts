@@ -1,5 +1,5 @@
 import { WrapletChildren } from "./types/WrapletChildren";
-import { Nullable } from "./types/Utils";
+import { Nullable } from "../utils/types/Utils";
 import {
   ChildrenAreNotAvailableError,
   MapError,
@@ -8,29 +8,30 @@ import {
   ChildrenTooManyFoundError,
   ChildrenAreAlreadyDestroyedError,
   InternalLogicError,
-} from "./errors";
+} from "../errors";
 import { Wraplet } from "./types/Wraplet";
 import {
   isWrapletChildrenMapWithDefaults,
   WrapletChildrenMap,
   WrapletChildrenMapWithDefaults,
 } from "./types/WrapletChildrenMap";
-import { isParentNode } from "./utils";
+import { isParentNode } from "../NodeTreeManager/utils";
 import { InstantiateChildListener } from "./types/InstantiateChildListener";
 import { ChildInstance } from "./types/ChildInstance";
 import { DestroyChildListener } from "./types/DestroyChildListener";
 import { CoreInitOptions } from "./types/CoreInitOptions";
 import { Core, CoreSymbol } from "./types/Core";
 import { DestroyListener } from "./types/DestroyListener";
-import { isWrapletSet, WrapletSet } from "./Set/types/WrapletSet";
-import { DefaultWrapletSet } from "./Set/DefaultWrapletSet";
+import { isWrapletSet, WrapletSet } from "../Set/types/WrapletSet";
+import { DefaultWrapletSet } from "../Set/DefaultWrapletSet";
 import {
   SelectorCallback,
   WrapletChildDefinitionWithDefaults,
 } from "./types/WrapletChildDefinition";
 import { NodeTreeParentSymbol } from "./types/NodeTreeParent";
-import { MapWrapper } from "./Map/MapWrapper";
+import { MapWrapper } from "../Map/MapWrapper";
 import { WrapletCreator, WrapletCreatorArgs } from "./types/WrapletCreator";
+import { isArgCreator } from "./types/ArgCreator";
 
 type ListenerData = {
   node: Node;
@@ -65,7 +66,15 @@ export class DefaultCore<
       args.map,
       args.initOptions,
     );
-    return new args.Class(core, ...args.args);
+
+    const processedArgs = args.args.map((arg) => {
+      if (isArgCreator<N, M>(arg)) {
+        return arg.createArg(args);
+      }
+      return arg;
+    });
+
+    return new args.Class(core, ...processedArgs);
   };
 
   private wrapletCreator: WrapletCreator<N, M> = this.defaultWrapletCreator;

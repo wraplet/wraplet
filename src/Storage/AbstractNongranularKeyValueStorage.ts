@@ -1,11 +1,15 @@
-import { Storage } from "./types/Storage";
+import {
+  KeyValueStorage,
+  KeyValueStorageSymbol,
+} from "./types/KeyValueStorage";
 import { StorageValidationError } from "../errors";
 import { StorageValidators } from "./types/StorageValidators";
 import { NongranularStorageOptions } from "./NongranularStorageOptions";
 
-export abstract class AbstractNongranularStorage<
+export abstract class AbstractNongranularKeyValueStorage<
   D extends Record<string, unknown>,
-> implements Storage<D> {
+> implements KeyValueStorage<D> {
+  [KeyValueStorageSymbol]: true = true;
   private data: D | null = null;
   private options: NongranularStorageOptions<D>;
 

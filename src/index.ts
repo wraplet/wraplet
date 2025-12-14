@@ -1,10 +1,15 @@
 // Core
-export type { Core } from "./types/Core";
-export type { WrapletCreator } from "./types/WrapletCreator";
-export { DefaultCore } from "./DefaultCore";
+export type { Core } from "./Core/types/Core";
+export type { WrapletCreator } from "./Core/types/WrapletCreator";
+export type { ArgCreator } from "./Core/types/ArgCreator";
+export { DefaultCore } from "./Core/DefaultCore";
+export { DefaultArgCreator } from "./Core/DefaultArgCreator";
 
 export { AbstractWraplet } from "./AbstractWraplet";
-export { destroyWrapletsRecursively, getWrapletsFromNode } from "./utils";
+export {
+  destroyWrapletsRecursively,
+  getWrapletsFromNode,
+} from "./NodeTreeManager/utils";
 
 // Map.
 export type { DynamicMap } from "./Map/types/DynamicMap";
@@ -16,13 +21,13 @@ export type { WrapletSet } from "./Set/types/WrapletSet";
 
 export { DefaultWrapletSetReadonly } from "./Set/DefaultWrapletSetReadonly";
 export { DefaultWrapletSet } from "./Set/DefaultWrapletSet";
-export { isWraplet } from "./types/Wraplet";
+export { isWraplet } from "./Core/types/Wraplet";
 
 // WrapletChildrenMap.
-export type { WrapletChildrenMap } from "./types/WrapletChildrenMap";
-export type { Wraplet } from "./types/Wraplet";
-export type { SelectorCallback } from "./types/WrapletChildDefinition";
-export type { Constructable } from "./types/Utils";
+export type { WrapletChildrenMap } from "./Core/types/WrapletChildrenMap";
+export type { Wraplet } from "./Core/types/Wraplet";
+export type { SelectorCallback } from "./Core/types/WrapletChildDefinition";
+export type { Constructable } from "./utils/types/Utils";
 
 // Global.
 import "./types/global";

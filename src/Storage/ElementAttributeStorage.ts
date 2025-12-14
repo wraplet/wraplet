@@ -1,6 +1,6 @@
 import { StorageValidators } from "./types/StorageValidators";
 import { ElementOptionsMerger } from "./ElementOptionsMerger";
-import { AbstractNongranularStorage } from "./AbstractNongranularStorage";
+import { AbstractNongranularKeyValueStorage } from "./AbstractNongranularKeyValueStorage";
 
 export type ElementStorageOptions<D extends Record<string, unknown>> = {
   keepFresh: boolean;
@@ -9,7 +9,7 @@ export type ElementStorageOptions<D extends Record<string, unknown>> = {
 
 export class ElementAttributeStorage<
   D extends Record<string, unknown>,
-> extends AbstractNongranularStorage<D> {
+> extends AbstractNongranularKeyValueStorage<D> {
   constructor(
     private element: Element,
     private attribute: string,

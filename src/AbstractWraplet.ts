@@ -1,17 +1,20 @@
-import { WrapletChildrenMap } from "./types/WrapletChildrenMap";
-import { WrapletChildren } from "./types/WrapletChildren";
-import { Wraplet, WrapletSymbol } from "./types/Wraplet";
-import { DestroyListener } from "./types/DestroyListener";
-import { ChildInstance } from "./types/ChildInstance";
+import { WrapletChildrenMap } from "./Core/types/WrapletChildrenMap";
+import { WrapletChildren } from "./Core/types/WrapletChildren";
+import { Wraplet, WrapletSymbol } from "./Core/types/Wraplet";
+import { DestroyListener } from "./Core/types/DestroyListener";
+import { ChildInstance } from "./Core/types/ChildInstance";
 import {
   defaultGroupableAttribute,
   Groupable,
   GroupableSymbol,
   GroupExtractor,
 } from "./types/Groupable";
-import { NodeTreeParent, NodeTreeParentSymbol } from "./types/NodeTreeParent";
-import { Core, isCore } from "./types/Core";
-import { DefaultCore } from "./DefaultCore";
+import {
+  NodeTreeParent,
+  NodeTreeParentSymbol,
+} from "./Core/types/NodeTreeParent";
+import { Core, isCore } from "./Core/types/Core";
+import { DefaultCore } from "./Core/DefaultCore";
 
 export abstract class AbstractWraplet<
   N extends Node = Node,

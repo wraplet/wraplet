@@ -1,10 +1,10 @@
-import { addWrapletToNode, destroyWrapletsRecursively } from "../utils";
+import { addWrapletToNode, destroyWrapletsRecursively } from "./utils";
 import { NodeTreeManager } from "./NodeTreeManager";
-import { Wraplet } from "../types/Wraplet";
+import { Wraplet } from "../Core/types/Wraplet";
 import { WrapletSet } from "../Set/types/WrapletSet";
 import { WrapletSetReadonly } from "../Set/types/WrapletSetReadonly";
 import { DefaultWrapletSet } from "../Set/DefaultWrapletSet";
-import { isNodeTreeParent } from "../types/NodeTreeParent";
+import { isNodeTreeParent } from "../Core/types/NodeTreeParent";
 
 export type Initializer = (node: Node) => Promise<Wraplet[]>;
 
@@ -27,7 +27,7 @@ export default class DefaultNodeTreeManager implements NodeTreeManager {
         if (isNodeTreeParent(wraplet)) {
           const children = wraplet.getNodeTreeChildren();
           for (const child of children) {
-            child.accessNode((childNode) => {
+            child.accessNode((childNode: Node) => {
               addWrapletToNode(child, childNode);
             });
             this.items.add(child);

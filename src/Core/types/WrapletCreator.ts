@@ -1,11 +1,11 @@
 import { Wraplet } from "./Wraplet";
-import { MapWrapper } from "../Map/MapWrapper";
+import { MapWrapper } from "../../Map/MapWrapper";
 import {
   WrapletChildrenMap,
   WrapletChildrenMapWithDefaults,
 } from "./WrapletChildrenMap";
 import { CoreInitOptions } from "./CoreInitOptions";
-import { Constructable } from "./Utils";
+import { Constructable } from "../../utils/types/Utils";
 
 export type WrapletCreator<N extends Node, M extends WrapletChildrenMap> = (
   args: WrapletCreatorArgs<N, M>,

@@ -1,11 +1,16 @@
 export { StorageWrapper } from "./Storage/StorageWrapper";
-export { AbstractNongranularStorage } from "./Storage/AbstractNongranularStorage";
+export { AbstractNongranularKeyValueStorage } from "./Storage/AbstractNongranularKeyValueStorage";
 export { ElementAttributeStorage } from "./Storage/ElementAttributeStorage";
 export { ElementStorage } from "./Storage/ElementStorage";
 
+export {
+  isKeyValueStorage,
+  KeyValueStorageSymbol,
+} from "./Storage/types/KeyValueStorage";
+
 export type { ElementOptionsMerger } from "./Storage/ElementOptionsMerger";
 
-export type { Storage } from "./Storage/types/Storage";
+export type { KeyValueStorage } from "./Storage/types/KeyValueStorage";
 export type {
   StorageValidators,
   StorageValidator,

@@ -1,7 +1,7 @@
 import "./setup";
 import { AbstractWraplet, DefaultCore, WrapletChildrenMap } from "../src";
 import { BaseElementTestWraplet } from "./resources/BaseElementTestWraplet";
-import { Core } from "../src/types/Core";
+import { Core } from "../src/Core/types/Core";
 
 describe("Test passing arguments", () => {
   const testWrapletSelectorAttribute = "data-test-selector";

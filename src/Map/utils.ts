@@ -1,12 +1,12 @@
 import {
   WrapletChildDefinition,
   WrapletChildDefinitionWithDefaults,
-} from "./types/WrapletChildDefinition";
+} from "../Core/types/WrapletChildDefinition";
 import {
   isWrapletChildrenMapWithDefaults,
   WrapletChildrenMap,
   WrapletChildrenMapWithDefaults,
-} from "./types/WrapletChildrenMap";
+} from "../Core/types/WrapletChildrenMap";
 
 export function addDefaultsToChildDefinition<
   M extends WrapletChildrenMap,

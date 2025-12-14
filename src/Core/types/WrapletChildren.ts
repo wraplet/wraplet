@@ -1,6 +1,6 @@
 import { WrapletChildrenMap } from "./WrapletChildrenMap";
-import { InstantiableReturnType } from "./Utils";
-import { WrapletSet } from "../Set/types/WrapletSet";
+import { InstantiableReturnType } from "../../utils/types/Utils";
+import { WrapletSet } from "../../Set/types/WrapletSet";
 
 export type OptionalSingleInstantiableReturnType<
   T extends WrapletChildrenMap,

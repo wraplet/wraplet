@@ -1,8 +1,8 @@
 import { Wraplet } from "./Wraplet";
 import { WrapletChildrenMap } from "./WrapletChildrenMap";
 import { CoreInitOptions } from "./CoreInitOptions";
-import { DynamicMap } from "../Map/types/DynamicMap";
-import { Constructable } from "./Utils";
+import { DynamicMap } from "../../Map/types/DynamicMap";
+import { Constructable } from "../../utils/types/Utils";
 
 export type SelectorCallback<N extends ParentNode = ParentNode> = (
   node: N,

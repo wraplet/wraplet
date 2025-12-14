@@ -1,12 +1,16 @@
-import { Storage } from "./types/Storage";
+import {
+  KeyValueStorage,
+  KeyValueStorageSymbol,
+} from "./types/KeyValueStorage";
 import { StorageValidationError } from "../errors";
 import { StorageValidators } from "./types/StorageValidators";
 
 export class StorageWrapper<
   D extends Record<string, unknown>,
-> implements Storage<D> {
+> implements KeyValueStorage<D> {
+  [KeyValueStorageSymbol]: true = true;
   constructor(
-    private storage: Storage<D>,
+    private storage: KeyValueStorage<D>,
     private defaults: D,
     private validators: StorageValidators<D>,
   ) {}

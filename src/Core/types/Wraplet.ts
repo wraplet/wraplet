@@ -1,5 +1,6 @@
 import { DestroyListener } from "./DestroyListener";
-import { is } from "./Utils";
+
+import { is } from "../../utils/is";
 
 const WrapletSymbol = Symbol("Wraplet");
 export { WrapletSymbol };

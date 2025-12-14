@@ -1,5 +1,6 @@
 import "./setup";
 import {
+  DefaultArgCreator,
   DefaultCore,
   DefaultWrapletSet,
   Wraplet,
@@ -11,8 +12,8 @@ import {
   MapError,
 } from "../src/errors";
 import { Core } from "../src";
-import { DestroyListener } from "../src/types/DestroyListener";
-import { WrapletSymbol } from "../src/types/Wraplet";
+import { DestroyListener } from "../src/Core/types/DestroyListener";
+import { WrapletSymbol } from "../src/Core/types/Wraplet";
 import { WrapletCreator } from "../src";
 
 describe("Test DefaultCore", () => {
@@ -247,6 +248,79 @@ describe("Test DefaultCore", () => {
 
     core.syncChildren();
     expect(func).toHaveBeenCalledTimes(4);
+  });
+
+  it("uses ArgCreator to compute child constructor arguments", async () => {
+    const node = document.createElement("div");
+    node.innerHTML = "<div data-child></div>";
+
+    // Local wraplet class that records received args beyond core
+    class ArgAwareWraplet implements Wraplet {
+      [WrapletSymbol]: true = true;
+      public isGettingInitialized = false;
+      public isInitialized = false;
+      public isGettingDestroyed = false;
+      public isDestroyed = false;
+
+      public received: unknown[];
+      private destroyListeners: DestroyListener<Node>[] = [];
+
+      constructor(
+        private core: Core,
+        ...rest: unknown[]
+      ) {
+        this.received = rest;
+      }
+
+      accessNode(callback: (node: Node) => void): void {
+        callback(this.core.node);
+      }
+
+      addDestroyListener(callback: DestroyListener<Node>): void {
+        this.destroyListeners.push(callback);
+      }
+
+      async destroy() {
+        for (const listener of this.destroyListeners) {
+          await listener(this);
+        }
+        this.isDestroyed = true;
+      }
+
+      async initialize() {
+        this.isInitialized = true;
+      }
+    }
+
+    // Arg creator mock that should be invoked by DefaultCore.defaultWrapletCreator
+    const createdValue = { via: "ArgCreator" };
+    const createArgMock = jest.fn().mockImplementation(() => createdValue);
+    // Use DefaultArgCreator to tag with ArgCreatorSymbol
+    const argCreator = DefaultArgCreator.create(createArgMock);
+
+    const map = {
+      child: {
+        selector: "[data-child]",
+        Class: ArgAwareWraplet,
+        multiple: false,
+        required: true,
+        args: [argCreator, 42, "plain"],
+      },
+    } as const satisfies WrapletChildrenMap;
+
+    const core: Core<Node, typeof map> = new DefaultCore(node, map);
+    await core.initialize();
+
+    // ArgCreator should be called once with proper WrapletCreatorArgs
+    expect(createArgMock).toHaveBeenCalledTimes(1);
+    const callArg = createArgMock.mock.calls[0][0];
+    expect(callArg.Class).toBe(ArgAwareWraplet);
+    expect(callArg.element).toBe(node.querySelector("[data-child]"));
+    expect(callArg.args).toEqual([argCreator, 42, "plain"]);
+
+    // The constructed wraplet should receive the processed value instead of the ArgCreator instance
+    const child = core.children.child;
+    expect(child.received).toEqual([createdValue, 42, "plain"]);
   });
 
   it("Test DefaultCore cannot be destroyed twice", async () => {

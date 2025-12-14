@@ -1,4 +1,4 @@
-import { Wraplet } from "../../types/Wraplet";
+import { Wraplet } from "../../Core/types/Wraplet";
 import { BaseSet } from "./BaseSet";
 
 const WrapletSetReadonlySymbol = Symbol("WrapletSetReadonly");

@@ -2,8 +2,8 @@ import {
   isWrapletChildrenMapWithDefaults,
   WrapletChildrenMap,
   WrapletChildrenMapWithDefaults,
-} from "../types/WrapletChildrenMap";
-import { fillMapWithDefaults } from "../WrapletChildrenMap";
+} from "../Core/types/WrapletChildrenMap";
+import { fillMapWithDefaults } from "./utils";
 import { isDynamicMap } from "./types/DynamicMap";
 
 type RecursiveMapKeys<T extends WrapletChildrenMap> = {

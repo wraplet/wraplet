@@ -1,6 +1,6 @@
 /* istanbul ignore file */
 import { AbstractWraplet, WrapletChildrenMap } from "../../src";
-import { WrapletChildren } from "../../src/types/WrapletChildren";
+import { WrapletChildren } from "../../src/Core/types/WrapletChildren";
 import { Core } from "../../src";
 
 export abstract class BaseElementTestWraplet<

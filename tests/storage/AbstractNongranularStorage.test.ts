@@ -1,6 +1,6 @@
 import "../setup";
 import {
-  AbstractNongranularStorage,
+  AbstractNongranularKeyValueStorage,
   NongranularStorageOptions,
   StorageValidator,
   StorageValidators,
@@ -11,7 +11,7 @@ import { StorageValidationError } from "../../src/errors";
 // It uses a shared in-memory string as the memory store.
 class InMemoryNongranularStorage<
   D extends Record<string, unknown>,
-> extends AbstractNongranularStorage<D> {
+> extends AbstractNongranularKeyValueStorage<D> {
   constructor(
     private memory: { value: string },
     defaults: D,

@@ -1,5 +1,5 @@
 import { WrapletSet, WrapletSetSymbol } from "./types/WrapletSet";
-import { Wraplet } from "../types/Wraplet";
+import { Wraplet } from "../Core/types/Wraplet";
 import { DefaultSearchableSet } from "./DefaultSearchableSet";
 import { WrapletSetReadonlySymbol } from "./types/WrapletSetReadonly";
 

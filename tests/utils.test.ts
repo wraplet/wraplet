@@ -8,7 +8,10 @@ import {
   Wraplet,
   WrapletSet,
 } from "../src";
-import { addWrapletToNode, removeWrapletFromNode } from "../src/utils";
+import {
+  addWrapletToNode,
+  removeWrapletFromNode,
+} from "../src/NodeTreeManager/utils";
 
 it("Test removing and adding wraplets to nodes", () => {
   const node = document.createElement("div");

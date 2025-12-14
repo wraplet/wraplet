@@ -1,11 +1,11 @@
 import { StorageValidators } from "./types/StorageValidators";
-import { AbstractNongranularStorage } from "./AbstractNongranularStorage";
+import { AbstractNongranularKeyValueStorage } from "./AbstractNongranularKeyValueStorage";
 import { NongranularStorageOptions } from "./NongranularStorageOptions";
 
 export class ElementStorage<
   D extends Record<string, unknown>,
   E extends Element = HTMLScriptElement,
-> extends AbstractNongranularStorage<D> {
+> extends AbstractNongranularKeyValueStorage<D> {
   constructor(
     private element: E,
     protected defaults: D,

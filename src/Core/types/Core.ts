@@ -5,10 +5,10 @@ import {
 } from "./WrapletChildrenMap";
 import { DestroyChildListener } from "./DestroyChildListener";
 import { InstantiateChildListener } from "./InstantiateChildListener";
-import { is } from "./Utils";
 import { NodeTreeParent, NodeTreeParentSymbol } from "./NodeTreeParent";
 import { Wraplet } from "./Wraplet";
 import { WrapletCreator } from "./WrapletCreator";
+import { is } from "../../utils/is";
 
 const CoreSymbol = Symbol("ChildrenManager");
 export { CoreSymbol };
