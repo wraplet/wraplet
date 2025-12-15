@@ -14,4 +14,9 @@ export default {
       lines: 100,
     },
   },
+  collectCoverageFrom: [
+    "src/**/*.{ts,tsx}",
+    "!src/index.ts",
+    "!src/**/index.ts",
+  ],
 };

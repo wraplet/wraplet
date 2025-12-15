@@ -1,13 +1,13 @@
 import { WrapletChildren } from "./types/WrapletChildren";
 import { Nullable } from "../utils/types/Utils";
 import {
+  ChildrenAreAlreadyDestroyedError,
   ChildrenAreNotAvailableError,
+  ChildrenTooManyFoundError,
+  InternalLogicError,
   MapError,
   MissingRequiredChildError,
   RequiredChildDestroyedError,
-  ChildrenTooManyFoundError,
-  ChildrenAreAlreadyDestroyedError,
-  InternalLogicError,
 } from "../errors";
 import { Wraplet } from "./types/Wraplet";
 import {
@@ -32,6 +32,7 @@ import { NodeTreeParentSymbol } from "./types/NodeTreeParent";
 import { MapWrapper } from "../Map/MapWrapper";
 import { WrapletCreator, WrapletCreatorArgs } from "./types/WrapletCreator";
 import { isArgCreator } from "./types/ArgCreator";
+import { defaultWrapletCreator } from "./defaultWrapletCreator";
 
 type ListenerData = {
   node: Node;
@@ -58,19 +59,8 @@ export class DefaultCore<
     [];
   private listeners: ListenerData[] = [];
 
-  private defaultWrapletCreator: WrapletCreator<N, M> = (
-    args: WrapletCreatorArgs<N, M>,
-  ): Wraplet<N> => {
-    const core = new (this.constructor as any)(
-      args.element,
-      args.map,
-      args.initOptions,
-    );
-
-    return new args.Class(core, ...args.args);
-  };
-
-  private wrapletCreator: WrapletCreator<N, M> = this.defaultWrapletCreator;
+  private wrapletCreator: WrapletCreator<Node, WrapletChildrenMap> =
+    defaultWrapletCreator;
 
   constructor(
     public node: N,
@@ -281,24 +271,23 @@ export class DefaultCore<
     }
 
     const wrapletClass = childDefinition.Class;
-    const creatorArgs = {
+    const creatorArgs: WrapletCreatorArgs<Node, WrapletChildrenMap> = {
       id: id,
       Class: wrapletClass,
       element: node,
       map: childMap,
       initOptions: childDefinition.coreOptions,
       args: childDefinition.args,
-      defaultCreator: this.defaultWrapletCreator,
     };
 
     creatorArgs.args = creatorArgs.args.map((arg) => {
-      if (isArgCreator<N, M>(arg)) {
+      if (isArgCreator<Node, WrapletChildrenMap>(arg)) {
         return arg.createArg(creatorArgs);
       }
       return arg;
     });
 
-    const wraplet = this.wrapletCreator(creatorArgs);
+    const wraplet = this.wrapletCreator(creatorArgs, this.constructor as any);
     this.prepareIndividualWraplet(id, wraplet);
 
     for (const listener of this.instantiateChildListeners) {
@@ -356,15 +345,17 @@ export class DefaultCore<
     this.instantiateChildListeners.push(callback);
   }
 
-  public setWrapletCreator(wrapletCreator: WrapletCreator<N, M>): void {
+  public setWrapletCreator(
+    wrapletCreator: WrapletCreator<Node, WrapletChildrenMap>,
+  ): void {
     this.wrapletCreator = wrapletCreator;
   }
 
   private prepareIndividualWraplet<K extends Extract<keyof M, string>>(
     id: K,
-    wraplet: Wraplet<N>,
+    wraplet: Wraplet,
   ) {
-    const destroyListener: DestroyListener<N> = (<K extends keyof M>(
+    const destroyListener: DestroyListener<Node> = (<K extends keyof M>(
       wraplet: ChildInstance<M, K>,
     ) => {
       this.removeChild(wraplet, id);
@@ -372,7 +363,7 @@ export class DefaultCore<
       for (const listener of this.destroyChildListeners) {
         listener(wraplet, id);
       }
-    }) as DestroyListener<N>;
+    }) as DestroyListener<Node>;
     // Listen for the child's destruction.
     wraplet.addDestroyListener(destroyListener);
   }

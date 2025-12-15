@@ -564,7 +564,7 @@ describe("Test DefaultCore", () => {
 
     const func = jest.fn();
 
-    const creator: WrapletCreator<HTMLDivElement, {}> = (args) => {
+    const creator: WrapletCreator<Node, WrapletChildrenMap> = (args) => {
       expect(["child", "children"]).toContain(args.id);
       func();
       const core = new DefaultCore(args.element, {}, args.initOptions);

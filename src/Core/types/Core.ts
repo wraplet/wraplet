@@ -101,7 +101,9 @@ export interface Core<
   /**
    * Allows for overriding the default wraplet creation process.
    */
-  setWrapletCreator(wrapletCreator: WrapletCreator<N, M>): void;
+  setWrapletCreator(
+    wrapletCreator: WrapletCreator<Node, WrapletChildrenMap>,
+  ): void;
 
   /**
    * Get the instantiated children.

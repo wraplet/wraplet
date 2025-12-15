@@ -4,6 +4,7 @@ export type { WrapletCreator } from "./Core/types/WrapletCreator";
 export type { ArgCreator } from "./Core/types/ArgCreator";
 export { DefaultCore } from "./Core/DefaultCore";
 export { DefaultArgCreator } from "./Core/DefaultArgCreator";
+export { defaultWrapletCreator } from "./Core/defaultWrapletCreator";
 
 export { AbstractWraplet } from "./AbstractWraplet";
 export {
