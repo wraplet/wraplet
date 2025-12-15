@@ -107,9 +107,14 @@ export abstract class AbstractWraplet<
     this.destroyListeners.length = 0;
 
     await this.core.destroy();
+
+    await this._destroy();
+
     this.isDestroyed = true;
     this.isGettingDestroyed = false;
   }
+
+  protected async _destroy() {}
 
   public addDestroyListener(callback: DestroyListener<N>): void {
     this.destroyListeners.push(callback);
@@ -124,6 +129,7 @@ export abstract class AbstractWraplet<
   public async initialize(): Promise<void> {
     this.isGettingInitialized = true;
     await this.core.initialize();
+    await this._initialize();
     this.isInitialized = true;
     this.isGettingInitialized = false;
 
@@ -133,6 +139,8 @@ export abstract class AbstractWraplet<
       await this.destroy();
     }
   }
+
+  protected async _initialize() {}
 
   protected get node(): N {
     return this.core.node;
