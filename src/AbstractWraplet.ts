@@ -54,7 +54,7 @@ export abstract class AbstractWraplet<
     }
 
     core.addDestroyChildListener(this.onChildDestroy.bind(this));
-    core.addInstantiateChildListener(this.onChildInstantiated.bind(this));
+    core.addInstantiateChildListener(this.onChildInstantiate.bind(this));
   }
 
   public getNodeTreeChildren(): Wraplet[] {
@@ -147,9 +147,9 @@ export abstract class AbstractWraplet<
   }
 
   /**
-   * This method will be ivoked if one of the wraplet's children has been instantiated.
+   * This method will be invoked if one of the wraplet's children has been instantiated.
    */
-  protected onChildInstantiated(
+  protected onChildInstantiate(
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     child: ChildInstance<M, keyof M>,
     // eslint-disable-next-line @typescript-eslint/no-unused-vars

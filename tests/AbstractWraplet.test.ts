@@ -148,7 +148,7 @@ describe("AbstractWraplet initialization", () => {
     } as const satisfies WrapletChildrenMap;
 
     class TestWraplet extends BaseElementTestWraplet<typeof map> {
-      protected onChildInstantiated<K extends keyof typeof map>(
+      protected onChildInstantiate<K extends keyof typeof map>(
         child: ChildInstance<typeof map, K>,
         id: K,
       ) {
@@ -199,7 +199,7 @@ describe("AbstractWraplet initialization", () => {
     } as const satisfies WrapletChildrenMap;
 
     class TestWraplet extends BaseElementTestWraplet<typeof map> {
-      protected onChildInstantiated() {
+      protected onChildInstantiate() {
         defaultStatus = this.isInitialized;
       }
     }
