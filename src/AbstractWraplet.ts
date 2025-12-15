@@ -197,13 +197,13 @@ export abstract class AbstractWraplet<
     const result: T[] = [];
 
     if (node instanceof Element && node.hasAttribute(attribute)) {
-      const core = AbstractWraplet.createCore(node, map);
+      const core = this.createCore(node, map);
       result.push(new (this as any)(core, ...additional_args));
     }
 
     const foundElements = node.querySelectorAll(`[${attribute}]`);
     for (const element of foundElements) {
-      const core = AbstractWraplet.createCore(element, map);
+      const core = this.createCore(element, map);
       result.push(new (this as any)(core, ...additional_args));
     }
 
