@@ -223,7 +223,7 @@ it("Destroy child listener", async () => {
   } as const satisfies WrapletChildrenMap;
 
   class TestWraplet extends BaseElementTestWraplet<typeof childrenMap> {
-    protected onChildDestroyed<K extends keyof typeof childrenMap>(
+    protected onChildDestroy<K extends keyof typeof childrenMap>(
       child: ChildInstance<typeof childrenMap, K>,
       id: K,
     ) {
@@ -273,7 +273,7 @@ it("Test isDestroyed values", async () => {
   } as const satisfies WrapletChildrenMap;
 
   class TestWraplet extends BaseElementTestWraplet<typeof childrenMap> {
-    protected onChildDestroyed() {
+    protected onChildDestroy() {
       expect(this.isGettingDestroyed).toBe(true);
       expect(this.isDestroyed).toBe(false);
     }

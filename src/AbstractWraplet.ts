@@ -53,7 +53,7 @@ export abstract class AbstractWraplet<
       throw new Error("AbstractWraplet requires a Core instance.");
     }
 
-    core.addDestroyChildListener(this.onChildDestroyed.bind(this));
+    core.addDestroyChildListener(this.onChildDestroy.bind(this));
     core.addInstantiateChildListener(this.onChildInstantiated.bind(this));
   }
 
@@ -124,7 +124,7 @@ export abstract class AbstractWraplet<
    * This method will be ivoked if one of the wraplet's children has been destroyed.
    */
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  protected onChildDestroyed(child: ChildInstance<M, keyof M>, id: keyof M) {}
+  protected onChildDestroy(child: ChildInstance<M, keyof M>, id: keyof M) {}
 
   public async initialize(): Promise<void> {
     this.isGettingInitialized = true;
