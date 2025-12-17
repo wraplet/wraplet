@@ -1,6 +1,11 @@
 import { WrapletChildrenMap } from "./Wraplet/types/WrapletChildrenMap";
 import { WrapletChildren } from "./Wraplet/types/WrapletChildren";
-import { Wraplet, WrapletApi, WrapletSymbol } from "./Wraplet/types/Wraplet";
+import {
+  Status,
+  Wraplet,
+  WrapletApi,
+  WrapletSymbol,
+} from "./Wraplet/types/Wraplet";
 import { DestroyListener } from "./Core/types/DestroyListener";
 import { ChildInstance } from "./Wraplet/types/ChildInstance";
 import {
@@ -26,10 +31,12 @@ export abstract class AbstractWraplet<
   public [GroupableSymbol]: true = true;
   public [NodeTreeParentSymbol]: true = true;
 
-  protected isGettingDestroyed: boolean = false;
-  protected isDestroyed: boolean = false;
-  protected isGettingInitialized: boolean = false;
-  protected isInitialized: boolean = false;
+  protected status: Status = {
+    isGettingInitialized: false,
+    isDestroyed: false,
+    isInitialized: false,
+    isGettingDestroyed: false,
+  };
 
   private groupsExtractor: GroupExtractor = (node: Node) => {
     if (node instanceof Element) {
@@ -57,36 +64,30 @@ export abstract class AbstractWraplet<
     core.addInstantiateChildListener(this.onChildInstantiate.bind(this));
   }
 
-  public get wraplet(): WrapletApi<N> &
+  public wraplet: WrapletApi<N> &
     NodeTreeParent["wraplet"] &
-    Groupable["wraplet"] {
-    return {
-      isGettingInitialized: this.isGettingInitialized,
-      isInitialized: this.isInitialized,
-      isGettingDestroyed: this.isGettingDestroyed,
-      isDestroyed: this.isDestroyed,
+    Groupable["wraplet"] = {
+    status: this.status,
+    addDestroyListener: (callback: DestroyListener<N>) => {
+      this.destroyListeners.push(callback);
+    },
 
-      addDestroyListener: (callback: DestroyListener<N>) => {
-        this.destroyListeners.push(callback);
-      },
+    initialize: this.initialize.bind(this),
 
-      initialize: this.initialize.bind(this),
+    destroy: this.destroy.bind(this),
 
-      destroy: this.destroy.bind(this),
+    accessNode: (callback: (node: N) => void) => {
+      this.__debugNodeAccessors.push(callback);
+      callback(this.node);
+    },
 
-      accessNode: (callback: (node: N) => void) => {
-        this.__debugNodeAccessors.push(callback);
-        callback(this.node);
-      },
+    getNodeTreeChildren: (): Wraplet[] => {
+      return this.core.getNodeTreeChildren();
+    },
 
-      getNodeTreeChildren: (): Wraplet[] => {
-        return this.core.getNodeTreeChildren();
-      },
-
-      setGroupsExtractor: this.setGroupsExtractor.bind(this),
-      getGroups: this.getGroups.bind(this),
-    };
-  }
+    setGroupsExtractor: this.setGroupsExtractor.bind(this),
+    getGroups: this.getGroups.bind(this),
+  };
 
   protected setGroupsExtractor(callback: GroupExtractor): void {
     this.groupsExtractor = callback;
@@ -101,13 +102,13 @@ export abstract class AbstractWraplet<
   }
 
   protected async destroy() {
-    if (this.isDestroyed) {
+    if (this.status.isDestroyed) {
       // We are already destroyed.
       return;
     }
 
-    this.isGettingDestroyed = true;
-    if (this.isGettingInitialized) {
+    this.status.isGettingDestroyed = true;
+    if (this.status.isGettingInitialized) {
       // If we are still initializing, then postpone destruction until after
       // initialization is finished.
       // We are leaving this method, but with `isGettingDestroyed` set to true, so
@@ -115,10 +116,10 @@ export abstract class AbstractWraplet<
       return;
     }
 
-    if (!this.isInitialized) {
+    if (!this.status.isInitialized) {
       // If we are not initialized, then we have nothing to do here.
-      this.isDestroyed = true;
-      this.isGettingDestroyed = false;
+      this.status.isDestroyed = true;
+      this.status.isGettingDestroyed = false;
       return;
     }
 
@@ -132,8 +133,8 @@ export abstract class AbstractWraplet<
 
     await this.onDestroy();
 
-    this.isDestroyed = true;
-    this.isGettingDestroyed = false;
+    this.status.isDestroyed = true;
+    this.status.isGettingDestroyed = false;
   }
 
   protected async onDestroy() {}
@@ -145,15 +146,15 @@ export abstract class AbstractWraplet<
   protected onChildDestroy(child: ChildInstance<M, keyof M>, id: keyof M) {}
 
   protected async initialize(): Promise<void> {
-    this.isGettingInitialized = true;
+    this.status.isGettingInitialized = true;
     await this.core.initialize();
     await this.onInitialize();
-    this.isInitialized = true;
-    this.isGettingInitialized = false;
+    this.status.isInitialized = true;
+    this.status.isGettingInitialized = false;
 
     // If destruction has been invoked in the meantime, we can finally do it, when initialization
     // is finished.
-    if (this.isGettingDestroyed) {
+    if (this.status.isGettingDestroyed) {
       await this.destroy();
     }
   }

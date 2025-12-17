@@ -274,8 +274,8 @@ it("Test isDestroyed values", async () => {
 
   class TestWraplet extends BaseElementTestWraplet<typeof childrenMap> {
     protected onChildDestroy() {
-      expect(this.isGettingDestroyed).toBe(true);
-      expect(this.isDestroyed).toBe(false);
+      expect(this.status.isGettingDestroyed).toBe(true);
+      expect(this.status.isDestroyed).toBe(false);
     }
   }
 
@@ -293,8 +293,8 @@ it("Test isDestroyed values", async () => {
     throw new Error("Wraplet not created.");
   }
   await wraplet.wraplet.initialize();
-  expect(wraplet.wraplet.isGettingDestroyed).toBe(false);
-  expect(wraplet.wraplet.isDestroyed).toBe(false);
+  expect(wraplet.wraplet.status.isGettingDestroyed).toBe(false);
+  expect(wraplet.wraplet.status.isDestroyed).toBe(false);
   await wraplet.wraplet.destroy();
-  expect(wraplet.wraplet.isDestroyed).toBe(true);
+  expect(wraplet.wraplet.status.isDestroyed).toBe(true);
 });

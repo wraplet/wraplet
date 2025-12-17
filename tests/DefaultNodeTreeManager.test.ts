@@ -236,10 +236,12 @@ it("Test initializing non-tree-parent wraplet", async () => {
 
     public get wraplet(): WrapletApi {
       return {
-        isGettingInitialized: false,
-        isInitialized: true,
-        isDestroyed: false,
-        isGettingDestroyed: false,
+        status: {
+          isGettingInitialized: false,
+          isInitialized: true,
+          isDestroyed: false,
+          isGettingDestroyed: false,
+        },
         accessNode(): void {},
         async initialize() {},
         async destroy() {},

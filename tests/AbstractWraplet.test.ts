@@ -200,7 +200,7 @@ describe("AbstractWraplet initialization", () => {
 
     class TestWraplet extends BaseElementTestWraplet<typeof map> {
       protected onChildInstantiate() {
-        defaultStatus = this.isInitialized;
+        defaultStatus = this.status.isInitialized;
       }
     }
 
@@ -218,7 +218,7 @@ describe("AbstractWraplet initialization", () => {
     await wraplet.wraplet.initialize();
 
     expect(defaultStatus).toEqual(false);
-    expect(wraplet.wraplet.isInitialized).toEqual(true);
+    expect(wraplet.wraplet.status.isInitialized).toEqual(true);
   });
 
   it("Test that proper errors are thrown when accessing children when they are instantiated or not", async () => {
@@ -589,17 +589,17 @@ it("Test AbstractWraplet destroy during initialization", async () => {
     .then(async () => {
       func();
       // Make sure that wraplet is destroyed after initialization is complete.
-      expect(wraplet.wraplet.isDestroyed).toBe(true);
+      expect(wraplet.wraplet.status.isDestroyed).toBe(true);
       // We can run `destroy` multiple times without consequences.
       await expect(wraplet.wraplet.destroy()).resolves.not.toThrow();
     })
     .finally(() => {
       expect(func).toHaveBeenCalledTimes(1);
     });
-  expect(wraplet.wraplet.isInitialized).toBe(false);
-  expect(wraplet.wraplet.isGettingInitialized).toBe(true);
+  expect(wraplet.wraplet.status.isInitialized).toBe(false);
+  expect(wraplet.wraplet.status.isGettingInitialized).toBe(true);
   wraplet.wraplet.destroy();
   // Destruction is scheduled after initialization.
-  expect(wraplet.wraplet.isGettingInitialized).toBe(true);
-  expect(wraplet.wraplet.isGettingDestroyed).toBe(true);
+  expect(wraplet.wraplet.status.isGettingInitialized).toBe(true);
+  expect(wraplet.wraplet.status.isGettingDestroyed).toBe(true);
 });

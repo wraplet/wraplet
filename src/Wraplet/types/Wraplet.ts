@@ -11,14 +11,18 @@ export interface Wraplet<N extends Node = Node> {
 }
 
 export interface WrapletApi<N extends Node = Node> {
-  isInitialized: boolean;
-  isGettingInitialized: boolean;
-  isDestroyed: boolean;
-  isGettingDestroyed: boolean;
+  status: Status;
   accessNode(callback: (node: N) => void): void;
   destroy(): Promise<void>;
   initialize(): Promise<void>;
   addDestroyListener(callback: DestroyListener<N>): void;
+}
+
+export interface Status {
+  isInitialized: boolean;
+  isGettingInitialized: boolean;
+  isDestroyed: boolean;
+  isGettingDestroyed: boolean;
 }
 
 export function isWraplet<N extends Node>(

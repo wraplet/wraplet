@@ -20,13 +20,14 @@ export { MapRepeat } from "./Map/MapRepeat";
 export type { WrapletSetReadonly } from "./Set/types/WrapletSetReadonly";
 export type { WrapletSet } from "./Set/types/WrapletSet";
 
+// Wraplet
 export { DefaultWrapletSetReadonly } from "./Set/DefaultWrapletSetReadonly";
 export { DefaultWrapletSet } from "./Set/DefaultWrapletSet";
 export { isWraplet } from "./Wraplet/types/Wraplet";
 
 // WrapletChildrenMap.
 export type { WrapletChildrenMap } from "./Wraplet/types/WrapletChildrenMap";
-export type { Wraplet, WrapletApi } from "./Wraplet/types/Wraplet";
+export type { Wraplet, WrapletApi, Status } from "./Wraplet/types/Wraplet";
 export type { SelectorCallback } from "./Wraplet/types/WrapletChildDefinition";
 export type { Constructable } from "./utils/types/Utils";
 

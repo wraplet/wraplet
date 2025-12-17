@@ -56,7 +56,10 @@ export async function destroyWrapletsRecursively(node: Node): Promise<void> {
   await actOnNodesRecursively(node, async (node) => {
     const wraplets = getWrapletsFromNode(node);
     for (const wraplet of wraplets) {
-      if (!wraplet.wraplet.isGettingDestroyed && !wraplet.wraplet.isDestroyed) {
+      if (
+        !wraplet.wraplet.status.isGettingDestroyed &&
+        !wraplet.wraplet.status.isDestroyed
+      ) {
         await wraplet.wraplet.destroy();
       }
       removeWrapletFromNode(wraplet, node);

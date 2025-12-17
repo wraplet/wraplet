@@ -3,6 +3,7 @@ import {
   DefaultCore,
   isWraplet,
   MapRepeat,
+  Status,
   WrapletApi,
   WrapletChildrenMap,
 } from "../src";
@@ -18,10 +19,13 @@ it("Test isWraplet", () => {
 
   class WrapletClass implements WrapletApi {
     [WrapletSymbol]: true = true;
-    public isGettingInitialized: boolean = false;
-    public isInitialized: boolean = true;
-    public isGettingDestroyed: boolean = false;
-    public isDestroyed: boolean = false;
+
+    public status: Status = {
+      isGettingInitialized: false,
+      isInitialized: true,
+      isDestroyed: false,
+      isGettingDestroyed: false,
+    };
 
     public accessNode(): void {}
 

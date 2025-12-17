@@ -3,6 +3,7 @@ import {
   DefaultArgCreator,
   DefaultCore,
   DefaultWrapletSet,
+  Status,
   WrapletApi,
   WrapletChildrenMap,
 } from "../src";
@@ -19,43 +20,40 @@ import { WrapletCreator } from "../src";
 describe("Test DefaultCore", () => {
   class TestWrapletClass implements Wraplet {
     [WrapletSymbol]: true = true;
-    public isGettingInitialized: boolean = false;
-    public isInitialized: boolean = false;
-    public isGettingDestroyed: boolean = false;
-    public isDestroyed: boolean = false;
+    private status: Status = {
+      isGettingInitialized: false,
+      isGettingDestroyed: false,
+      isInitialized: false,
+      isDestroyed: false,
+    };
 
     private destroyListeners: DestroyListener<Node>[] = [];
 
     constructor(private core: Core) {}
 
-    public get wraplet(): WrapletApi {
-      return {
-        isGettingInitialized: this.isGettingInitialized,
-        isInitialized: this.isInitialized,
-        isGettingDestroyed: this.isGettingDestroyed,
-        isDestroyed: this.isDestroyed,
+    public wraplet: WrapletApi = {
+      status: this.status,
 
-        addDestroyListener: (callback: DestroyListener<Node>) => {
-          this.destroyListeners.push(callback);
-        },
+      addDestroyListener: (callback: DestroyListener<Node>) => {
+        this.destroyListeners.push(callback);
+      },
 
-        initialize: async () => {
-          await this.core.initialize();
-          this.isInitialized = true;
-        },
+      initialize: async () => {
+        await this.core.initialize();
+        this.status.isInitialized = true;
+      },
 
-        destroy: async () => {
-          for (const listener of this.destroyListeners) {
-            await listener(this);
-          }
-          this.isDestroyed = true;
-        },
+      destroy: async () => {
+        for (const listener of this.destroyListeners) {
+          await listener(this);
+        }
+        this.status.isDestroyed = true;
+      },
 
-        accessNode: (callback: (node: Node) => void) => {
-          callback(this.core.node);
-        },
-      };
-    }
+      accessNode: (callback: (node: Node) => void) => {
+        callback(this.core.node);
+      },
+    };
   }
 
   it("Test DefaultCore not allowing children if provided node is not a ParentNode", () => {
@@ -266,6 +264,12 @@ describe("Test DefaultCore", () => {
     // Local wraplet class that records received args beyond core
     class ArgAwareWraplet implements Wraplet {
       [WrapletSymbol]: true = true;
+      private status: Status = {
+        isGettingInitialized: false,
+        isGettingDestroyed: false,
+        isInitialized: false,
+        isDestroyed: false,
+      };
       protected isGettingInitialized = false;
       protected isInitialized = false;
       protected isGettingDestroyed = false;
@@ -281,29 +285,25 @@ describe("Test DefaultCore", () => {
         this.received = rest;
       }
 
-      get wraplet(): WrapletApi {
-        return {
-          isGettingInitialized: this.isGettingInitialized,
-          isGettingDestroyed: this.isGettingDestroyed,
-          isInitialized: this.isInitialized,
-          isDestroyed: this.isDestroyed,
-          accessNode: (callback: (node: Node) => void) => {
-            callback(this.core.node);
-          },
-          addDestroyListener: (callback: DestroyListener<Node>): void => {
-            this.destroyListeners.push(callback);
-          },
-          destroy: async () => {
-            for (const listener of this.destroyListeners) {
-              await listener(this);
-            }
-            this.isDestroyed = true;
-          },
-          initialize: async () => {
-            this.isInitialized = true;
-          },
-        };
-      }
+      public wraplet: WrapletApi = {
+        status: this.status,
+
+        accessNode: (callback: (node: Node) => void) => {
+          callback(this.core.node);
+        },
+        addDestroyListener: (callback: DestroyListener<Node>): void => {
+          this.destroyListeners.push(callback);
+        },
+        destroy: async () => {
+          for (const listener of this.destroyListeners) {
+            await listener(this);
+          }
+          this.isDestroyed = true;
+        },
+        initialize: async () => {
+          this.isInitialized = true;
+        },
+      };
     }
 
     // Arg creator mock that should be invoked by DefaultCore.defaultWrapletCreator
