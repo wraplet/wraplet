@@ -5,7 +5,9 @@ export { NodeTreeParentSymbol };
 
 export interface NodeTreeParent {
   [NodeTreeParentSymbol]: true;
-  getNodeTreeChildren(): Wraplet[];
+  wraplet: {
+    getNodeTreeChildren(): Wraplet[];
+  };
 }
 
 export function isNodeTreeParent(object: object): object is NodeTreeParent {

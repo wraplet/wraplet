@@ -83,7 +83,7 @@ describe("AbstractWraplet initialization", () => {
     }
     const callback = jest.fn((element: Element) => element);
 
-    wraplet.accessNode((element) => {
+    wraplet.wraplet.accessNode((element) => {
       callback(element);
     });
 
@@ -172,7 +172,7 @@ describe("AbstractWraplet initialization", () => {
     if (!wraplet) {
       throw Error("Wraplet not created.");
     }
-    await wraplet.initialize();
+    await wraplet.wraplet.initialize();
 
     expect(instatiatedFunc).toHaveBeenCalledTimes(1);
   });
@@ -215,10 +215,10 @@ describe("AbstractWraplet initialization", () => {
       throw Error("Wraplet not initialized.");
     }
 
-    await wraplet.initialize();
+    await wraplet.wraplet.initialize();
 
     expect(defaultStatus).toEqual(false);
-    expect(wraplet.isInitialized).toEqual(true);
+    expect(wraplet.wraplet.isInitialized).toEqual(true);
   });
 
   it("Test that proper errors are thrown when accessing children when they are instantiated or not", async () => {
@@ -269,7 +269,7 @@ describe("AbstractWraplet initialization", () => {
 
     expect(funcUninitialized).not.toThrow();
     expect(funcInitialized).toThrow(ChildrenAreNotAvailableError);
-    await wraplet.initialize();
+    await wraplet.wraplet.initialize();
     expect(funcUninitialized).toThrow(ChildrenAreNotAvailableError);
     expect(funcInitialized).not.toThrow();
   });
@@ -340,7 +340,7 @@ it("Test AbstractWraplet syncing children", async () => {
     throw new Error("The main wraplet has not been created.");
   }
 
-  await wraplet.initialize();
+  await wraplet.wraplet.initialize();
 
   // Test if syncing is idempotent.
   wraplet.syncChildren();
@@ -429,19 +429,19 @@ describe("Test AbstractWraplet groupable", () => {
   }
 
   it("Test AbstractWraplet groupable default groups attribute", async () => {
-    await wraplet.initialize();
+    await wraplet.wraplet.initialize();
 
     const child1 = wraplet.getChild("child1");
     const child2 = wraplet.getChild("child2");
     const child3 = wraplet.getChild("child3");
 
-    expect(child1.getGroups()).toEqual(["group1", "group2"]);
-    expect(child2.getGroups()).toEqual(["group2"]);
-    expect(child3.getGroups()).toEqual([]);
+    expect(child1.wraplet.getGroups()).toEqual(["group1", "group2"]);
+    expect(child2.wraplet.getGroups()).toEqual(["group2"]);
+    expect(child3.wraplet.getGroups()).toEqual([]);
   });
 
   it("Test AbstractWraplet groupable custom groups attribute", async () => {
-    await wraplet.initialize();
+    await wraplet.wraplet.initialize();
 
     const child1 = wraplet.getChild("child1");
     const child2 = wraplet.getChild("child2");
@@ -459,11 +459,11 @@ describe("Test AbstractWraplet groupable", () => {
       return value.split(",");
     };
 
-    child1.setGroupsExtractor(newGroupExtractor);
-    child2.setGroupsExtractor(newGroupExtractor);
+    child1.wraplet.setGroupsExtractor(newGroupExtractor);
+    child2.wraplet.setGroupsExtractor(newGroupExtractor);
 
-    expect(child1.getGroups()).toEqual(["group1"]);
-    expect(child2.getGroups()).toEqual(["group1", "group2"]);
+    expect(child1.wraplet.getGroups()).toEqual(["group1"]);
+    expect(child2.wraplet.getGroups()).toEqual(["group1", "group2"]);
   });
 });
 
@@ -507,9 +507,9 @@ it("Test AbstractWraplet NodeTreeParent interface", async () => {
     throw new Error("Wraplets not created.");
   }
 
-  await wraplet.initialize();
+  await wraplet.wraplet.initialize();
 
-  const nodeTreeChildren = wraplet.getNodeTreeChildren();
+  const nodeTreeChildren = wraplet.wraplet.getNodeTreeChildren();
   expect(nodeTreeChildren.length).toBe(4);
 });
 
@@ -522,7 +522,7 @@ it("Test AbstractWraplet groupable when node is not an element", () => {
 
   const node = document.createTextNode("test");
   const wraplet = new TestWraplet(node);
-  const groups = wraplet.getGroups();
+  const groups = wraplet.wraplet.getGroups();
 
   expect(groups).toEqual([]);
 });
@@ -569,7 +569,7 @@ it("Test AbstractWraplet map children args", async () => {
     throw new Error("Wraplet not created.");
   }
 
-  await wraplet.initialize();
+  await wraplet.wraplet.initialize();
 
   expect(wraplet.getChildArg1Value()).toEqual(arg1Value);
 });
@@ -584,22 +584,22 @@ it("Test AbstractWraplet destroy during initialization", async () => {
 
   const func = jest.fn();
 
-  wraplet
+  wraplet.wraplet
     .initialize()
     .then(async () => {
       func();
       // Make sure that wraplet is destroyed after initialization is complete.
-      expect(wraplet.isDestroyed).toBe(true);
+      expect(wraplet.wraplet.isDestroyed).toBe(true);
       // We can run `destroy` multiple times without consequences.
-      await expect(wraplet.destroy()).resolves.not.toThrow();
+      await expect(wraplet.wraplet.destroy()).resolves.not.toThrow();
     })
     .finally(() => {
       expect(func).toHaveBeenCalledTimes(1);
     });
-  expect(wraplet.isInitialized).toBe(false);
-  expect(wraplet.isGettingInitialized).toBe(true);
-  wraplet.destroy();
+  expect(wraplet.wraplet.isInitialized).toBe(false);
+  expect(wraplet.wraplet.isGettingInitialized).toBe(true);
+  wraplet.wraplet.destroy();
   // Destruction is scheduled after initialization.
-  expect(wraplet.isGettingInitialized).toBe(true);
-  expect(wraplet.isGettingDestroyed).toBe(true);
+  expect(wraplet.wraplet.isGettingInitialized).toBe(true);
+  expect(wraplet.wraplet.isGettingDestroyed).toBe(true);
 });

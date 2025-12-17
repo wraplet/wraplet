@@ -7,6 +7,10 @@ export { WrapletSymbol };
 
 export interface Wraplet<N extends Node = Node> {
   [WrapletSymbol]: true;
+  wraplet: WrapletApi<N>;
+}
+
+export interface WrapletApi<N extends Node = Node> {
   isInitialized: boolean;
   isGettingInitialized: boolean;
   isDestroyed: boolean;

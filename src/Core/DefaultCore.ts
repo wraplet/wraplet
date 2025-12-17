@@ -98,7 +98,9 @@ export class DefaultCore<
       return isWrapletSet(child) ? Array.from(child) : [child];
     });
 
-    await Promise.all(childInstances.map((child) => child.initialize()));
+    await Promise.all(
+      childInstances.map((child) => child.wraplet.initialize()),
+    );
 
     this.isInitialized = true;
     this.isGettingInitialized = false;
@@ -169,7 +171,7 @@ export class DefaultCore<
     // Return only descendants.
     return children.filter((child) => {
       let result = false;
-      child.accessNode((childsNode) => {
+      child.wraplet.accessNode((childsNode) => {
         result = this.node.contains(childsNode);
       });
       return result;
@@ -196,7 +198,7 @@ export class DefaultCore<
       const existingWraplets = existingChild.find((wraplet) => {
         let result = false;
 
-        wraplet.accessNode((node) => {
+        wraplet.wraplet.accessNode((node) => {
           if (node === childElement) {
             result = true;
           }
@@ -365,7 +367,7 @@ export class DefaultCore<
       }
     }) as DestroyListener<Node>;
     // Listen for the child's destruction.
-    wraplet.addDestroyListener(destroyListener);
+    wraplet.wraplet.addDestroyListener(destroyListener);
   }
 
   /**
@@ -540,10 +542,10 @@ export class DefaultCore<
       }
       if (isWrapletSet(child)) {
         for (const item of child) {
-          await item.destroy();
+          await item.wraplet.destroy();
         }
       } else {
-        await child.destroy();
+        await child.wraplet.destroy();
       }
     }
   }

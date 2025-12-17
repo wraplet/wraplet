@@ -32,7 +32,7 @@ describe("Test wraplet single optional child", () => {
     if (!wraplet) {
       throw Error("Wraplet not initialized.");
     }
-    await wraplet.initialize();
+    await wraplet.wraplet.initialize();
     expect(wraplet.getChild("child")).toBeInstanceOf(TestWrapletChild);
   });
 
@@ -45,7 +45,7 @@ describe("Test wraplet single optional child", () => {
     if (!wraplet) {
       throw Error("Wraplet not initialized.");
     }
-    await wraplet.initialize();
+    await wraplet.wraplet.initialize();
     expect(wraplet.getChild("child")?.hasElement()).toBeTruthy();
   });
 });

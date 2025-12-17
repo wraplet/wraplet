@@ -26,7 +26,7 @@ export { isWraplet } from "./Core/types/Wraplet";
 
 // WrapletChildrenMap.
 export type { WrapletChildrenMap } from "./Core/types/WrapletChildrenMap";
-export type { Wraplet } from "./Core/types/Wraplet";
+export type { Wraplet, WrapletApi } from "./Core/types/Wraplet";
 export type { SelectorCallback } from "./Core/types/WrapletChildDefinition";
 export type { Constructable } from "./utils/types/Utils";
 

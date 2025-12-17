@@ -31,7 +31,7 @@ describe("Test wraplet multiple optional children", () => {
     if (!wraplet) {
       throw new Error("Wraplet not initialized.");
     }
-    await wraplet.initialize();
+    await wraplet.wraplet.initialize();
     const children = wraplet.getChild("children");
     expect(children.size).toBe(0);
   });
@@ -46,7 +46,7 @@ describe("Test wraplet multiple optional children", () => {
     if (!wraplet) {
       throw new Error("Wraplet not initialized.");
     }
-    await wraplet.initialize();
+    await wraplet.wraplet.initialize();
     const children = wraplet.getChild("children");
     expect(children.size).toBe(2);
   });

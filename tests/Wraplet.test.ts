@@ -3,7 +3,7 @@ import {
   DefaultCore,
   isWraplet,
   MapRepeat,
-  Wraplet,
+  WrapletApi,
   WrapletChildrenMap,
 } from "../src";
 import { WrapletSymbol } from "../src/Core/types/Wraplet";
@@ -16,7 +16,7 @@ it("Test isWraplet", () => {
 
   expect(isWraplet(noWraplet)).toBe(false);
 
-  class WrapletClass implements Wraplet {
+  class WrapletClass implements WrapletApi {
     [WrapletSymbol]: true = true;
     public isGettingInitialized: boolean = false;
     public isInitialized: boolean = true;
@@ -85,7 +85,7 @@ describe("Test recursive wraplets", () => {
     if (!wraplet) {
       throw new Error("Wraplet not created.");
     }
-    await wraplet.initialize();
+    await wraplet.wraplet.initialize();
     const func = jest.fn();
 
     let child = wraplet.getChild("child");
@@ -202,7 +202,7 @@ describe("Test recursive wraplets", () => {
       throw new Error("Wraplet not created.");
     }
 
-    await parent1.initialize();
+    await parent1.wraplet.initialize();
 
     const child1 = getChild(parent1);
     const parent2 = getParent(child1);

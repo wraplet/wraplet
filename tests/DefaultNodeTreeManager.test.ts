@@ -7,9 +7,9 @@ import {
   predictElementCount,
 } from "./resources/utils";
 import DefaultNodeTreeManager from "../src/NodeTreeManager/DefaultNodeTreeManager";
-import { AbstractWraplet, Wraplet, WrapletChildrenMap } from "../src";
+import { AbstractWraplet, WrapletChildrenMap } from "../src";
 import { isParentNode } from "../src/NodeTreeManager/utils";
-import { WrapletSymbol } from "../src/Core/types/Wraplet";
+import { WrapletApi, Wraplet, WrapletSymbol } from "../src/Core/types/Wraplet";
 
 it("Test default node tree manager destroy tree", async () => {
   const func = jest.fn();
@@ -37,7 +37,7 @@ it("Test default node tree manager destroy tree", async () => {
 
     const wraplets = TestWraplet.createAll(attribute, {}, node);
     for (const wraplet of wraplets) {
-      await wraplet.initialize();
+      await wraplet.wraplet.initialize();
     }
 
     return wraplets;
@@ -74,7 +74,7 @@ it("Test default node tree manager initialize tree", async () => {
     if (!wraplet) {
       throw new Error("Wraplet not created.");
     }
-    await wraplet.initialize();
+    await wraplet.wraplet.initialize();
     return [wraplet];
   });
 
@@ -124,7 +124,7 @@ it("Test wraplet tree manager initialization performance", async () => {
 
     const wraplets = TestWraplet.create(node, "data-id-0-1");
     for (const wraplet of wraplets) {
-      await wraplet.initialize();
+      await wraplet.wraplet.initialize();
     }
     return wraplets;
   });
@@ -192,7 +192,7 @@ it("Test searching for wraplets in the node tree manager", async () => {
       throw new Error("Wraplets not created.");
     }
     for (const wraplet of wraplets) {
-      await wraplet.initialize();
+      await wraplet.wraplet.initialize();
     }
     return wraplets;
   });
@@ -229,14 +229,19 @@ it("Test searching for wraplets in the node tree manager", async () => {
 it("Test initializing non-tree-parent wraplet", async () => {
   class TestWraplet implements Wraplet {
     [WrapletSymbol]: true = true;
-    isGettingInitialized: boolean = false;
-    isInitialized: boolean = true;
-    isDestroyed: boolean = false;
-    isGettingDestroyed: boolean = false;
-    accessNode(): void {}
-    async initialize() {}
-    async destroy() {}
-    addDestroyListener(): void {}
+
+    public get wraplet(): WrapletApi {
+      return {
+        isGettingInitialized: false,
+        isInitialized: true,
+        isDestroyed: false,
+        isGettingDestroyed: false,
+        accessNode(): void {},
+        async initialize() {},
+        async destroy() {},
+        addDestroyListener(): void {},
+      };
+    }
   }
 
   const manager = new DefaultNodeTreeManager();
@@ -245,7 +250,7 @@ it("Test initializing non-tree-parent wraplet", async () => {
       throw new Error("Node is not a Document");
     }
     const wraplet = new TestWraplet();
-    await wraplet.initialize();
+    await wraplet.wraplet.initialize();
     return [wraplet];
   });
 

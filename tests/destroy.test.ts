@@ -72,8 +72,8 @@ it("Test that 'destroy' is invoked on all children", async () => {
   if (!wraplet) {
     throw new Error("Wraplet not created.");
   }
-  await wraplet.initialize();
-  await wraplet.destroy();
+  await wraplet.wraplet.initialize();
+  await wraplet.wraplet.destroy();
   expect(funcCounter).toHaveBeenCalledTimes(5);
 });
 
@@ -92,8 +92,8 @@ it("Test that children are removed from the nodes after being destroyed", async 
   if (!wraplet) {
     throw new Error("Wraplet not initialized.");
   }
-  await wraplet.initialize();
-  await wraplet.destroy();
+  await wraplet.wraplet.initialize();
+  await wraplet.wraplet.destroy();
   const elements = document.querySelectorAll("*");
 
   for (const element of elements) {
@@ -147,7 +147,7 @@ it("Test that listeneres are being detached during destruction", async () => {
     throw new Error("Wraplet not created.");
   }
 
-  await main.initialize();
+  await main.wraplet.initialize();
 
   const child = main.getChild("child");
   if (!child) {
@@ -156,7 +156,7 @@ it("Test that listeneres are being detached during destruction", async () => {
 
   const childNode = document.querySelector(`[${childAttribute}]`) as Element;
   childNode.dispatchEvent(new Event("click"));
-  await main.destroy();
+  await main.wraplet.destroy();
   childNode.dispatchEvent(new Event("click"));
 
   expect(listener).toHaveBeenCalledTimes(1);
@@ -193,7 +193,7 @@ it("Test that if the required child has been destroyed then throw exception", as
     throw new Error("Wraplet not created.");
   }
 
-  await wraplet.initialize();
+  await wraplet.wraplet.initialize();
 
   const child = wraplet.getChild("child");
   if (!child) {
@@ -201,7 +201,7 @@ it("Test that if the required child has been destroyed then throw exception", as
   }
 
   await expect(async () => {
-    await child.destroy();
+    await child.wraplet.destroy();
   }).rejects.toThrow(RequiredChildDestroyedError);
 });
 
@@ -246,13 +246,13 @@ it("Destroy child listener", async () => {
   if (!wraplet) {
     throw new Error("Wraplet not created.");
   }
-  await wraplet.initialize();
+  await wraplet.wraplet.initialize();
 
   const child = wraplet.getChild("child");
   if (!child) {
     throw new Error("Child not found.");
   }
-  await child.destroy();
+  await child.wraplet.destroy();
 
   expect(func).toHaveBeenCalledTimes(1);
 });
@@ -292,9 +292,9 @@ it("Test isDestroyed values", async () => {
   if (!wraplet) {
     throw new Error("Wraplet not created.");
   }
-  await wraplet.initialize();
-  expect(wraplet.isGettingDestroyed).toBe(false);
-  expect(wraplet.isDestroyed).toBe(false);
-  await wraplet.destroy();
-  expect(wraplet.isDestroyed).toBe(true);
+  await wraplet.wraplet.initialize();
+  expect(wraplet.wraplet.isGettingDestroyed).toBe(false);
+  expect(wraplet.wraplet.isDestroyed).toBe(false);
+  await wraplet.wraplet.destroy();
+  expect(wraplet.wraplet.isDestroyed).toBe(true);
 });

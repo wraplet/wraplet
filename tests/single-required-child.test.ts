@@ -29,7 +29,7 @@ describe("Test wraplet single child required", () => {
     if (!wraplet) {
       throw Error("Wraplet not initialized.");
     }
-    await wraplet.initialize();
+    await wraplet.wraplet.initialize();
     expect(wraplet.getChild("child")).toBeInstanceOf(TestWrapletChild);
   });
 
@@ -43,7 +43,7 @@ describe("Test wraplet single child required", () => {
       if (!wraplet) {
         throw new Error("Wraplet not created.");
       }
-      await wraplet.initialize();
+      await wraplet.wraplet.initialize();
     };
     await expect(createWraplet()).rejects.toThrow(MissingRequiredChildError);
   });

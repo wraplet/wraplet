@@ -32,7 +32,7 @@ describe("Test wraplet multiple required children", () => {
       if (!wraplet) {
         throw new Error("Wraplet not created.");
       }
-      await wraplet.initialize();
+      await wraplet.wraplet.initialize();
     };
     await expect(getWraplet).rejects.toThrow(MissingRequiredChildError);
   });
@@ -47,7 +47,7 @@ describe("Test wraplet multiple required children", () => {
     if (!wraplet) {
       throw new Error("Wraplet not initialized.");
     }
-    await wraplet.initialize();
+    await wraplet.wraplet.initialize();
     const children = wraplet.getChild("children");
     expect(children.size).toBe(2);
   });

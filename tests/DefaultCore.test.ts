@@ -3,7 +3,7 @@ import {
   DefaultArgCreator,
   DefaultCore,
   DefaultWrapletSet,
-  Wraplet,
+  WrapletApi,
   WrapletChildrenMap,
 } from "../src";
 import {
@@ -13,7 +13,7 @@ import {
 } from "../src/errors";
 import { Core } from "../src";
 import { DestroyListener } from "../src/Core/types/DestroyListener";
-import { WrapletSymbol } from "../src/Core/types/Wraplet";
+import { Wraplet, WrapletSymbol } from "../src/Core/types/Wraplet";
 import { WrapletCreator } from "../src";
 
 describe("Test DefaultCore", () => {
@@ -28,24 +28,33 @@ describe("Test DefaultCore", () => {
 
     constructor(private core: Core) {}
 
-    accessNode(callback: (node: Node) => void): void {
-      callback(this.core.node);
-    }
+    public get wraplet(): WrapletApi {
+      return {
+        isGettingInitialized: this.isGettingInitialized,
+        isInitialized: this.isInitialized,
+        isGettingDestroyed: this.isGettingDestroyed,
+        isDestroyed: this.isDestroyed,
 
-    addDestroyListener(callback: DestroyListener<Node>): void {
-      this.destroyListeners.push(callback);
-    }
+        addDestroyListener: (callback: DestroyListener<Node>) => {
+          this.destroyListeners.push(callback);
+        },
 
-    async destroy() {
-      for (const listener of this.destroyListeners) {
-        await listener(this);
-      }
-      this.isDestroyed = true;
-    }
+        initialize: async () => {
+          await this.core.initialize();
+          this.isInitialized = true;
+        },
 
-    async initialize() {
-      await this.core.initialize();
-      this.isInitialized = true;
+        destroy: async () => {
+          for (const listener of this.destroyListeners) {
+            await listener(this);
+          }
+          this.isDestroyed = true;
+        },
+
+        accessNode: (callback: (node: Node) => void) => {
+          callback(this.core.node);
+        },
+      };
     }
   }
 
@@ -200,10 +209,10 @@ describe("Test DefaultCore", () => {
     await core.initialize();
 
     for (const child of core.children.children.values()) {
-      await child.destroy();
+      await child.wraplet.destroy();
     }
 
-    core.children.child?.destroy();
+    core.children.child?.wraplet.destroy();
 
     expect(func).toHaveBeenCalledTimes(3);
   });
@@ -257,10 +266,10 @@ describe("Test DefaultCore", () => {
     // Local wraplet class that records received args beyond core
     class ArgAwareWraplet implements Wraplet {
       [WrapletSymbol]: true = true;
-      public isGettingInitialized = false;
-      public isInitialized = false;
-      public isGettingDestroyed = false;
-      public isDestroyed = false;
+      protected isGettingInitialized = false;
+      protected isInitialized = false;
+      protected isGettingDestroyed = false;
+      protected isDestroyed = false;
 
       public received: unknown[];
       private destroyListeners: DestroyListener<Node>[] = [];
@@ -272,23 +281,28 @@ describe("Test DefaultCore", () => {
         this.received = rest;
       }
 
-      accessNode(callback: (node: Node) => void): void {
-        callback(this.core.node);
-      }
-
-      addDestroyListener(callback: DestroyListener<Node>): void {
-        this.destroyListeners.push(callback);
-      }
-
-      async destroy() {
-        for (const listener of this.destroyListeners) {
-          await listener(this);
-        }
-        this.isDestroyed = true;
-      }
-
-      async initialize() {
-        this.isInitialized = true;
+      get wraplet(): WrapletApi {
+        return {
+          isGettingInitialized: this.isGettingInitialized,
+          isGettingDestroyed: this.isGettingDestroyed,
+          isInitialized: this.isInitialized,
+          isDestroyed: this.isDestroyed,
+          accessNode: (callback: (node: Node) => void) => {
+            callback(this.core.node);
+          },
+          addDestroyListener: (callback: DestroyListener<Node>): void => {
+            this.destroyListeners.push(callback);
+          },
+          destroy: async () => {
+            for (const listener of this.destroyListeners) {
+              await listener(this);
+            }
+            this.isDestroyed = true;
+          },
+          initialize: async () => {
+            this.isInitialized = true;
+          },
+        };
       }
     }
 
@@ -383,7 +397,7 @@ describe("Test DefaultCore", () => {
     (core.children as any)["child"] = null;
 
     const func1 = async () => {
-      await child?.destroy();
+      await child?.wraplet.destroy();
     };
 
     await expect(func1).rejects.toThrow(
@@ -399,7 +413,7 @@ describe("Test DefaultCore", () => {
     childrenItems.delete(childrenItem);
 
     const func2 = async () => {
-      await childrenItem?.destroy();
+      await childrenItem?.wraplet.destroy();
     };
 
     await expect(func2).rejects.toThrow(

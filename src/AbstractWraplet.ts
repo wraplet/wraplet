@@ -1,6 +1,6 @@
 import { WrapletChildrenMap } from "./Core/types/WrapletChildrenMap";
 import { WrapletChildren } from "./Core/types/WrapletChildren";
-import { Wraplet, WrapletSymbol } from "./Core/types/Wraplet";
+import { Wraplet, WrapletApi, WrapletSymbol } from "./Core/types/Wraplet";
 import { DestroyListener } from "./Core/types/DestroyListener";
 import { ChildInstance } from "./Core/types/ChildInstance";
 import {
@@ -26,10 +26,10 @@ export abstract class AbstractWraplet<
   public [GroupableSymbol]: true = true;
   public [NodeTreeParentSymbol]: true = true;
 
-  public isGettingDestroyed: boolean = false;
-  public isDestroyed: boolean = false;
-  public isGettingInitialized: boolean = false;
-  public isInitialized: boolean = false;
+  protected isGettingDestroyed: boolean = false;
+  protected isDestroyed: boolean = false;
+  protected isGettingInitialized: boolean = false;
+  protected isInitialized: boolean = false;
 
   private groupsExtractor: GroupExtractor = (node: Node) => {
     if (node instanceof Element) {
@@ -57,15 +57,42 @@ export abstract class AbstractWraplet<
     core.addInstantiateChildListener(this.onChildInstantiate.bind(this));
   }
 
-  public getNodeTreeChildren(): Wraplet[] {
-    return this.core.getNodeTreeChildren();
+  public get wraplet(): WrapletApi<N> &
+    NodeTreeParent["wraplet"] &
+    Groupable["wraplet"] {
+    return {
+      isGettingInitialized: this.isGettingInitialized,
+      isInitialized: this.isInitialized,
+      isGettingDestroyed: this.isGettingDestroyed,
+      isDestroyed: this.isDestroyed,
+
+      addDestroyListener: (callback: DestroyListener<N>) => {
+        this.destroyListeners.push(callback);
+      },
+
+      initialize: this.initialize.bind(this),
+
+      destroy: this.destroy.bind(this),
+
+      accessNode: (callback: (node: N) => void) => {
+        this.__debugNodeAccessors.push(callback);
+        callback(this.node);
+      },
+
+      getNodeTreeChildren: (): Wraplet[] => {
+        return this.core.getNodeTreeChildren();
+      },
+
+      setGroupsExtractor: this.setGroupsExtractor.bind(this),
+      getGroups: this.getGroups.bind(this),
+    };
   }
 
-  public setGroupsExtractor(callback: GroupExtractor): void {
+  protected setGroupsExtractor(callback: GroupExtractor): void {
     this.groupsExtractor = callback;
   }
 
-  public getGroups(): string[] {
+  protected getGroups(): string[] {
     return this.groupsExtractor(this.node);
   }
 
@@ -73,12 +100,7 @@ export abstract class AbstractWraplet<
     return this.core.children;
   }
 
-  public accessNode(callback: (node: N) => void) {
-    this.__debugNodeAccessors.push(callback);
-    callback(this.node);
-  }
-
-  public async destroy() {
+  protected async destroy() {
     if (this.isDestroyed) {
       // We are already destroyed.
       return;
@@ -116,17 +138,13 @@ export abstract class AbstractWraplet<
 
   protected async onDestroy() {}
 
-  public addDestroyListener(callback: DestroyListener<N>): void {
-    this.destroyListeners.push(callback);
-  }
-
   /**
    * This method will be ivoked if one of the wraplet's children has been destroyed.
    */
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   protected onChildDestroy(child: ChildInstance<M, keyof M>, id: keyof M) {}
 
-  public async initialize(): Promise<void> {
+  protected async initialize(): Promise<void> {
     this.isGettingInitialized = true;
     await this.core.initialize();
     await this.onInitialize();

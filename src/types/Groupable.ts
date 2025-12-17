@@ -7,8 +7,10 @@ export { GroupableSymbol };
 
 export interface Groupable {
   [GroupableSymbol]: true;
-  setGroupsExtractor(callback: GroupExtractor): void;
-  getGroups(): string[];
+  wraplet: {
+    setGroupsExtractor(callback: GroupExtractor): void;
+    getGroups(): string[];
+  };
 }
 
 export function isGroupable(object: unknown): object is Groupable {

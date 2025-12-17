@@ -20,20 +20,20 @@ export default class DefaultNodeTreeManager implements NodeTreeManager {
     for (const initializer of this.initializers) {
       const wraplets = await initializer(node);
       for (const wraplet of wraplets) {
-        wraplet.accessNode((wrapletsNode) => {
+        wraplet.wraplet.accessNode((wrapletsNode) => {
           addWrapletToNode(wraplet, wrapletsNode);
         });
         this.items.add(wraplet);
         if (isNodeTreeParent(wraplet)) {
-          const children = wraplet.getNodeTreeChildren();
+          const children = wraplet.wraplet.getNodeTreeChildren();
           for (const child of children) {
-            child.accessNode((childNode: Node) => {
+            child.wraplet.accessNode((childNode: Node) => {
               addWrapletToNode(child, childNode);
             });
             this.items.add(child);
           }
         }
-        wraplet.addDestroyListener(async (wraplet) => {
+        wraplet.wraplet.addDestroyListener(async (wraplet) => {
           this.items.delete(wraplet);
         });
       }

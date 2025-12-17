@@ -36,7 +36,7 @@ describe("Test wraplet map", () => {
       if (!wraplet) {
         throw new Error("Wraplet not created.");
       }
-      await wraplet.initialize();
+      await wraplet.wraplet.initialize();
     };
     await expect(createWraplet()).rejects.toThrow(MapError);
   });
@@ -45,7 +45,7 @@ describe("Test wraplet map", () => {
     const textNode = document.createTextNode("test");
     const createNodeWraplet = async () => {
       const wraplet = new TestNodeWraplet(textNode);
-      await wraplet.initialize();
+      await wraplet.wraplet.initialize();
     };
     await expect(createNodeWraplet()).rejects.toThrow(MapError);
   });

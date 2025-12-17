@@ -1,6 +1,7 @@
 import "./setup";
-import { DefaultWrapletSetReadonly, Wraplet, WrapletSetReadonly } from "../src";
+import { DefaultWrapletSetReadonly, WrapletSetReadonly } from "../src";
 import { BaseElementTestWraplet } from "./resources/BaseElementTestWraplet";
+import { Wraplet } from "../src";
 
 describe("Test default wraplet set", () => {
   const attribute = "data-wraplet";

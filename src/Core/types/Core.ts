@@ -5,7 +5,6 @@ import {
 } from "./WrapletChildrenMap";
 import { DestroyChildListener } from "./DestroyChildListener";
 import { InstantiateChildListener } from "./InstantiateChildListener";
-import { NodeTreeParent, NodeTreeParentSymbol } from "./NodeTreeParent";
 import { Wraplet } from "./Wraplet";
 import { WrapletCreator } from "./WrapletCreator";
 import { is } from "../../utils/is";
@@ -20,9 +19,8 @@ export { CoreSymbol };
 export interface Core<
   N extends Node = Node,
   M extends WrapletChildrenMap = {},
-> extends NodeTreeParent {
+> {
   [CoreSymbol]: true;
-  [NodeTreeParentSymbol]: true;
   /**
    * Indicates whether the core is destroyed.
    */
