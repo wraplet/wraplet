@@ -1,5 +1,5 @@
 import { InstantiateChildListener } from "./InstantiateChildListener";
-import { WrapletChildrenMap } from "./WrapletChildrenMap";
+import { WrapletChildrenMap } from "../../Wraplet/types/WrapletChildrenMap";
 import { DestroyChildListener } from "./DestroyChildListener";
 
 export type CoreInitOptions<M extends WrapletChildrenMap = WrapletChildrenMap> =

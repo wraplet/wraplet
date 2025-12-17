@@ -1,4 +1,4 @@
-import { DestroyListener } from "./DestroyListener";
+import { DestroyListener } from "../../Core/types/DestroyListener";
 
 import { is } from "../../utils/is";
 

@@ -4,7 +4,7 @@ import { is } from "../src/utils/is";
 
 // Type guards using the shared `is` helper
 import { CoreSymbol, isCore } from "../src/Core/types/Core";
-import { WrapletSymbol, isWraplet } from "../src/Core/types/Wraplet";
+import { WrapletSymbol, isWraplet } from "../src/Wraplet/types/Wraplet";
 import { ArgCreatorSymbol, isArgCreator } from "../src/Core/types/ArgCreator";
 import { DynamicMapSymbol, isDynamicMap } from "../src/Map/types/DynamicMap";
 import { WrapletSetSymbol, isWrapletSet } from "../src/Set/types/WrapletSet";

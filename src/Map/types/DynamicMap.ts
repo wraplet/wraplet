@@ -1,7 +1,7 @@
 import {
   WrapletChildrenMap,
   WrapletChildrenMapWithDefaults,
-} from "../../Core/types/WrapletChildrenMap";
+} from "../../Wraplet/types/WrapletChildrenMap";
 import { MapWrapper } from "../MapWrapper";
 import { is } from "../../utils/is";
 

@@ -2,7 +2,7 @@ import {
   isWrapletChildrenMapWithDefaults,
   WrapletChildrenMap,
   WrapletChildrenMapWithDefaults,
-} from "../Core/types/WrapletChildrenMap";
+} from "../Wraplet/types/WrapletChildrenMap";
 import { fillMapWithDefaults } from "./utils";
 import { isDynamicMap } from "./types/DynamicMap";
 

@@ -1,6 +1,6 @@
 import { Wraplet } from "./Wraplet";
 import { WrapletChildrenMap } from "./WrapletChildrenMap";
-import { CoreInitOptions } from "./CoreInitOptions";
+import { CoreInitOptions } from "../../Core/types/CoreInitOptions";
 import { DynamicMap } from "../../Map/types/DynamicMap";
 import { Constructable } from "../../utils/types/Utils";
 

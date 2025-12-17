@@ -1,5 +1,5 @@
 import "./setup";
-import { NodeTreeManager } from "../src/NodeTreeManager/NodeTreeManager";
+import { NodeTreeManager } from "../src/NodeTreeManager/types/NodeTreeManager";
 import { BaseElementTestWraplet } from "./resources/BaseElementTestWraplet";
 import {
   countNodesRecursively,
@@ -9,7 +9,11 @@ import {
 import DefaultNodeTreeManager from "../src/NodeTreeManager/DefaultNodeTreeManager";
 import { AbstractWraplet, WrapletChildrenMap } from "../src";
 import { isParentNode } from "../src/NodeTreeManager/utils";
-import { WrapletApi, Wraplet, WrapletSymbol } from "../src/Core/types/Wraplet";
+import {
+  WrapletApi,
+  Wraplet,
+  WrapletSymbol,
+} from "../src/Wraplet/types/Wraplet";
 
 it("Test default node tree manager destroy tree", async () => {
   const func = jest.fn();

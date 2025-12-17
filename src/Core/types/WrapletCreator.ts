@@ -1,6 +1,6 @@
-import { Wraplet } from "./Wraplet";
+import { Wraplet } from "../../Wraplet/types/Wraplet";
 import { MapWrapper } from "../../Map/MapWrapper";
-import { WrapletChildrenMap } from "./WrapletChildrenMap";
+import { WrapletChildrenMap } from "../../Wraplet/types/WrapletChildrenMap";
 import { CoreInitOptions } from "./CoreInitOptions";
 import { Constructable } from "../../utils/types/Utils";
 import { Core } from "./Core";

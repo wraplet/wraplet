@@ -3,7 +3,7 @@ import "./setup";
 import { AbstractWraplet, WrapletChildrenMap } from "../src";
 import { BaseElementTestWraplet } from "./resources/BaseElementTestWraplet";
 import { RequiredChildDestroyedError } from "../src/errors";
-import { ChildInstance } from "../src/Core/types/ChildInstance";
+import { ChildInstance } from "../src/Wraplet/types/ChildInstance";
 import { Core } from "../src";
 
 const funcCounter = jest.fn();

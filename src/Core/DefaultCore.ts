@@ -1,4 +1,4 @@
-import { WrapletChildren } from "./types/WrapletChildren";
+import { WrapletChildren } from "../Wraplet/types/WrapletChildren";
 import { Nullable } from "../utils/types/Utils";
 import {
   ChildrenAreAlreadyDestroyedError,
@@ -9,15 +9,15 @@ import {
   MissingRequiredChildError,
   RequiredChildDestroyedError,
 } from "../errors";
-import { Wraplet } from "./types/Wraplet";
+import { Wraplet } from "../Wraplet/types/Wraplet";
 import {
   isWrapletChildrenMapWithDefaults,
   WrapletChildrenMap,
   WrapletChildrenMapWithDefaults,
-} from "./types/WrapletChildrenMap";
+} from "../Wraplet/types/WrapletChildrenMap";
 import { isParentNode } from "../NodeTreeManager/utils";
 import { InstantiateChildListener } from "./types/InstantiateChildListener";
-import { ChildInstance } from "./types/ChildInstance";
+import { ChildInstance } from "../Wraplet/types/ChildInstance";
 import { DestroyChildListener } from "./types/DestroyChildListener";
 import { CoreInitOptions } from "./types/CoreInitOptions";
 import { Core, CoreSymbol } from "./types/Core";
@@ -27,8 +27,8 @@ import { DefaultWrapletSet } from "../Set/DefaultWrapletSet";
 import {
   SelectorCallback,
   WrapletChildDefinitionWithDefaults,
-} from "./types/WrapletChildDefinition";
-import { NodeTreeParentSymbol } from "./types/NodeTreeParent";
+} from "../Wraplet/types/WrapletChildDefinition";
+import { NodeTreeParentSymbol } from "../NodeTreeManager/types/NodeTreeParent";
 import { MapWrapper } from "../Map/MapWrapper";
 import { WrapletCreator, WrapletCreatorArgs } from "./types/WrapletCreator";
 import { isArgCreator } from "./types/ArgCreator";

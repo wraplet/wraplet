@@ -1,4 +1,4 @@
-import { Wraplet } from "../Core/types/Wraplet";
+import { Wraplet } from "../Wraplet/types/Wraplet";
 import { DefaultWrapletSet } from "../Set/DefaultWrapletSet";
 import { isWrapletSet, WrapletSet } from "../Set/types/WrapletSet";
 

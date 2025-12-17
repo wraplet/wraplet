@@ -1,5 +1,5 @@
 import { WrapletCreatorArgs } from "./WrapletCreator";
-import { WrapletChildrenMap } from "./WrapletChildrenMap";
+import { WrapletChildrenMap } from "../../Wraplet/types/WrapletChildrenMap";
 
 import { is } from "../../utils/is";
 

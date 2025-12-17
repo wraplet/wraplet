@@ -1,11 +1,11 @@
-import { WrapletChildren } from "./WrapletChildren";
+import { WrapletChildren } from "../../Wraplet/types/WrapletChildren";
 import {
   WrapletChildrenMap,
   WrapletChildrenMapWithDefaults,
-} from "./WrapletChildrenMap";
+} from "../../Wraplet/types/WrapletChildrenMap";
 import { DestroyChildListener } from "./DestroyChildListener";
 import { InstantiateChildListener } from "./InstantiateChildListener";
-import { Wraplet } from "./Wraplet";
+import { Wraplet } from "../../Wraplet/types/Wraplet";
 import { WrapletCreator } from "./WrapletCreator";
 import { is } from "../../utils/is";
 

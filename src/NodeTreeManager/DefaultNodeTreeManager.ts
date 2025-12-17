@@ -1,10 +1,10 @@
 import { addWrapletToNode, destroyWrapletsRecursively } from "./utils";
-import { NodeTreeManager } from "./NodeTreeManager";
-import { Wraplet } from "../Core/types/Wraplet";
+import { NodeTreeManager } from "./types/NodeTreeManager";
+import { Wraplet } from "../Wraplet/types/Wraplet";
 import { WrapletSet } from "../Set/types/WrapletSet";
 import { WrapletSetReadonly } from "../Set/types/WrapletSetReadonly";
 import { DefaultWrapletSet } from "../Set/DefaultWrapletSet";
-import { isNodeTreeParent } from "../Core/types/NodeTreeParent";
+import { isNodeTreeParent } from "./types/NodeTreeParent";
 
 export type Initializer = (node: Node) => Promise<Wraplet[]>;
 

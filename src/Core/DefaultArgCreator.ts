@@ -1,5 +1,5 @@
 import { ArgCreator, ArgCreatorSymbol } from "./types/ArgCreator";
-import { WrapletChildrenMap } from "./types/WrapletChildrenMap";
+import { WrapletChildrenMap } from "../Wraplet/types/WrapletChildrenMap";
 import { WrapletCreatorArgs } from "./types/WrapletCreator";
 
 export class DefaultArgCreator<

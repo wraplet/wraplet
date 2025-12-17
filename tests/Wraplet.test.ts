@@ -6,7 +6,7 @@ import {
   WrapletApi,
   WrapletChildrenMap,
 } from "../src";
-import { WrapletSymbol } from "../src/Core/types/Wraplet";
+import { WrapletSymbol } from "../src/Wraplet/types/Wraplet";
 import { BaseElementTestWraplet } from "./resources/BaseElementTestWraplet";
 
 it("Test isWraplet", () => {

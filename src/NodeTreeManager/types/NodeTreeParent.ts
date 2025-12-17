@@ -1,4 +1,4 @@
-import { Wraplet } from "./Wraplet";
+import { Wraplet } from "../../Wraplet/types/Wraplet";
 
 const NodeTreeParentSymbol = Symbol("NodeTreeParent");
 export { NodeTreeParentSymbol };

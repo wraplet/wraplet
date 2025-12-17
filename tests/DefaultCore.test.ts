@@ -13,7 +13,7 @@ import {
 } from "../src/errors";
 import { Core } from "../src";
 import { DestroyListener } from "../src/Core/types/DestroyListener";
-import { Wraplet, WrapletSymbol } from "../src/Core/types/Wraplet";
+import { Wraplet, WrapletSymbol } from "../src/Wraplet/types/Wraplet";
 import { WrapletCreator } from "../src";
 
 describe("Test DefaultCore", () => {

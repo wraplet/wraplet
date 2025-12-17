@@ -22,12 +22,12 @@ export type { WrapletSet } from "./Set/types/WrapletSet";
 
 export { DefaultWrapletSetReadonly } from "./Set/DefaultWrapletSetReadonly";
 export { DefaultWrapletSet } from "./Set/DefaultWrapletSet";
-export { isWraplet } from "./Core/types/Wraplet";
+export { isWraplet } from "./Wraplet/types/Wraplet";
 
 // WrapletChildrenMap.
-export type { WrapletChildrenMap } from "./Core/types/WrapletChildrenMap";
-export type { Wraplet, WrapletApi } from "./Core/types/Wraplet";
-export type { SelectorCallback } from "./Core/types/WrapletChildDefinition";
+export type { WrapletChildrenMap } from "./Wraplet/types/WrapletChildrenMap";
+export type { Wraplet, WrapletApi } from "./Wraplet/types/Wraplet";
+export type { SelectorCallback } from "./Wraplet/types/WrapletChildDefinition";
 export type { Constructable } from "./utils/types/Utils";
 
 // Global.

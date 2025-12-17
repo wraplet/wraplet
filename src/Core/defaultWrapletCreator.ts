@@ -1,8 +1,8 @@
 import { WrapletCreatorArgs } from "./types/WrapletCreator";
-import { WrapletChildrenMap } from "./types/WrapletChildrenMap";
+import { WrapletChildrenMap } from "../Wraplet/types/WrapletChildrenMap";
 import { Constructable } from "../utils/types/Utils";
 import { Core } from "./types/Core";
-import { Wraplet } from "./types/Wraplet";
+import { Wraplet } from "../Wraplet/types/Wraplet";
 
 export function defaultWrapletCreator(
   args: WrapletCreatorArgs<Node, WrapletChildrenMap>,

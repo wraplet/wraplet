@@ -1,7 +1,7 @@
 import "./setup";
 import { AbstractWraplet, DefaultCore, WrapletChildrenMap } from "../src";
 import { BaseElementTestWraplet } from "./resources/BaseElementTestWraplet";
-import { ChildInstance } from "../src/Core/types/ChildInstance";
+import { ChildInstance } from "../src/Wraplet/types/ChildInstance";
 import { ChildrenAreNotAvailableError } from "../src/errors";
 import {
   defaultGroupableAttribute,

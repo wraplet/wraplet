@@ -1,4 +1,4 @@
-import { Wraplet } from "../Core/types/Wraplet";
+import { Wraplet } from "../Wraplet/types/Wraplet";
 import {
   WrapletSetReadonly,
   WrapletSetReadonlySymbol,

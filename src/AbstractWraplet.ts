@@ -1,8 +1,8 @@
-import { WrapletChildrenMap } from "./Core/types/WrapletChildrenMap";
-import { WrapletChildren } from "./Core/types/WrapletChildren";
-import { Wraplet, WrapletApi, WrapletSymbol } from "./Core/types/Wraplet";
+import { WrapletChildrenMap } from "./Wraplet/types/WrapletChildrenMap";
+import { WrapletChildren } from "./Wraplet/types/WrapletChildren";
+import { Wraplet, WrapletApi, WrapletSymbol } from "./Wraplet/types/Wraplet";
 import { DestroyListener } from "./Core/types/DestroyListener";
-import { ChildInstance } from "./Core/types/ChildInstance";
+import { ChildInstance } from "./Wraplet/types/ChildInstance";
 import {
   defaultGroupableAttribute,
   Groupable,
@@ -12,7 +12,7 @@ import {
 import {
   NodeTreeParent,
   NodeTreeParentSymbol,
-} from "./Core/types/NodeTreeParent";
+} from "./NodeTreeManager/types/NodeTreeParent";
 import { Core, isCore } from "./Core/types/Core";
 import { DefaultCore } from "./Core/DefaultCore";
 

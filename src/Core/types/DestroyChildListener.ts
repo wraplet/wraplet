@@ -1,5 +1,5 @@
-import { WrapletChildrenMap } from "./WrapletChildrenMap";
-import { ChildInstance } from "./ChildInstance";
+import { WrapletChildrenMap } from "../../Wraplet/types/WrapletChildrenMap";
+import { ChildInstance } from "../../Wraplet/types/ChildInstance";
 
 export type DestroyChildListener<
   M extends WrapletChildrenMap,
