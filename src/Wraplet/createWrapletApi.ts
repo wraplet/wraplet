@@ -7,7 +7,6 @@ import {
   GroupExtractor,
 } from "../types/Groupable";
 import { NodeTreeParent } from "../NodeTreeManager/types/NodeTreeParent";
-import { WrapletApiFactoryBasicCallback } from "./types/WrapletApiFactoryBasicCallback";
 import { WrapletApiFactoryArgs } from "./types/WrapletApiFactoryArgs";
 import { WrapletApi, WrapletApiDebug } from "./types/WrapletApi";
 import { StatusWritable } from "./types/Status";

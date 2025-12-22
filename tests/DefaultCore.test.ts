@@ -521,7 +521,6 @@ describe("Test DefaultCore", () => {
 
     const core = new DefaultCore(node, map);
 
-
     const initPromise = core.initialize();
     const destroyPromise = core.destroy();
 
