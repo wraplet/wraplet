@@ -33,6 +33,7 @@ import { MapWrapper } from "../Map/MapWrapper";
 import { WrapletCreator, WrapletCreatorArgs } from "./types/WrapletCreator";
 import { isArgCreator } from "./types/ArgCreator";
 import { defaultWrapletCreator } from "./defaultWrapletCreator";
+import { Status, StatusWritable } from "../Wraplet/types/Status";
 
 type ListenerData = {
   node: Node;
@@ -47,10 +48,17 @@ export class DefaultCore<
 > implements Core<N, M> {
   public [CoreSymbol]: true = true;
   public [NodeTreeParentSymbol]: true = true;
-  public isDestroyed: boolean = false;
-  public isGettingDestroyed: boolean = false;
-  public isGettingInitialized: boolean = false;
-  public isInitialized: boolean = false;
+  private statusWritable: StatusWritable = {
+    isDestroyed: false,
+    isGettingDestroyed: false,
+    isInitialized: false,
+    isGettingInitialized: false,
+  };
+
+  public get status(): Status {
+    return this.statusWritable;
+  }
+
   public mapWrapper: MapWrapper<M>;
   private instantiatedChildren: Partial<WrapletChildren<M>> = {};
 
@@ -87,7 +95,7 @@ export class DefaultCore<
    * so the children manager has to exist already.
    */
   public async initialize() {
-    this.isGettingInitialized = true;
+    this.statusWritable.isGettingInitialized = true;
     const children = this.instantiateChildren();
     this.instantiatedChildren = this.wrapChildren(children);
 
@@ -102,8 +110,14 @@ export class DefaultCore<
       childInstances.map((child) => child.wraplet.initialize()),
     );
 
-    this.isInitialized = true;
-    this.isGettingInitialized = false;
+    this.statusWritable.isInitialized = true;
+    this.statusWritable.isGettingInitialized = false;
+
+    // If destruction has been invoked in the meantime, we can finally do it, when initialization
+    // is finished.
+    if (this.statusWritable.isGettingDestroyed) {
+      await this.destroy();
+    }
   }
 
   public get map(): WrapletChildrenMapWithDefaults<M> {
@@ -374,12 +388,27 @@ export class DefaultCore<
    * This method removes from nodes references to this wraplet and its children recursively.
    */
   public async destroy(): Promise<void> {
-    if (this.isDestroyed) {
+    if (this.statusWritable.isDestroyed) {
       throw new ChildrenAreAlreadyDestroyedError(
         "Children are already destroyed.",
       );
     }
-    this.isGettingDestroyed = true;
+    this.statusWritable.isGettingDestroyed = true;
+
+    if (this.statusWritable.isGettingInitialized) {
+      // If we are still initializing, then postpone destruction until after
+      // initialization is finished.
+      // We are leaving this method, but with `isGettingDestroyed` set to true, so
+      // the initialization process will know to return here after it will finish.
+      return;
+    }
+
+    if (!this.statusWritable.isInitialized) {
+      // If we are not initialized, then we have nothing to do here.
+      this.statusWritable.isDestroyed = true;
+      this.statusWritable.isGettingDestroyed = false;
+      return;
+    }
 
     // Remove listeners.
     for (const listener of this.listeners) {
@@ -390,10 +419,13 @@ export class DefaultCore<
       node.removeEventListener(eventName, callback, options);
     }
 
+    this.listeners.length = 0;
+
     await this.destroyChildren();
 
-    this.isGettingDestroyed = false;
-    this.isDestroyed = true;
+    this.statusWritable.isInitialized = false;
+    this.statusWritable.isDestroyed = true;
+    this.statusWritable.isGettingDestroyed = false;
   }
 
   private findChildren<PN extends ParentNode>(
@@ -424,7 +456,7 @@ export class DefaultCore<
   }
 
   public get children(): WrapletChildren<M> {
-    if (!this.isInitialized) {
+    if (!this.statusWritable.isInitialized) {
       throw new ChildrenAreNotAvailableError(
         "Wraplet is not yet fully initialized. You can fetch partial children with the 'uninitializedChildren' property.",
       );
@@ -433,7 +465,7 @@ export class DefaultCore<
   }
 
   public get uninitializedChildren(): Partial<WrapletChildren<M>> {
-    if (this.isInitialized) {
+    if (this.statusWritable.isInitialized) {
       throw new ChildrenAreNotAvailableError(
         "Wraplet is already initialized. Fetch children with 'children' property instead.",
       );
@@ -454,7 +486,7 @@ export class DefaultCore<
       return;
     }
 
-    if (this.map[id].required && !this.isGettingDestroyed) {
+    if (this.map[id].required && !this.statusWritable.isGettingDestroyed) {
       throw new RequiredChildDestroyedError(
         "Required child has been destroyed.",
       );

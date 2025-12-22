@@ -12,24 +12,30 @@ export {
   getWrapletsFromNode,
 } from "./NodeTreeManager/utils";
 
-// Map.
+// Map
 export type { DynamicMap } from "./Map/types/DynamicMap";
 export { MapRepeat } from "./Map/MapRepeat";
 
-// WrapletSet.
+// WrapletSet
 export type { WrapletSetReadonly } from "./Set/types/WrapletSetReadonly";
 export type { WrapletSet } from "./Set/types/WrapletSet";
 
-// Wraplet
 export { DefaultWrapletSetReadonly } from "./Set/DefaultWrapletSetReadonly";
 export { DefaultWrapletSet } from "./Set/DefaultWrapletSet";
+
+// Wraplet
+export type { Wraplet } from "./Wraplet/types/Wraplet";
+export type { WrapletApi } from "./Wraplet/types/WrapletApi";
+export type { Status } from "./Wraplet/types/Status";
+
 export { isWraplet } from "./Wraplet/types/Wraplet";
 
-// WrapletChildrenMap.
+// WrapletChildrenMap
 export type { WrapletChildrenMap } from "./Wraplet/types/WrapletChildrenMap";
-export type { Wraplet, WrapletApi, Status } from "./Wraplet/types/Wraplet";
 export type { SelectorCallback } from "./Wraplet/types/WrapletChildDefinition";
+
+// Utils
 export type { Constructable } from "./utils/types/Utils";
 
-// Global.
+// Global
 import "./types/global";

@@ -8,6 +8,7 @@ import { InstantiateChildListener } from "./InstantiateChildListener";
 import { Wraplet } from "../../Wraplet/types/Wraplet";
 import { WrapletCreator } from "./WrapletCreator";
 import { is } from "../../utils/is";
+import { Status } from "../../Wraplet/types/Status";
 
 const CoreSymbol = Symbol("ChildrenManager");
 export { CoreSymbol };
@@ -21,25 +22,11 @@ export interface Core<
   M extends WrapletChildrenMap = {},
 > {
   [CoreSymbol]: true;
-  /**
-   * Indicates whether the core is destroyed.
-   */
-  isDestroyed: boolean;
 
   /**
-   * Indicates whether the core is in the process of being destroyed.
+   * Core status.
    */
-  isGettingDestroyed: boolean;
-
-  /**
-   * Indicates whether the core is in the process of being initialized.
-   */
-  isGettingInitialized: boolean;
-
-  /**
-   * Indicates whether the core has been initialized.
-   */
-  isInitialized: boolean;
+  status: Status;
 
   /**
    * The children map that defines the relationships between nodes.

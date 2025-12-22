@@ -16,11 +16,12 @@ import { Core } from "../src";
 import { DestroyListener } from "../src/Core/types/DestroyListener";
 import { Wraplet, WrapletSymbol } from "../src/Wraplet/types/Wraplet";
 import { WrapletCreator } from "../src";
+import { StatusWritable } from "../src/Wraplet/types/Status";
 
 describe("Test DefaultCore", () => {
   class TestWrapletClass implements Wraplet {
     [WrapletSymbol]: true = true;
-    private status: Status = {
+    private status: StatusWritable = {
       isGettingInitialized: false,
       isGettingDestroyed: false,
       isInitialized: false,
@@ -493,6 +494,52 @@ describe("Test DefaultCore", () => {
     expect(func).toThrow(
       "Internal logic error. Multiple instances wrapping the same element found in the core.",
     );
+  });
+
+  it("Test DefaultCore status getter", () => {
+    const node = document.createElement("div");
+    const core = new DefaultCore(node, {});
+    expect(core.status).toEqual({
+      isDestroyed: false,
+      isGettingDestroyed: false,
+      isInitialized: false,
+      isGettingInitialized: false,
+    });
+  });
+
+  it("Test DefaultCore postponed destruction during initialization", async () => {
+    const node = document.createElement("div");
+    node.innerHTML = "<div data-child></div>";
+    const map = {
+      child: {
+        selector: "[data-child]",
+        Class: TestWrapletClass,
+        multiple: false,
+        required: false,
+      },
+    } as const satisfies WrapletChildrenMap;
+
+    const core = new DefaultCore(node, map);
+
+
+    const initPromise = core.initialize();
+    const destroyPromise = core.destroy();
+
+    await Promise.all([initPromise, destroyPromise]);
+
+    expect(core.status.isInitialized).toBe(false);
+    expect(core.status.isDestroyed).toBe(true);
+  });
+
+  it("Test DefaultCore destruction of uninitialized core", async () => {
+    const node = document.createElement("div");
+    const core = new DefaultCore(node, {});
+
+    expect(core.status.isInitialized).toBe(false);
+    await core.destroy();
+
+    expect(core.status.isDestroyed).toBe(true);
+    expect(core.status.isGettingDestroyed).toBe(false);
   });
 
   it("Test DefaultCore initOptions", async () => {
