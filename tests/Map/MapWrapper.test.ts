@@ -1,8 +1,8 @@
-import "./setup";
-import { MapWrapper } from "../src/Map/MapWrapper";
-import { BaseElementTestWraplet } from "./resources/BaseElementTestWraplet";
-import { MapRepeat, WrapletChildrenMap } from "../src";
-import { fillMapWithDefaults } from "../src/Map/utils";
+import "../setup";
+import { MapWrapper } from "../../src/Map/MapWrapper";
+import { BaseElementTestWraplet } from "../resources/BaseElementTestWraplet";
+import { MapRepeat, WrapletChildrenMap } from "../../src";
+import { fillMapWithDefaults } from "../../src/Map/utils";
 
 it("Test MapWrapper traverse", () => {
   const mapChildMap = {

@@ -1,7 +1,7 @@
-import "./setup";
-import { AbstractWraplet, DefaultCore, WrapletChildrenMap } from "../src";
-import { BaseElementTestWraplet } from "./resources/BaseElementTestWraplet";
-import { MapError } from "../src/errors";
+import "../setup";
+import { AbstractWraplet, DefaultCore, WrapletChildrenMap } from "../../src";
+import { BaseElementTestWraplet } from "../resources/BaseElementTestWraplet";
+import { MapError } from "../../src/errors";
 
 describe("Test wraplet map", () => {
   const testWrapletSelectorAttribute = "data-test-selector";

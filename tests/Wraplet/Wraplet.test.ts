@@ -1,4 +1,4 @@
-import "./setup";
+import "../setup";
 import {
   DefaultCore,
   isWraplet,
@@ -6,9 +6,9 @@ import {
   Status,
   WrapletApi,
   WrapletChildrenMap,
-} from "../src";
-import { WrapletSymbol } from "../src/Wraplet/types/Wraplet";
-import { BaseElementTestWraplet } from "./resources/BaseElementTestWraplet";
+} from "../../src";
+import { WrapletSymbol } from "../../src/Wraplet/types/Wraplet";
+import { BaseElementTestWraplet } from "../resources/BaseElementTestWraplet";
 
 it("Test isWraplet", () => {
   class NoWrapletClass {}
