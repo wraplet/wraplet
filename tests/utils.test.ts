@@ -6,12 +6,17 @@ import {
   destroyWrapletsRecursively,
   getWrapletsFromNode,
   Wraplet,
+  WrapletApi,
   WrapletSet,
 } from "../src";
 import {
   addWrapletToNode,
   removeWrapletFromNode,
 } from "../src/NodeTreeManager/utils";
+import { NodeTreeParent } from "../src/NodeTreeManager/types/NodeTreeParent";
+import { Groupable } from "../src/types/Groupable";
+
+import { WrapletApiFactoryArgs } from "../src/Wraplet/types/WrapletApiFactoryArgs";
 
 it("Test removing and adding wraplets to nodes", () => {
   const node = document.createElement("div");
@@ -57,14 +62,19 @@ it("destroyWrapletsRecursively", async () => {
   const counter = jest.fn();
 
   class TestWraplet extends AbstractWraplet {
-    async destroy() {
-      counter();
-      await super.destroy();
+    protected createWrapletApi(
+      args: WrapletApiFactoryArgs,
+    ): WrapletApi & NodeTreeParent["wraplet"] & Groupable["wraplet"] {
+      args.destroyCallback = async () => {
+        counter();
+      };
+      return super.createWrapletApi(args);
     }
   }
 
   const core = new DefaultCore(element, {});
   const wraplet = new TestWraplet(core);
+  await wraplet.wraplet.initialize();
 
   addWrapletToNode(wraplet, element);
 

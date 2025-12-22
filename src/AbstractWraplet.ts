@@ -1,25 +1,18 @@
 import { WrapletChildrenMap } from "./Wraplet/types/WrapletChildrenMap";
 import { WrapletChildren } from "./Wraplet/types/WrapletChildren";
-import {
-  Status,
-  Wraplet,
-  WrapletApi,
-  WrapletSymbol,
-} from "./Wraplet/types/Wraplet";
+import { Wraplet, WrapletSymbol } from "./Wraplet/types/Wraplet";
 import { DestroyListener } from "./Core/types/DestroyListener";
 import { ChildInstance } from "./Wraplet/types/ChildInstance";
-import {
-  defaultGroupableAttribute,
-  Groupable,
-  GroupableSymbol,
-  GroupExtractor,
-} from "./types/Groupable";
+import { Groupable, GroupableSymbol } from "./types/Groupable";
 import {
   NodeTreeParent,
   NodeTreeParentSymbol,
 } from "./NodeTreeManager/types/NodeTreeParent";
 import { Core, isCore } from "./Core/types/Core";
 import { DefaultCore } from "./Core/DefaultCore";
+import { createWrapletApi } from "./Wraplet/createWrapletApi";
+import { WrapletApiFactoryArgs } from "./Wraplet/types/WrapletApiFactoryArgs";
+import { WrapletApi } from "./Wraplet/types/WrapletApi";
 
 export abstract class AbstractWraplet<
   N extends Node = Node,
@@ -31,29 +24,11 @@ export abstract class AbstractWraplet<
   public [GroupableSymbol]: true = true;
   public [NodeTreeParentSymbol]: true = true;
 
-  protected status: Status = {
-    isGettingInitialized: false,
-    isDestroyed: false,
-    isInitialized: false,
-    isGettingDestroyed: false,
-  };
+  protected destroyListeners: DestroyListener<N>[] = [];
 
-  private groupsExtractor: GroupExtractor = (node: Node) => {
-    if (node instanceof Element) {
-      const groupsString = node.getAttribute(defaultGroupableAttribute);
-      if (groupsString) {
-        return groupsString.split(",");
-      }
-    }
-
-    return [];
-  };
-  private destroyListeners: DestroyListener<N>[] = [];
-
-  /**
-   * This is the log of all node accessors, available for easier debugging.
-   */
-  private __debugNodeAccessors: ((element: N) => void)[] = [];
+  public wraplet: WrapletApi<N> &
+    NodeTreeParent["wraplet"] &
+    Groupable["wraplet"];
 
   constructor(protected core: Core<N, M>) {
     if (!isCore(core)) {
@@ -62,104 +37,29 @@ export abstract class AbstractWraplet<
 
     core.addDestroyChildListener(this.onChildDestroy.bind(this));
     core.addInstantiateChildListener(this.onChildInstantiate.bind(this));
+
+    this.wraplet = this.createWrapletApi({
+      core: this.core,
+      wraplet: this,
+      destroyListeners: this.destroyListeners,
+    });
   }
 
-  public wraplet: WrapletApi<N> &
-    NodeTreeParent["wraplet"] &
-    Groupable["wraplet"] = {
-    status: this.status,
-    addDestroyListener: (callback: DestroyListener<N>) => {
-      this.destroyListeners.push(callback);
-    },
-
-    initialize: this.initialize.bind(this),
-
-    destroy: this.destroy.bind(this),
-
-    accessNode: (callback: (node: N) => void) => {
-      this.__debugNodeAccessors.push(callback);
-      callback(this.node);
-    },
-
-    getNodeTreeChildren: (): Wraplet[] => {
-      return this.core.getNodeTreeChildren();
-    },
-
-    setGroupsExtractor: this.setGroupsExtractor.bind(this),
-    getGroups: this.getGroups.bind(this),
-  };
-
-  protected setGroupsExtractor(callback: GroupExtractor): void {
-    this.groupsExtractor = callback;
-  }
-
-  protected getGroups(): string[] {
-    return this.groupsExtractor(this.node);
+  protected createWrapletApi(
+    args: WrapletApiFactoryArgs<N, M>,
+  ): WrapletApi<N> & NodeTreeParent["wraplet"] & Groupable["wraplet"] {
+    return createWrapletApi<N, M>(args);
   }
 
   protected get children(): WrapletChildren<M> {
     return this.core.children;
   }
 
-  protected async destroy() {
-    if (this.status.isDestroyed) {
-      // We are already destroyed.
-      return;
-    }
-
-    this.status.isGettingDestroyed = true;
-    if (this.status.isGettingInitialized) {
-      // If we are still initializing, then postpone destruction until after
-      // initialization is finished.
-      // We are leaving this method, but with `isGettingDestroyed` set to true, so
-      // the initialization process will know to return here after it will finish.
-      return;
-    }
-
-    if (!this.status.isInitialized) {
-      // If we are not initialized, then we have nothing to do here.
-      this.status.isDestroyed = true;
-      this.status.isGettingDestroyed = false;
-      return;
-    }
-
-    for (const listener of this.destroyListeners) {
-      await listener(this);
-    }
-
-    this.destroyListeners.length = 0;
-
-    await this.core.destroy();
-
-    await this.onDestroy();
-
-    this.status.isDestroyed = true;
-    this.status.isGettingDestroyed = false;
-  }
-
-  protected async onDestroy() {}
-
   /**
    * This method will be ivoked if one of the wraplet's children has been destroyed.
    */
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   protected onChildDestroy(child: ChildInstance<M, keyof M>, id: keyof M) {}
-
-  protected async initialize(): Promise<void> {
-    this.status.isGettingInitialized = true;
-    await this.core.initialize();
-    await this.onInitialize();
-    this.status.isInitialized = true;
-    this.status.isGettingInitialized = false;
-
-    // If destruction has been invoked in the meantime, we can finally do it, when initialization
-    // is finished.
-    if (this.status.isGettingDestroyed) {
-      await this.destroy();
-    }
-  }
-
-  protected async onInitialize() {}
 
   protected get node(): N {
     return this.core.node;

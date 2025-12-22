@@ -200,7 +200,7 @@ describe("AbstractWraplet initialization", () => {
 
     class TestWraplet extends BaseElementTestWraplet<typeof map> {
       protected onChildInstantiate() {
-        defaultStatus = this.status.isInitialized;
+        defaultStatus = this.wraplet.status.isInitialized;
       }
     }
 

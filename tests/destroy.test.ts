@@ -6,6 +6,8 @@ import { RequiredChildDestroyedError } from "../src/errors";
 import { ChildInstance } from "../src/Wraplet/types/ChildInstance";
 import { Core } from "../src";
 
+import { WrapletApiFactoryArgs } from "../src/Wraplet/types/WrapletApiFactoryArgs";
+
 const funcCounter = jest.fn();
 beforeEach(() => {
   funcCounter.mockClear();
@@ -21,9 +23,11 @@ const testWrapletChildSelectorIndestructibleAttribute =
 const testWrapletChildSelectorMultipleAttribute =
   "data-test-child-selector-multiple";
 class TestWrapletChild extends AbstractWraplet {
-  async destroy() {
-    funcCounter();
-    await super.destroy();
+  public createWrapletApi(args: WrapletApiFactoryArgs) {
+    args.destroyCallback = async () => {
+      funcCounter();
+    };
+    return super.createWrapletApi(args);
   }
 }
 
@@ -274,8 +278,8 @@ it("Test isDestroyed values", async () => {
 
   class TestWraplet extends BaseElementTestWraplet<typeof childrenMap> {
     protected onChildDestroy() {
-      expect(this.status.isGettingDestroyed).toBe(true);
-      expect(this.status.isDestroyed).toBe(false);
+      expect(this.wraplet.status.isGettingDestroyed).toBe(true);
+      expect(this.wraplet.status.isDestroyed).toBe(false);
     }
   }
 
