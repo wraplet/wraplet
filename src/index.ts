@@ -25,10 +25,17 @@ export { DefaultWrapletSet } from "./Set/DefaultWrapletSet";
 
 // Wraplet
 export type { Wraplet } from "./Wraplet/types/Wraplet";
-export type { WrapletApi } from "./Wraplet/types/WrapletApi";
+export type { WrapletApi, WrapletApiDebug } from "./Wraplet/types/WrapletApi";
+export type { WrapletApiFactoryArgs } from "./Wraplet/types/WrapletApiFactoryArgs";
 export type { Status } from "./Wraplet/types/Status";
 
 export { isWraplet } from "./Wraplet/types/Wraplet";
+
+// NodeTree
+export type { NodeTreeParent } from "./NodeTreeManager/types/NodeTreeParent";
+
+// Groupable
+export type { Groupable } from "./types/Groupable";
 
 // WrapletChildrenMap
 export type { WrapletChildrenMap } from "./Wraplet/types/WrapletChildrenMap";
