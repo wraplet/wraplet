@@ -13,3 +13,5 @@ export class ChildrenTooManyFoundError extends Error {}
 export class ChildrenAreAlreadyDestroyedError extends Error {}
 
 export class InternalLogicError extends Error {}
+
+export class UnsupportedNodeTypeError extends Error {}

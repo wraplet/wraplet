@@ -13,6 +13,8 @@ import { DefaultCore } from "./Core/DefaultCore";
 import { createWrapletApi } from "./Wraplet/createWrapletApi";
 import { WrapletApiFactoryArgs } from "./Wraplet/types/WrapletApiFactoryArgs";
 import { WrapletApi } from "./Wraplet/types/WrapletApi";
+import { Constructable } from "./utils/types/Utils";
+import { UnsupportedNodeTypeError } from "./errors";
 
 export abstract class AbstractWraplet<
   N extends Node = Node,
@@ -33,6 +35,17 @@ export abstract class AbstractWraplet<
   constructor(protected core: Core<N, M>) {
     if (!isCore(core)) {
       throw new Error("AbstractWraplet requires a Core instance.");
+    }
+
+    const supportedNodeTypes = this.supportedNodeTypes();
+    if (supportedNodeTypes !== null) {
+      if (
+        !supportedNodeTypes.includes(core.node.constructor as Constructable<N>)
+      ) {
+        throw new UnsupportedNodeTypeError(
+          `Node type ${core.node.constructor.name} is not supported by the ${this.constructor.name} wraplet.`,
+        );
+      }
     }
 
     core.addDestroyChildListener(this.onChildDestroy.bind(this));
@@ -74,6 +87,24 @@ export abstract class AbstractWraplet<
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     id: keyof M,
   ) {}
+
+  /**
+   * Subclasses must return an array of constructors covering all types in union N.
+   * Wrap the result in the `supportedTypeCheck` helper to make sure that the array contains all
+   * and only classes that extend the given type.
+   */
+  protected supportedNodeTypes(): readonly Constructable<N>[] | null {
+    return null;
+  }
+
+  /**
+   * Helper for subclasses to easily satisfy the exhaustive check.
+   */
+  protected supportedNodeTypesGuard<T extends readonly Constructable<N>[]>(
+    types: T & (Exclude<N, InstanceType<T[number]>> extends never ? T : never),
+  ): T {
+    return types;
+  }
 
   /**
    * This method makes sure that the given instance is an instance of a class belonging to the

@@ -2,12 +2,12 @@ import "./setup";
 import { AbstractWraplet, DefaultCore, WrapletChildrenMap } from "../src";
 import { BaseElementTestWraplet } from "./resources/BaseElementTestWraplet";
 import { ChildInstance } from "../src/Wraplet/types/ChildInstance";
-import { ChildrenAreNotAvailableError } from "../src/errors";
+import { ChildrenAreNotAvailableError } from "../src";
 import {
   defaultGroupableAttribute,
   GroupExtractor,
 } from "../src/types/Groupable";
-import { Core } from "../src/Core/types/Core";
+import { Core } from "../src";
 
 const testWrapletSelectorAttribute = "data-test-selector";
 const testWrapletChildSelectorAttribute = `${testWrapletSelectorAttribute}-child`;

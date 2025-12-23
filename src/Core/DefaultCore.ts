@@ -8,6 +8,7 @@ import {
   MapError,
   MissingRequiredChildError,
   RequiredChildDestroyedError,
+  UnsupportedNodeTypeError,
 } from "../errors";
 import { Wraplet } from "../Wraplet/types/Wraplet";
 import {
@@ -173,6 +174,9 @@ export class DefaultCore<
   public getNodeTreeChildren(): Wraplet[] {
     const children: Wraplet[] = [];
     for (const child of Object.values(this.children)) {
+      if (child === null) {
+        continue;
+      }
       if (isWrapletSet(child)) {
         for (const item of child) {
           children.push(item);
@@ -271,7 +275,7 @@ export class DefaultCore<
       childDefinition,
       childMap,
       childElement,
-    ) as WrapletChildren<M>[T] | null;
+    ) as WrapletChildren<M>[T];
   }
 
   private instantiateWrapletItem<T extends keyof M>(
@@ -279,7 +283,7 @@ export class DefaultCore<
     childDefinition: WrapletChildDefinitionWithDefaults<M[T], M>,
     childMap: MapWrapper<WrapletChildrenMapWithDefaults<M>>,
     node: Node,
-  ): Wraplet {
+  ): Wraplet | null {
     // Re-use existing wraplet.
     const existingWraplet = this.findExistingWraplet(id, node);
     if (existingWraplet) {
@@ -302,8 +306,20 @@ export class DefaultCore<
       }
       return arg;
     });
-
-    const wraplet = this.wrapletCreator(creatorArgs, this.constructor as any);
+    let wraplet: Wraplet | null = null;
+    try {
+      wraplet = this.wrapletCreator(creatorArgs, this.constructor as any);
+    } catch (e) {
+      if (e instanceof UnsupportedNodeTypeError) {
+        if (!childDefinition.required) {
+          console.warn(
+            `${e.message} Skipping instantiation of the "${id}" child.`,
+          );
+          return null;
+        }
+      }
+      throw e;
+    }
     this.prepareIndividualWraplet(id, wraplet);
 
     for (const listener of this.instantiateChildListeners) {
@@ -343,7 +359,9 @@ export class DefaultCore<
         childMap,
         childElement,
       );
-      items.add(wraplet);
+      if (wraplet) {
+        items.add(wraplet);
+      }
     }
 
     return items as WrapletChildren<M>[keyof WrapletChildren<M>];

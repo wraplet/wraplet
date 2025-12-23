@@ -48,4 +48,18 @@ describe("Test wraplet single optional child", () => {
     await wraplet.wraplet.initialize();
     expect(wraplet.getChild("child")?.hasElement()).toBeTruthy();
   });
+
+  it("should return empty node tree children when optional child is missing", async () => {
+    document.body.innerHTML = `<div ${testWrapletSelectorAttribute}></div>`;
+    const wraplet = TestWraplet.create<typeof childrenMap, TestWraplet>(
+      testWrapletSelectorAttribute,
+      childrenMap,
+    );
+    if (!wraplet) {
+      throw Error("Wraplet not initialized.");
+    }
+    await wraplet.wraplet.initialize();
+    expect(wraplet.getChild("child")).toBeNull();
+    expect(wraplet.wraplet.getNodeTreeChildren()).toHaveLength(0);
+  });
 });
