@@ -10,7 +10,7 @@ export class StorageWrapper<
 > implements KeyValueStorage<D> {
   [KeyValueStorageSymbol]: true = true;
   constructor(
-    private storage: KeyValueStorage<D>,
+    private storage: KeyValueStorage<Partial<D>>,
     private defaults: D,
     private validators: StorageValidators<D>,
   ) {}
