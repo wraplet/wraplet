@@ -1,6 +1,6 @@
 import "../setup";
 import { StorageWrapper } from "../../src/storage";
-import { StorageValidationError } from "../../src/errors";
+import { StorageValidationError } from "../../src";
 import {
   KeyValueStorage,
   KeyValueStorageSymbol,
@@ -79,7 +79,9 @@ it("StorageWrapper basic CRUD and defaults", async () => {
     option3: (value) => typeof value === "string",
   };
 
-  const base = new InMemoryStorage<Options>({ option1: "initial value" });
+  const base = new InMemoryStorage<Partial<Options>>({
+    option1: "initial value",
+  });
   const storage = new StorageWrapper<Options>(
     base,
     { option1: "default value" },
@@ -149,7 +151,7 @@ it("StorageWrapper validators on set and get", async () => {
     option2: (value) => typeof value === "boolean",
   };
 
-  const base = new InMemoryStorage<Options>({ option1: "ok" });
+  const base = new InMemoryStorage<Partial<Options>>({ option1: "ok" });
   const storage = new StorageWrapper<Options>(
     base,
     { option1: "def" },
@@ -179,7 +181,7 @@ it("StorageWrapper getMultiple fills defaults for missing keys (covers default m
   };
 
   // Underlying storage only has option1; option2 is missing/undefined
-  const base = new InMemoryStorage<Options>({ option1: "present" });
+  const base = new InMemoryStorage<Partial<Options>>({ option1: "present" });
   const storage = new StorageWrapper<Options>(
     base,
     { option1: "def1", option2: false },

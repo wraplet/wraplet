@@ -2,7 +2,7 @@ import "../setup";
 import { ElementStorage } from "../../src/storage";
 import { StorageValidationError } from "../../src/errors";
 
-it("HTMLScriptElementStorage basic CRUD and defaults", async () => {
+it("ElementStorage basic CRUD and defaults", async () => {
   type Options = {
     option1: string;
     option2?: boolean;
@@ -80,7 +80,7 @@ it("uses '{}' when element.textContent is empty (line 19)", async () => {
   expect(await storage.getAll()).toEqual({ option1: "default value" });
 });
 
-it("HTMLScriptElementStorage freshness on/off and default behavior", async () => {
+it("ElementStorage freshness on/off and default behavior", async () => {
   type Options = { option1: string; option2?: boolean };
 
   const validators: Record<keyof Options, (value: unknown) => boolean> = {
@@ -123,7 +123,7 @@ it("HTMLScriptElementStorage freshness on/off and default behavior", async () =>
   expect(await s2.get("option1")).toEqual("fresh data");
 });
 
-it("HTMLScriptElementStorage getMultiple/setMultiple/deleteMultiple", async () => {
+it("ElementStorage getMultiple/setMultiple/deleteMultiple", async () => {
   type Options = { option1: string; option2?: boolean; option3?: string };
   const el = document.createElement("script");
   el.textContent = '{"option1":"initial"}';
@@ -161,7 +161,7 @@ it("HTMLScriptElementStorage getMultiple/setMultiple/deleteMultiple", async () =
   expect(res).toEqual({ option1: "present", option2: undefined as any });
 });
 
-it("HTMLScriptElementStorage validators and errors", async () => {
+it("ElementStorage validators and errors", async () => {
   type Options = { option1: string; option2?: boolean };
   const el = document.createElement("script");
   el.textContent = '{"option1":"ok"}';
@@ -196,7 +196,7 @@ it("HTMLScriptElementStorage validators and errors", async () => {
   await expect(construct).rejects.toThrow(StorageValidationError);
 });
 
-it("HTMLScriptElementStorage custom merger and warnings", async () => {
+it("ElementStorage custom merger and warnings", async () => {
   type Options = { option1: string; option2?: string };
   const el1 = document.createElement("script");
   el1.textContent = '{"option1":"initial"}';
@@ -244,7 +244,7 @@ it("HTMLScriptElementStorage custom merger and warnings", async () => {
   expect(ctor2).toThrow(StorageValidationError);
 });
 
-it("HTMLScriptElementStorage only single option is saved when set (no defaults persisted)", () => {
+it("ElementStorage only single option is saved when set (no defaults persisted)", () => {
   type Options = { option1: string; option2?: string };
   const el = document.createElement("script");
   el.textContent = '{"option1":"test"}';
@@ -262,7 +262,7 @@ it("HTMLScriptElementStorage only single option is saved when set (no defaults p
   expect(el.textContent).not.toContain(option2Default);
 });
 
-it("HTMLScriptElementStorage data has to be an object (non-braced text)", async () => {
+it("ElementStorage data has to be an object (non-braced text)", async () => {
   type Options = { option1: string };
   const el = document.createElement("script");
   el.textContent = "1"; // not starting with '{'
