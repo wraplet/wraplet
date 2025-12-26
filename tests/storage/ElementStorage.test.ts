@@ -22,6 +22,7 @@ it("ElementStorage basic CRUD and defaults", async () => {
     element,
     { option1: "default value" },
     validators,
+    false,
     { keepFresh: true },
   );
 
@@ -106,6 +107,7 @@ it("ElementStorage freshness on/off and default behavior", async () => {
     el2,
     { option1: "default value" },
     validators,
+    false,
     { keepFresh: false },
   );
 
@@ -204,13 +206,19 @@ it("ElementStorage custom merger and warnings", async () => {
     option1: (v) => typeof v === "string",
     option2: (v) => typeof v === "string",
   };
-  const s1 = new ElementStorage<Options>(el1, { option1: "def" }, validators1, {
-    elementOptionsMerger: (defaults, elementOptions) => ({
-      ...defaults,
-      ...elementOptions,
-      option1: "overridden",
-    }),
-  });
+  const s1 = new ElementStorage<Options>(
+    el1,
+    { option1: "def" },
+    validators1,
+    false,
+    {
+      elementOptionsMerger: (defaults, elementOptions) => ({
+        ...defaults,
+        ...elementOptions,
+        option1: "overridden",
+      }),
+    },
+  );
   expect(await s1.get("option1")).toEqual("overridden");
 
   // Missing validator warning
@@ -225,6 +233,7 @@ it("ElementStorage custom merger and warnings", async () => {
       el2,
       { option1: "def" },
       validators2,
+      false,
     );
     // Get data to trigger validation.
     await storage.getAll();

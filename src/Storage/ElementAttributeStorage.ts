@@ -1,24 +1,26 @@
-import { StorageValidators } from "./types/StorageValidators";
-import { ElementOptionsMerger } from "./ElementOptionsMerger";
-import { AbstractNongranularKeyValueStorage } from "./AbstractNongranularKeyValueStorage";
+import {
+  AbstractNongranularKeyValueStorage,
+  ValidatorsFor,
+} from "./AbstractNongranularKeyValueStorage";
+import { NongranularStorageOptions } from "./NongranularStorageOptions";
 
-export type ElementStorageOptions<D extends Record<string, unknown>> = {
-  keepFresh: boolean;
-  elementOptionsMerger: ElementOptionsMerger<D>;
-};
+export type ElementStorageOptions<D extends Record<string, unknown>> =
+  NongranularStorageOptions<D>;
 
 export class ElementAttributeStorage<
   D extends Record<string, unknown>,
-  V extends Partial<StorageValidators<D>> = Partial<StorageValidators<D>>,
-> extends AbstractNongranularKeyValueStorage<D, V> {
+  IS_PARTIAL extends boolean = false,
+  V extends ValidatorsFor<D, IS_PARTIAL> = ValidatorsFor<D, IS_PARTIAL>,
+> extends AbstractNongranularKeyValueStorage<D, IS_PARTIAL, V> {
   constructor(
     private element: Element,
     private attribute: string,
     protected defaults: D,
     protected validators: V,
+    isPartial: IS_PARTIAL = false as IS_PARTIAL,
     options: Partial<ElementStorageOptions<D>> = {},
   ) {
-    super(defaults, validators, options);
+    super(defaults, validators, isPartial, options);
   }
 
   protected async getValue(): Promise<string> {

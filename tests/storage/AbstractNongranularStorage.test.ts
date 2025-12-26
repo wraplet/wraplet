@@ -5,20 +5,24 @@ import {
   StorageValidator,
   StorageValidators,
 } from "../../src/storage";
-import { StorageValidationError } from "../../src/errors";
+import { StorageValidationError } from "../../src";
 
 // A minimal concrete storage for testing the abstract behaviors.
 // It uses a shared in-memory string as the memory store.
 class InMemoryNongranularStorage<
   D extends Record<string, unknown>,
-> extends AbstractNongranularKeyValueStorage<D> {
+  IS_PARTIAL extends boolean = false,
+> extends AbstractNongranularKeyValueStorage<D, IS_PARTIAL> {
   constructor(
     private memory: { value: string },
     defaults: D,
-    validators: StorageValidators<D>,
+    validators: IS_PARTIAL extends true
+      ? Partial<StorageValidators<D>>
+      : StorageValidators<D>,
     options: Partial<NongranularStorageOptions<D>> = {},
+    isPartial: IS_PARTIAL = false as IS_PARTIAL,
   ) {
-    super(defaults, validators, options);
+    super(defaults, validators, isPartial, options);
   }
 
   protected async getValue(): Promise<string> {
@@ -212,5 +216,56 @@ describe("AbstractNongranularStorage via in-memory subclass", () => {
           badValidators,
         ),
     ).toThrow(StorageValidationError);
+  });
+
+  it("allows missing validators when isPartial is true", async () => {
+    const memory = { value: '{"unknown":123}' };
+    const storage = new InMemoryNongranularStorage<Options, true>(
+      memory,
+      { option1: "default" },
+      validators,
+      {},
+      true, // isPartial
+    );
+
+    let data: Options | null = null;
+    // Should not throw even if 'unknown' has no validator
+    const func = async () => {
+      data = await storage.getAll();
+    };
+
+    await expect(func).resolves.not.toThrow();
+    expect(data).toMatchObject({ option1: "default", unknown: 123 });
+  });
+
+  it("uses default value for isPartial (false) when not provided to super", async () => {
+    class DefaultIsPartialStorage extends AbstractNongranularKeyValueStorage<Options> {
+      constructor(
+        private memory: { value: string },
+        defaults: Options,
+        validators: StorageValidators<Options>,
+      ) {
+        super(defaults, validators);
+      }
+      protected async getValue(): Promise<string> {
+        return this.memory.value || "{}";
+      }
+      protected async setValue(value: Options): Promise<void> {
+        this.memory.value = JSON.stringify(value);
+      }
+      protected async deleteAllValues(): Promise<void> {
+        this.memory.value = "{}";
+      }
+    }
+
+    const memory = { value: '{"unknown":123}' };
+    const storage = new DefaultIsPartialStorage(
+      memory,
+      { option1: "default" },
+      validators,
+    );
+
+    // Should throw because isPartial should default to false
+    await expect(storage.getAll()).rejects.toThrow(StorageValidationError);
   });
 });

@@ -24,6 +24,7 @@ it("Test element storage", async () => {
     attribute,
     { option1: "default value" },
     validators,
+    false,
     { keepFresh: true },
   );
 
@@ -133,6 +134,7 @@ it("Test element storage fresh data", async () => {
     attribute,
     { option1: "default value" },
     validators,
+    false,
     { keepFresh: true },
   );
 
@@ -161,6 +163,7 @@ it("Test element storage non-fresh data", async () => {
     attribute,
     { option1: "default value" },
     validators,
+    false,
     { keepFresh: false },
   );
 
@@ -276,6 +279,7 @@ it("Test ElementStorage custom elementOptions merger", async () => {
     attribute,
     { option1: "default value" },
     validators,
+    false,
     {
       elementOptionsMerger: (defaultOptions, elementOptions) => {
         return {
@@ -363,6 +367,7 @@ it("Test ElementStorage warns and throws when option has no validator", async ()
       attribute,
       { option1: "default" },
       validators,
+      false,
     );
     // Get data to trigger validation.
     await storage.getAll();

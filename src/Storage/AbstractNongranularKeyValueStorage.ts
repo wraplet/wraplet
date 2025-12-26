@@ -6,18 +6,27 @@ import { StorageValidationError } from "../errors";
 import { StorageValidators } from "./types/StorageValidators";
 import { NongranularStorageOptions } from "./NongranularStorageOptions";
 
+export type ValidatorsFor<
+  D extends Record<string, unknown>,
+  IS_PARTIAL extends boolean,
+> = IS_PARTIAL extends true
+  ? Partial<StorageValidators<D>>
+  : StorageValidators<D>;
+
 export abstract class AbstractNongranularKeyValueStorage<
   D extends Record<string, unknown>,
-  V extends Partial<StorageValidators<D>> = Partial<StorageValidators<D>>,
+  IS_PARTIAL extends boolean = false,
+  V extends ValidatorsFor<D, IS_PARTIAL> = ValidatorsFor<D, IS_PARTIAL>,
 > implements KeyValueStorage<D> {
   [KeyValueStorageSymbol]: true = true;
   private data: D | null = null;
   private options: NongranularStorageOptions<D>;
 
-  constructor(
+  protected constructor(
     protected defaults: D,
     protected validators: V,
-    options: Partial<NongranularStorageOptions<D>>,
+    private isPartial: IS_PARTIAL = false as IS_PARTIAL,
+    options: Partial<NongranularStorageOptions<D>> = {},
   ) {
     this.validateValidators(validators);
     this.options = {
@@ -121,12 +130,12 @@ export abstract class AbstractNongranularKeyValueStorage<
 
   private validateData(data: Record<string, unknown>): void {
     for (const key in data) {
-      if (!this.validators[key]) {
+      if (!this.isPartial && !this.validators[key]) {
         throw new StorageValidationError(
           `No validator found for the value: ${key}`,
         );
       }
-      if (!this.validators[key](data[key])) {
+      if (this.validators[key] && !this.validators[key](data[key])) {
         throw new StorageValidationError(
           `Value for '${key}' has been discarded by the validator.`,
         );
