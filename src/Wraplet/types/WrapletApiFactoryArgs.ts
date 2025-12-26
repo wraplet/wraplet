@@ -2,7 +2,6 @@ import { WrapletChildrenMap } from "./WrapletChildrenMap";
 import { Core } from "../../Core/types/Core";
 import { DestroyListener } from "../../Core/types/DestroyListener";
 import { WrapletApiFactoryBasicCallback } from "./WrapletApiFactoryBasicCallback";
-import { GroupExtractor } from "../../types/Groupable";
 import { Status } from "./Status";
 import { Wraplet } from "./Wraplet";
 
@@ -16,5 +15,4 @@ export type WrapletApiFactoryArgs<
   destroyListeners?: DestroyListener<N>[];
   initializeCallback?: WrapletApiFactoryBasicCallback;
   destroyCallback?: WrapletApiFactoryBasicCallback;
-  groupExtractor?: GroupExtractor;
 };

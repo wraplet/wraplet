@@ -9,12 +9,13 @@ export type ElementStorageOptions<D extends Record<string, unknown>> = {
 
 export class ElementAttributeStorage<
   D extends Record<string, unknown>,
+  V extends Partial<StorageValidators<D>> = Partial<StorageValidators<D>>,
 > extends AbstractNongranularKeyValueStorage<D> {
   constructor(
     private element: Element,
     private attribute: string,
     protected defaults: D,
-    protected validators: StorageValidators<D>,
+    protected validators: V,
     options: Partial<ElementStorageOptions<D>> = {},
   ) {
     super(defaults, validators, options);

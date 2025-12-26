@@ -1,6 +1,6 @@
 import "../setup";
 import { ElementAttributeStorage } from "../../src/storage";
-import { StorageValidationError } from "../../src/errors";
+import { StorageValidationError } from "../../src";
 
 it("Test element storage", async () => {
   const attribute = "data-test-wraplet";

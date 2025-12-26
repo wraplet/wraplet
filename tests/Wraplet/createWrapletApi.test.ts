@@ -1,4 +1,4 @@
-import { createWrapletApi } from "../../src/Wraplet/createWrapletApi";
+import { createRichWrapletApi } from "../../src/Wraplet/createRichWrapletApi";
 import { Core, CoreSymbol } from "../../src/Core/types/Core";
 import { Wraplet, WrapletSymbol } from "../../src/Wraplet/types/Wraplet";
 import { defaultGroupableAttribute } from "../../src/types/Groupable";
@@ -36,7 +36,7 @@ describe("createWrapletApi", () => {
   });
 
   it("should initialize correctly", async () => {
-    const api = createWrapletApi({
+    const api = createRichWrapletApi({
       core: mockCore,
       wraplet: mockWraplet,
     });
@@ -55,7 +55,7 @@ describe("createWrapletApi", () => {
   });
 
   it("should not initialize twice", async () => {
-    const api = createWrapletApi({
+    const api = createRichWrapletApi({
       core: mockCore,
       wraplet: mockWraplet,
     });
@@ -67,7 +67,7 @@ describe("createWrapletApi", () => {
   });
 
   it("should destroy correctly", async () => {
-    const api = createWrapletApi({
+    const api = createRichWrapletApi({
       core: mockCore,
       wraplet: mockWraplet,
     });
@@ -83,7 +83,7 @@ describe("createWrapletApi", () => {
   });
 
   it("should handle destruction before initialization", async () => {
-    const api = createWrapletApi({
+    const api = createRichWrapletApi({
       core: mockCore,
       wraplet: mockWraplet,
     });
@@ -98,7 +98,7 @@ describe("createWrapletApi", () => {
   });
 
   it("should postpone destruction if currently initializing", async () => {
-    const api = createWrapletApi({
+    const api = createRichWrapletApi({
       core: mockCore,
       wraplet: mockWraplet,
     });
@@ -119,7 +119,7 @@ describe("createWrapletApi", () => {
   });
 
   it("should call destroy listeners", async () => {
-    const api = createWrapletApi({
+    const api = createRichWrapletApi({
       core: mockCore,
       wraplet: mockWraplet,
     });
@@ -138,7 +138,7 @@ describe("createWrapletApi", () => {
     const customInit = jest.fn();
     const customDestroy = jest.fn();
 
-    const api = createWrapletApi({
+    const api = createRichWrapletApi({
       core: mockCore,
       wraplet: mockWraplet,
       initializeCallback: customInit,
@@ -154,7 +154,7 @@ describe("createWrapletApi", () => {
   });
 
   it("should handle accessNode and __nodeAccessors", () => {
-    const api = createWrapletApi({
+    const api = createRichWrapletApi({
       core: mockCore,
       wraplet: mockWraplet,
     });
@@ -168,7 +168,7 @@ describe("createWrapletApi", () => {
 
   it("should handle groups correctly with default extractor", () => {
     node.setAttribute(defaultGroupableAttribute, "group1,group2");
-    const api = createWrapletApi({
+    const api = createRichWrapletApi({
       core: mockCore,
       wraplet: mockWraplet,
     });
@@ -177,7 +177,7 @@ describe("createWrapletApi", () => {
   });
 
   it("should handle groups correctly with custom extractor", () => {
-    const api = createWrapletApi({
+    const api = createRichWrapletApi({
       core: mockCore,
       wraplet: mockWraplet,
     });
@@ -193,7 +193,7 @@ describe("createWrapletApi", () => {
     const childWraplet = {} as Wraplet;
     mockCore.getNodeTreeChildren.mockReturnValue([childWraplet]);
 
-    const api = createWrapletApi({
+    const api = createRichWrapletApi({
       core: mockCore,
       wraplet: mockWraplet,
     });

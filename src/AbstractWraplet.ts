@@ -10,11 +10,11 @@ import {
 } from "./NodeTreeManager/types/NodeTreeParent";
 import { Core, isCore } from "./Core/types/Core";
 import { DefaultCore } from "./Core/DefaultCore";
-import { createWrapletApi } from "./Wraplet/createWrapletApi";
-import { WrapletApiFactoryArgs } from "./Wraplet/types/WrapletApiFactoryArgs";
-import { WrapletApi } from "./Wraplet/types/WrapletApi";
+import { createRichWrapletApi } from "./Wraplet/createRichWrapletApi";
 import { Constructable } from "./utils/types/Utils";
 import { UnsupportedNodeTypeError } from "./errors";
+import { RichWrapletApi } from "./Wraplet/types/RichWrapletApi";
+import { RichWrapletApiFactoryArgs } from "./Wraplet/types/RichWrapletApiFactoryArgs";
 
 export abstract class AbstractWraplet<
   N extends Node = Node,
@@ -28,9 +28,7 @@ export abstract class AbstractWraplet<
 
   protected destroyListeners: DestroyListener<N>[] = [];
 
-  public wraplet: WrapletApi<N> &
-    NodeTreeParent["wraplet"] &
-    Groupable["wraplet"];
+  public wraplet: RichWrapletApi<N>;
 
   constructor(protected core: Core<N, M>) {
     if (!isCore(core)) {
@@ -59,9 +57,9 @@ export abstract class AbstractWraplet<
   }
 
   protected createWrapletApi(
-    args: WrapletApiFactoryArgs<N, M>,
-  ): WrapletApi<N> & NodeTreeParent["wraplet"] & Groupable["wraplet"] {
-    return createWrapletApi<N, M>(args);
+    args: RichWrapletApiFactoryArgs<N, M>,
+  ): RichWrapletApi<N> {
+    return createRichWrapletApi<N, M>(args);
   }
 
   protected get children(): WrapletChildren<M> {

@@ -8,6 +8,7 @@ import { NongranularStorageOptions } from "./NongranularStorageOptions";
 
 export abstract class AbstractNongranularKeyValueStorage<
   D extends Record<string, unknown>,
+  V extends Partial<StorageValidators<D>> = Partial<StorageValidators<D>>,
 > implements KeyValueStorage<D> {
   [KeyValueStorageSymbol]: true = true;
   private data: D | null = null;
@@ -15,7 +16,7 @@ export abstract class AbstractNongranularKeyValueStorage<
 
   constructor(
     protected defaults: D,
-    protected validators: StorageValidators<D>,
+    protected validators: V,
     options: Partial<NongranularStorageOptions<D>>,
   ) {
     this.validateValidators(validators);
@@ -60,7 +61,7 @@ export abstract class AbstractNongranularKeyValueStorage<
   }
 
   public async set<T extends keyof D>(key: T, value: D[T]): Promise<void> {
-    if (!this.validators[key](value)) {
+    if (this.validators[key] && !this.validators[key](value)) {
       throw new StorageValidationError(
         `Attempted to set an invalid value for the key ${String(key)}.`,
       );
@@ -124,14 +125,14 @@ export abstract class AbstractNongranularKeyValueStorage<
     for (const key in data) {
       if (!(key in this.validators)) {
         return false;
-      } else if (!this.validators[key](data[key])) {
+      } else if (this.validators[key] && !this.validators[key](data[key])) {
         return false;
       }
     }
     return true;
   }
 
-  private validateValidators(validators: StorageValidators<D>): void {
+  private validateValidators(validators: V): void {
     for (const key in validators) {
       if (typeof validators[key] !== "function") {
         throw new StorageValidationError(
