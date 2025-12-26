@@ -10,7 +10,7 @@ export type ElementStorageOptions<D extends Record<string, unknown>> = {
 export class ElementAttributeStorage<
   D extends Record<string, unknown>,
   V extends Partial<StorageValidators<D>> = Partial<StorageValidators<D>>,
-> extends AbstractNongranularKeyValueStorage<D> {
+> extends AbstractNongranularKeyValueStorage<D, V> {
   constructor(
     private element: Element,
     private attribute: string,
