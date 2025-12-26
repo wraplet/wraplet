@@ -5,11 +5,12 @@ import { NongranularStorageOptions } from "./NongranularStorageOptions";
 export class ElementStorage<
   D extends Record<string, unknown>,
   E extends Element = HTMLScriptElement,
-> extends AbstractNongranularKeyValueStorage<D> {
+  V extends Partial<StorageValidators<D>> = Partial<StorageValidators<D>>,
+> extends AbstractNongranularKeyValueStorage<D, V> {
   constructor(
     private element: E,
     protected defaults: D,
-    protected validators: StorageValidators<D>,
+    protected validators: V,
     options: Partial<NongranularStorageOptions<D>> = {},
   ) {
     super(defaults, validators, options);
