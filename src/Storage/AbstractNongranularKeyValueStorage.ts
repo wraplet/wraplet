@@ -115,21 +115,23 @@ export abstract class AbstractNongranularKeyValueStorage<
     }
     const data: Record<string, unknown> = JSON.parse(dataString);
 
-    if (!this.validateData(data)) {
-      throw new StorageValidationError("Invalid storage value.");
-    }
-    return this.options.elementOptionsMerger(this.defaults, data);
+    this.validateData(data);
+    return this.options.elementOptionsMerger(this.defaults, data as D);
   }
 
-  private validateData(data: Record<string, unknown>): data is D {
+  private validateData(data: Record<string, unknown>): void {
     for (const key in data) {
-      if (!(key in this.validators)) {
-        return false;
-      } else if (this.validators[key] && !this.validators[key](data[key])) {
-        return false;
+      if (!this.validators[key]) {
+        throw new StorageValidationError(
+          `No validator found for the value: ${key}`,
+        );
+      }
+      if (!this.validators[key](data[key])) {
+        throw new StorageValidationError(
+          `Value for '${key}' has been discarded by the validator.`,
+        );
       }
     }
-    return true;
   }
 
   private validateValidators(validators: V): void {
