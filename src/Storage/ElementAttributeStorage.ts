@@ -13,14 +13,14 @@ export class ElementAttributeStorage<
   V extends ValidatorsFor<D, IS_PARTIAL> = ValidatorsFor<D, IS_PARTIAL>,
 > extends AbstractNongranularKeyValueStorage<D, IS_PARTIAL, V> {
   constructor(
+    isPartial: IS_PARTIAL,
     private element: Element,
     private attribute: string,
     protected defaults: D,
     protected validators: V,
-    isPartial: IS_PARTIAL = false as IS_PARTIAL,
     options: Partial<ElementStorageOptions<D>> = {},
   ) {
-    super(defaults, validators, isPartial, options);
+    super(isPartial, defaults, validators, options);
   }
 
   protected async getValue(): Promise<string> {

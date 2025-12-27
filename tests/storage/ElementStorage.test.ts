@@ -19,10 +19,10 @@ it("ElementStorage basic CRUD and defaults", async () => {
   };
 
   const storage = new ElementStorage<Options>(
+    false,
     element,
     { option1: "default value" },
     validators,
-    false,
     { keepFresh: true },
   );
 
@@ -71,6 +71,7 @@ it("uses '{}' when element.textContent is empty (line 19)", async () => {
   };
 
   const storage = new ElementStorage<Options>(
+    false,
     element,
     { option1: "default value" },
     validators,
@@ -93,6 +94,7 @@ it("ElementStorage freshness on/off and default behavior", async () => {
   const el1 = document.createElement("script");
   el1.textContent = '{"option1":"initial value"}';
   const s1 = new ElementStorage<Options>(
+    false,
     el1,
     { option1: "default value" },
     validators,
@@ -104,10 +106,10 @@ it("ElementStorage freshness on/off and default behavior", async () => {
   const el2 = document.createElement("script");
   el2.textContent = '{"option1":"initial value"}';
   const s2 = new ElementStorage<Options>(
+    false,
     el2,
     { option1: "default value" },
     validators,
-    false,
     { keepFresh: false },
   );
 
@@ -135,6 +137,7 @@ it("ElementStorage getMultiple/setMultiple/deleteMultiple", async () => {
     option3: (v) => typeof v === "string",
   };
   const storage = new ElementStorage<Options>(
+    false,
     el,
     { option1: "def" },
     validators,
@@ -172,6 +175,7 @@ it("ElementStorage validators and errors", async () => {
     option2: (v) => typeof v === "boolean",
   };
   const storage = new ElementStorage<Options>(
+    false,
     el,
     { option1: "def" },
     validators,
@@ -187,6 +191,7 @@ it("ElementStorage validators and errors", async () => {
   elBad.textContent = '{"option1":1}';
   const construct = async () => {
     const storage = new ElementStorage<Options>(
+      false,
       elBad,
       { option1: "def" },
       validators,
@@ -207,10 +212,10 @@ it("ElementStorage custom merger and warnings", async () => {
     option2: (v) => typeof v === "string",
   };
   const s1 = new ElementStorage<Options>(
+    false,
     el1,
     { option1: "def" },
     validators1,
-    false,
     {
       elementOptionsMerger: (defaults, elementOptions) => ({
         ...defaults,
@@ -230,10 +235,10 @@ it("ElementStorage custom merger and warnings", async () => {
   } as any;
   const ctor1 = async () => {
     const storage = new ElementStorage<Options>(
+      false,
       el2,
       { option1: "def" },
       validators2,
-      false,
     );
     // Get data to trigger validation.
     await storage.getAll();
@@ -249,7 +254,7 @@ it("ElementStorage custom merger and warnings", async () => {
     option2: "not-a-function" as any,
   } as any;
   const ctor2 = () =>
-    new ElementStorage<Options>(el3, { option1: "def" }, validators3);
+    new ElementStorage<Options>(false, el3, { option1: "def" }, validators3);
   expect(ctor2).toThrow(StorageValidationError);
 });
 
@@ -263,6 +268,7 @@ it("ElementStorage only single option is saved when set (no defaults persisted)"
     option2: (v) => typeof v === "string",
   };
   const storage = new ElementStorage<Options>(
+    false,
     el,
     { option1: "default value", option2: option2Default },
     validators,
@@ -280,11 +286,11 @@ it("ElementStorage data has to be an object (non-braced text)", async () => {
   };
   const ctor = async () => {
     const storage = new ElementStorage<Options>(
+      false,
       el,
       { option1: "def" },
       validators,
     );
-    // Get data to trigger validation.
     await storage.getAll();
   };
 

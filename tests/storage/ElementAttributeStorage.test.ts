@@ -20,11 +20,11 @@ it("Test element storage", async () => {
   };
 
   const storage = new ElementAttributeStorage<Options>(
+    false,
     element,
     attribute,
     { option1: "default value" },
     validators,
-    false,
     { keepFresh: true },
   );
 
@@ -130,11 +130,11 @@ it("Test element storage fresh data", async () => {
   };
 
   const storage = new ElementAttributeStorage<Options>(
+    false,
     element,
     attribute,
     { option1: "default value" },
     validators,
-    false,
     { keepFresh: true },
   );
 
@@ -159,11 +159,11 @@ it("Test element storage non-fresh data", async () => {
   };
 
   const storage = new ElementAttributeStorage<Options>(
+    false,
     element,
     attribute,
     { option1: "default value" },
     validators,
-    false,
     { keepFresh: false },
   );
 
@@ -192,6 +192,7 @@ it("Test element storage fresh data by default", async () => {
   };
 
   const storage = new ElementAttributeStorage<Options>(
+    false,
     element,
     attribute,
     {
@@ -218,8 +219,9 @@ it("Test element storage data has to be an object", async () => {
     option1: (value) => typeof value === "string",
   };
 
-  const func = async () => {
+  const func1 = async () => {
     const storage = new ElementAttributeStorage<Options>(
+      false,
       element,
       attribute,
       {
@@ -230,7 +232,7 @@ it("Test element storage data has to be an object", async () => {
     // Get data to trigger validation.
     await storage.getAll();
   };
-  await expect(func).rejects.toThrow(StorageValidationError);
+  await expect(func1).rejects.toThrow(StorageValidationError);
 });
 
 it("Test element storage data validator returned false", async () => {
@@ -246,8 +248,9 @@ it("Test element storage data validator returned false", async () => {
     option1: (value) => typeof value === "string",
   };
 
-  const func = async () => {
+  const func2 = async () => {
     const storage = new ElementAttributeStorage<Options>(
+      false,
       element,
       attribute,
       {
@@ -258,7 +261,7 @@ it("Test element storage data validator returned false", async () => {
     // Get data to trigger validation.
     await storage.getAll();
   };
-  await expect(func).rejects.toThrow(StorageValidationError);
+  await expect(func2).rejects.toThrow(StorageValidationError);
 });
 
 it("Test ElementStorage custom elementOptions merger", async () => {
@@ -275,11 +278,11 @@ it("Test ElementStorage custom elementOptions merger", async () => {
   };
 
   const storage = new ElementAttributeStorage<Options>(
+    false,
     element,
     attribute,
     { option1: "default value" },
     validators,
-    false,
     {
       elementOptionsMerger: (defaultOptions, elementOptions) => {
         return {
@@ -312,6 +315,7 @@ it("Test ElementStorage only single option is saved to element when set", () => 
   const option2DefaultValue = "option2 default value";
 
   const storage = new ElementAttributeStorage<Options>(
+    false,
     element,
     attribute,
     {
@@ -336,7 +340,13 @@ it("Test ElementStorage properly handling default empty options attribute", () =
   const validators: Record<keyof Options, (value: unknown) => boolean> = {};
 
   const func = () => {
-    new ElementAttributeStorage<Options>(element, attribute, {}, validators);
+    new ElementAttributeStorage<Options>(
+      false,
+      element,
+      attribute,
+      {},
+      validators,
+    );
   };
 
   expect(func).not.toThrow(StorageValidationError);
@@ -361,19 +371,19 @@ it("Test ElementStorage warns and throws when option has no validator", async ()
     // Note: no validator for option2 on purpose
   } as any;
 
-  const func = async () => {
+  const func_nonpartial = async () => {
     const storage = new ElementAttributeStorage<Options>(
+      false,
       element,
       attribute,
       { option1: "default" },
       validators,
-      false,
     );
     // Get data to trigger validation.
     await storage.getAll();
   };
 
-  await expect(func).rejects.toThrow(StorageValidationError);
+  await expect(func_nonpartial).rejects.toThrow(StorageValidationError);
 });
 
 it("Test ElementStorage warns and throws when validator is not a function", () => {
@@ -392,8 +402,9 @@ it("Test ElementStorage warns and throws when validator is not a function", () =
     option2: "not-a-function",
   } as any;
 
-  const func = () => {
+  const func_invalid_validator = () => {
     new ElementAttributeStorage<Options>(
+      false,
       element,
       attribute,
       { option1: "default" },
@@ -401,5 +412,5 @@ it("Test ElementStorage warns and throws when validator is not a function", () =
     );
   };
 
-  expect(func).toThrow(StorageValidationError);
+  expect(func_invalid_validator).toThrow(StorageValidationError);
 });

@@ -14,15 +14,15 @@ class InMemoryNongranularStorage<
   IS_PARTIAL extends boolean = false,
 > extends AbstractNongranularKeyValueStorage<D, IS_PARTIAL> {
   constructor(
+    isPartial: IS_PARTIAL,
     private memory: { value: string },
     defaults: D,
     validators: IS_PARTIAL extends true
       ? Partial<StorageValidators<D>>
       : StorageValidators<D>,
     options: Partial<NongranularStorageOptions<D>> = {},
-    isPartial: IS_PARTIAL = false as IS_PARTIAL,
   ) {
-    super(defaults, validators, isPartial, options);
+    super(isPartial, defaults, validators, options);
   }
 
   protected async getValue(): Promise<string> {
@@ -54,6 +54,7 @@ describe("AbstractNongranularStorage via in-memory subclass", () => {
   it("performs basic CRUD and merges defaults", async () => {
     const memory = { value: '{"option1":"initial"}' };
     const storage = new InMemoryNongranularStorage<Options>(
+      false,
       memory,
       { option1: "default" },
       validators,
@@ -96,6 +97,7 @@ describe("AbstractNongranularStorage via in-memory subclass", () => {
   it("deleteAll clears base and returns defaults afterwards", async () => {
     const memory = { value: '{"option1":"val"}' };
     const storage = new InMemoryNongranularStorage<Options>(
+      false,
       memory,
       { option1: "default" },
       validators,
@@ -109,6 +111,7 @@ describe("AbstractNongranularStorage via in-memory subclass", () => {
   it("respects keepFresh=true (default): reads see external changes", async () => {
     const memory = { value: '{"option1":"a"}' };
     const storage = new InMemoryNongranularStorage<Options>(
+      false,
       memory,
       { option1: "default" },
       validators,
@@ -124,6 +127,7 @@ describe("AbstractNongranularStorage via in-memory subclass", () => {
   it("respects keepFresh=false: caches until refresh()", async () => {
     const memory = { value: '{"option1":"one"}' };
     const storage = new InMemoryNongranularStorage<Options>(
+      false,
       memory,
       { option1: "default" },
       validators,
@@ -143,6 +147,7 @@ describe("AbstractNongranularStorage via in-memory subclass", () => {
   it("supports custom elementOptionsMerger", async () => {
     const memory = { value: '{"option2":false}' };
     const storage = new InMemoryNongranularStorage<Options>(
+      false,
       memory,
       { option1: "default" },
       validators,
@@ -167,6 +172,7 @@ describe("AbstractNongranularStorage via in-memory subclass", () => {
   it("throws when incoming data is not an object (must start with '{')", async () => {
     const memory = { value: "[]" };
     const storage = new InMemoryNongranularStorage<Options>(
+      false,
       memory,
       { option1: "default" },
       validators,
@@ -178,6 +184,7 @@ describe("AbstractNongranularStorage via in-memory subclass", () => {
   it("throws when unknown keys are present in data", async () => {
     const memory = { value: '{"unknown":123}' };
     const storage = new InMemoryNongranularStorage<Options>(
+      false,
       memory,
       { option1: "default" },
       validators,
@@ -189,6 +196,7 @@ describe("AbstractNongranularStorage via in-memory subclass", () => {
   it("validator is enforced on set()", async () => {
     const memory = { value: '{"option1":"ok"}' };
     const storage = new InMemoryNongranularStorage<Options>(
+      false,
       memory,
       { option1: "default" },
       validators,
@@ -211,6 +219,7 @@ describe("AbstractNongranularStorage via in-memory subclass", () => {
     expect(
       () =>
         new InMemoryNongranularStorage<Options>(
+          false,
           memory,
           { option1: "default" },
           badValidators,
@@ -221,11 +230,10 @@ describe("AbstractNongranularStorage via in-memory subclass", () => {
   it("allows missing validators when isPartial is true", async () => {
     const memory = { value: '{"unknown":123}' };
     const storage = new InMemoryNongranularStorage<Options, true>(
+      true, // isPartial
       memory,
       { option1: "default" },
       validators,
-      {},
-      true, // isPartial
     );
 
     let data: Options | null = null;
@@ -245,7 +253,7 @@ describe("AbstractNongranularStorage via in-memory subclass", () => {
         defaults: Options,
         validators: StorageValidators<Options>,
       ) {
-        super(defaults, validators);
+        super(false, defaults, validators);
       }
       protected async getValue(): Promise<string> {
         return this.memory.value || "{}";

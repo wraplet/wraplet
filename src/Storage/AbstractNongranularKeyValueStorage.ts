@@ -23,9 +23,9 @@ export abstract class AbstractNongranularKeyValueStorage<
   private options: NongranularStorageOptions<D>;
 
   protected constructor(
+    private isPartial: IS_PARTIAL,
     protected defaults: D,
     protected validators: V,
-    private isPartial: IS_PARTIAL = false as IS_PARTIAL,
     options: Partial<NongranularStorageOptions<D>> = {},
   ) {
     this.validateValidators(validators);
