@@ -18,7 +18,7 @@ export default function createDefaultInitializeWrapper<
     }
     status.isGettingInitialized = true;
 
-    await core.initialize();
+    await core.initializeChildren();
 
     if (initializeCallback) {
       await initializeCallback();

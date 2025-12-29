@@ -54,6 +54,8 @@ export abstract class AbstractWraplet<
       wraplet: this,
       destroyListeners: this.destroyListeners,
     });
+
+    core.instantiateChildren();
   }
 
   protected createWrapletApi(

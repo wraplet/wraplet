@@ -39,20 +39,19 @@ export interface Core<
   node: N;
 
   /**
-   * Initialize the core.
-   * This must be called after construction to fully initialize the core.
-   */
-  initialize(): Promise<void>;
-
-  /**
    * Instantiate children based on the map and the current node.
    */
-  instantiateChildren(node: N): WrapletChildren<M>;
+  instantiateChildren(): void;
+
+  /**
+   * Initialize children.
+   */
+  initializeChildren(): Promise<void>;
 
   /**
    * Synchronize the children instances with the DOM.
    */
-  syncChildren(): void;
+  syncChildren(): Promise<void>;
 
   /**
    * Add a listener that will be called when a child is destroyed.
@@ -94,11 +93,6 @@ export interface Core<
    * Get the instantiated children.
    */
   readonly children: WrapletChildren<M>;
-
-  /**
-   * Get the partially initialized children (before initialization is complete).
-   */
-  readonly uninitializedChildren: Partial<WrapletChildren<M>>;
 }
 
 export function isCore(object: unknown): object is Core {

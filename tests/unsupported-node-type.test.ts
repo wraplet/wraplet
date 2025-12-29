@@ -109,10 +109,11 @@ describe("Unsupported node type", () => {
       },
     });
 
-    const parent = new ParentWraplet(core as any);
-    await expect(parent.wraplet.initialize()).rejects.toThrow(
-      "Some other error",
-    );
+    const throwFunc = async () => {
+      new ParentWraplet(core as any);
+    };
+
+    await expect(throwFunc).rejects.toThrow("Some other error");
   });
 
   it("should throw if a required single child node type is not supported", async () => {
@@ -146,9 +147,10 @@ describe("Unsupported node type", () => {
       },
     });
 
-    const parent = new ParentWraplet(core as any);
-    await expect(parent.wraplet.initialize()).rejects.toThrow(
-      UnsupportedNodeTypeError,
-    );
+    const throwFunc = async () => {
+      new ParentWraplet(core as any);
+    };
+
+    await expect(throwFunc).rejects.toThrow(UnsupportedNodeTypeError);
   });
 });

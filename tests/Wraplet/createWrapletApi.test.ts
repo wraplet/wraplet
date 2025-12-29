@@ -16,7 +16,7 @@ describe("createWrapletApi", () => {
       status: {} as Status,
       map: {},
       node: node,
-      initialize: jest.fn().mockResolvedValue(undefined),
+      initializeChildren: jest.fn().mockResolvedValue(undefined),
       instantiateChildren: jest.fn(),
       syncChildren: jest.fn(),
       addDestroyChildListener: jest.fn(),
@@ -26,7 +26,6 @@ describe("createWrapletApi", () => {
       getNodeTreeChildren: jest.fn().mockReturnValue([]),
       setWrapletCreator: jest.fn(),
       children: {},
-      uninitializedChildren: {},
     } as any;
 
     mockWraplet = {
@@ -51,7 +50,7 @@ describe("createWrapletApi", () => {
 
     expect(api.status.isInitialized).toBe(true);
     expect(api.status.isGettingInitialized).toBe(false);
-    expect(mockCore.initialize).toHaveBeenCalledTimes(1);
+    expect(mockCore.initializeChildren).toHaveBeenCalledTimes(1);
   });
 
   it("should not initialize twice", async () => {
@@ -63,7 +62,7 @@ describe("createWrapletApi", () => {
     await api.initialize();
     await api.initialize();
 
-    expect(mockCore.initialize).toHaveBeenCalledTimes(1);
+    expect(mockCore.initializeChildren).toHaveBeenCalledTimes(1);
   });
 
   it("should destroy correctly", async () => {
@@ -147,7 +146,7 @@ describe("createWrapletApi", () => {
 
     await api.initialize();
     expect(customInit).toHaveBeenCalledTimes(1);
-    expect(mockCore.initialize).toHaveBeenCalledTimes(1);
+    expect(mockCore.initializeChildren).toHaveBeenCalledTimes(1);
 
     await api.destroy();
     expect(customDestroy).toHaveBeenCalledTimes(1);

@@ -2,7 +2,6 @@ import "./setup";
 import { AbstractWraplet, DefaultCore, WrapletChildrenMap } from "../src";
 import { BaseElementTestWraplet } from "./resources/BaseElementTestWraplet";
 import { ChildInstance } from "../src/Wraplet/types/ChildInstance";
-import { ChildrenAreNotAvailableError } from "../src";
 import {
   defaultGroupableAttribute,
   GroupExtractor,
@@ -241,10 +240,7 @@ describe("AbstractWraplet initialization", () => {
     } as const satisfies WrapletChildrenMap;
 
     class TestWraplet extends BaseElementTestWraplet<typeof map> {
-      public getChildrenUninitialized() {
-        return this.core.uninitializedChildren;
-      }
-      public getChildrenInitialized() {
+      public getChildrenInstantiated() {
         return this.children;
       }
     }
@@ -260,18 +256,14 @@ describe("AbstractWraplet initialization", () => {
       throw new Error("Wraplet not initialized.");
     }
 
-    const funcInitialized = () => {
-      wraplet.getChildrenInitialized();
-    };
-    const funcUninitialized = () => {
-      wraplet.getChildrenUninitialized();
+    const funcInstantiated = () => {
+      wraplet.getChildrenInstantiated();
     };
 
-    expect(funcUninitialized).not.toThrow();
-    expect(funcInitialized).toThrow(ChildrenAreNotAvailableError);
+    expect(funcInstantiated).not.toThrow();
     await wraplet.wraplet.initialize();
-    expect(funcUninitialized).toThrow(ChildrenAreNotAvailableError);
-    expect(funcInitialized).not.toThrow();
+    // After initialization everything is still ok.
+    expect(funcInstantiated).not.toThrow();
   });
 });
 
@@ -313,8 +305,8 @@ it("Test AbstractWraplet syncing children", async () => {
   } as const satisfies WrapletChildrenMap;
 
   class TestWraplet extends BaseElementTestWraplet<typeof childrenMap> {
-    public syncChildren(): void {
-      this.core.syncChildren();
+    public async syncChildren(): Promise<void> {
+      await this.core.syncChildren();
     }
     public getChildrenArray() {
       return this.children;
@@ -343,9 +335,9 @@ it("Test AbstractWraplet syncing children", async () => {
   await wraplet.wraplet.initialize();
 
   // Test if syncing is idempotent.
-  wraplet.syncChildren();
+  await wraplet.syncChildren();
   expect(wraplet.getChild("children").size).toBe(1);
-  wraplet.syncChildren();
+  await wraplet.syncChildren();
   expect(wraplet.getChild("children").size).toBe(1);
 
   const newChildElement = document.createElement("div");
@@ -368,9 +360,9 @@ it("Test AbstractWraplet syncing children", async () => {
   const childrenBefore = wraplet.getChild("children");
 
   // Test if syncing is idempotent.
-  wraplet.syncChildren();
+  await wraplet.syncChildren();
   expectations(wraplet);
-  wraplet.syncChildren();
+  await wraplet.syncChildren();
   expectations(wraplet);
 
   const topChildrenAfter = wraplet.getChildrenArray();

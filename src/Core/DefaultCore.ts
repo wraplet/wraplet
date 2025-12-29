@@ -49,6 +49,7 @@ export class DefaultCore<
 > implements Core<N, M> {
   public [CoreSymbol]: true = true;
   public [NodeTreeParentSymbol]: true = true;
+  private childrenAreInstantiated: boolean = false;
   private statusWritable: StatusWritable = {
     isDestroyed: false,
     isGettingDestroyed: false,
@@ -95,10 +96,8 @@ export class DefaultCore<
    * processing occurs (instantiate child listeners) that needs access to the children manager,
    * so the children manager has to exist already.
    */
-  public async initialize() {
+  public async initializeChildren() {
     this.statusWritable.isGettingInitialized = true;
-    const children = this.instantiateChildren();
-    this.instantiatedChildren = this.wrapChildren(children);
 
     const childInstances: Wraplet[] = Object.values(
       this.instantiatedChildren,
@@ -125,7 +124,7 @@ export class DefaultCore<
     return this.mapWrapper.getStartingMap() as WrapletChildrenMapWithDefaults<M>;
   }
 
-  public instantiateChildren(): WrapletChildren<M> {
+  public instantiateChildren(): void {
     const children: Partial<Nullable<WrapletChildren<M>>> =
       this.instantiatedChildren;
     // We check if are dealing with the ParentNode object.
@@ -135,7 +134,7 @@ export class DefaultCore<
           "If the node provided cannot have children, the children map should be empty.",
         );
       }
-      return children as WrapletChildren<M>;
+      return;
     }
     for (const id in this.map) {
       const childDefinition = this.map[id];
@@ -162,13 +161,17 @@ export class DefaultCore<
         id,
       );
     }
-
-    // Now we should have all properties set, so let's assert the final form.
-    return children as WrapletChildren<M>;
+    if (!this.childrenAreInstantiated) {
+      this.instantiatedChildren = this.wrapChildren(
+        children as WrapletChildren<M>,
+      );
+      this.childrenAreInstantiated = true;
+    }
   }
 
-  public syncChildren(): void {
-    this.instantiatedChildren = this.instantiateChildren();
+  public async syncChildren(): Promise<void> {
+    this.instantiateChildren();
+    await this.initializeChildren();
   }
 
   public getNodeTreeChildren(): Wraplet[] {
@@ -474,21 +477,12 @@ export class DefaultCore<
   }
 
   public get children(): WrapletChildren<M> {
-    if (!this.statusWritable.isInitialized) {
+    if (!this.childrenAreInstantiated) {
       throw new ChildrenAreNotAvailableError(
         "Wraplet is not yet fully initialized. You can fetch partial children with the 'uninitializedChildren' property.",
       );
     }
     return this.instantiatedChildren as WrapletChildren<M>;
-  }
-
-  public get uninitializedChildren(): Partial<WrapletChildren<M>> {
-    if (this.statusWritable.isInitialized) {
-      throw new ChildrenAreNotAvailableError(
-        "Wraplet is already initialized. Fetch children with 'children' property instead.",
-      );
-    }
-    return this.instantiatedChildren;
   }
 
   private removeChild<K extends Extract<keyof M, string>>(
