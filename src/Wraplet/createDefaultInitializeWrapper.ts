@@ -9,7 +9,7 @@ export function createDefaultInitializeWrapper<
 >(
   status: StatusWritable,
   core: Core<N, M>,
-  destroyMethod: () => Promise<void>,
+  destroyWrapper: () => Promise<void>,
   initializeCallback?: WrapletApiFactoryBasicCallback,
 ): () => Promise<void> {
   return async () => {
@@ -30,7 +30,7 @@ export function createDefaultInitializeWrapper<
     // If destruction has been invoked in the meantime, we can finally do it, when initialization
     // is finished.
     if (status.isGettingDestroyed) {
-      await destroyMethod();
+      await destroyWrapper();
     }
   };
 }

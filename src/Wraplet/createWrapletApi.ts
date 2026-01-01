@@ -26,12 +26,19 @@ export const createWrapletApi = <N extends Node, M extends WrapletChildrenMap>(
 
   const initializeCallback = args.initializeCallback;
 
-  const destroyMethod = createDefaultDestroyWrapper(
+  const destroyWrapper = createDefaultDestroyWrapper(
     status,
     args.core,
     args.wraplet,
     destroyListeners,
     destroyCallback,
+  );
+
+  const initializeWrapper = createDefaultInitializeWrapper(
+    status,
+    args.core,
+    destroyWrapper,
+    initializeCallback,
   );
 
   return {
@@ -41,14 +48,9 @@ export const createWrapletApi = <N extends Node, M extends WrapletChildrenMap>(
       destroyListeners.push(callback);
     },
 
-    initialize: createDefaultInitializeWrapper(
-      status,
-      args.core,
-      destroyMethod,
-      initializeCallback,
-    ),
+    initialize: initializeWrapper,
 
-    destroy: destroyMethod,
+    destroy: destroyWrapper,
 
     accessNode: (callback: (node: N) => void) => {
       nodeAccessors.push(callback);
