@@ -58,13 +58,13 @@ describe("Test DefaultCore", () => {
     };
   }
 
-  it("Test DefaultCore not allowing children if provided node is not a ParentNode", () => {
+  it("Test DefaultCore not allowing required children if provided node is not a ParentNode", () => {
     const map = {
       children: {
         selector: "[data-something]",
         Class: TestWrapletClass,
         multiple: false,
-        required: false,
+        required: true,
       },
     } as const satisfies WrapletChildrenMap;
 
@@ -83,6 +83,24 @@ describe("Test DefaultCore", () => {
     };
 
     expect(func2).not.toThrow(MapError);
+  });
+
+  it("Test DefaultCore allowing non-required children if provided node is not a ParentNode", () => {
+    const map = {
+      children: {
+        selector: "[data-something]",
+        Class: TestWrapletClass,
+        multiple: false,
+        required: false,
+      },
+    } as const satisfies WrapletChildrenMap;
+
+    const node = document.createTextNode("test");
+
+    const core = new DefaultCore(node, map);
+    expect(() => {
+      core.instantiateChildren();
+    }).not.toThrow();
   });
 
   it("should throw ChildrenAreNotAvailableError when accessing children before they are instantiated", () => {
@@ -617,6 +635,15 @@ describe("Test DefaultCore", () => {
       new DefaultCore(node, classInstance);
     };
     expect(func).toThrow("The map provided to the Core is not a valid map.");
+  });
+
+  it("should throw error if the node provided to the Core is not a valid node", () => {
+    const invalidNode = {} as any;
+    const map = {} as const satisfies WrapletChildrenMap;
+
+    expect(() => new DefaultCore(invalidNode, map)).toThrow(
+      "The node provided to the Core is not a valid node.",
+    );
   });
 
   it("Test DefaultCore custom wraplet creator", async () => {

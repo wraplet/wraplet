@@ -522,10 +522,10 @@ it("Test AbstractWraplet groupable when node is not an element", () => {
 it("Test AbstractWraplet map children args", async () => {
   class TestWrapletChild extends AbstractWraplet {
     constructor(
-      node: Node,
+      core: Core,
       public arg1: string,
     ) {
-      super(new DefaultCore(node, {}));
+      super(core);
     }
   }
 
@@ -552,7 +552,6 @@ it("Test AbstractWraplet map children args", async () => {
   <div data-child></div>
 </div>
 `;
-
   const wraplet = TestWraplet.create<typeof map, TestWraplet>(
     "data-wraplet",
     map,

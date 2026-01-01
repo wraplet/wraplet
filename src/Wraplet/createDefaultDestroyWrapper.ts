@@ -5,7 +5,7 @@ import { Wraplet } from "./types/Wraplet";
 import { DestroyListener } from "../Core/types/DestroyListener";
 import { WrapletChildrenMap } from "./types/WrapletChildrenMap";
 
-export default function createDefaultDestroyWrapper<
+export function createDefaultDestroyWrapper<
   N extends Node,
   M extends WrapletChildrenMap,
 >(

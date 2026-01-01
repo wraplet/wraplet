@@ -3,7 +3,7 @@ import { StatusWritable } from "./types/Status";
 import { Core } from "../Core/types/Core";
 import { WrapletApiFactoryBasicCallback } from "./types/WrapletApiFactoryBasicCallback";
 
-export default function createDefaultInitializeWrapper<
+export function createDefaultInitializeWrapper<
   N extends Node,
   M extends WrapletChildrenMap,
 >(

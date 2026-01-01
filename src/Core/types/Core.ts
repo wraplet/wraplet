@@ -10,7 +10,7 @@ import { WrapletCreator } from "./WrapletCreator";
 import { is } from "../../utils/is";
 import { Status } from "../../Wraplet/types/Status";
 
-const CoreSymbol = Symbol("ChildrenManager");
+const CoreSymbol = Symbol("Core");
 export { CoreSymbol };
 
 /**

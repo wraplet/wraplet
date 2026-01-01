@@ -3,8 +3,8 @@ import { DestroyListener } from "../Core/types/DestroyListener";
 import { WrapletApiFactoryArgs } from "./types/WrapletApiFactoryArgs";
 import { WrapletApi, WrapletApiDebug } from "./types/WrapletApi";
 import { StatusWritable } from "./types/Status";
-import createDefaultDestroyWrapper from "./createDefaultDestroyWrapper";
-import createDefaultInitializeWrapper from "./createDefaultInitializeWrapper";
+import { createDefaultDestroyWrapper } from "./createDefaultDestroyWrapper";
+import { createDefaultInitializeWrapper } from "./createDefaultInitializeWrapper";
 
 export const createWrapletApi = <N extends Node, M extends WrapletChildrenMap>(
   args: WrapletApiFactoryArgs<N, M>,

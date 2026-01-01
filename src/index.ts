@@ -35,8 +35,8 @@ export { isWraplet } from "./Wraplet/types/Wraplet";
 
 export * from "./Wraplet/createRichWrapletApi";
 export * from "./Wraplet/createWrapletApi";
-export * from "./Wraplet/createDefaultDestroyWrapper";
-export * from "./Wraplet/createDefaultInitializeWrapper";
+export { createDefaultDestroyWrapper } from "./Wraplet/createDefaultDestroyWrapper";
+export { createDefaultInitializeWrapper } from "./Wraplet/createDefaultInitializeWrapper";
 
 // NodeTree
 export type { NodeTreeParent } from "./NodeTreeManager/types/NodeTreeParent";

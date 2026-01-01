@@ -77,6 +77,9 @@ export class DefaultCore<
     map: M | MapWrapper<M>,
     initOptions: Partial<CoreInitOptions<M>> = {},
   ) {
+    if (!(node instanceof Node)) {
+      throw new Error("The node provided to the Core is not a valid node.");
+    }
     if (isWrapletChildrenMapWithDefaults(map)) {
       this.mapWrapper = new MapWrapper(map);
     } else if (map instanceof MapWrapper) {
@@ -129,10 +132,9 @@ export class DefaultCore<
       this.instantiatedChildren;
     // We check if are dealing with the ParentNode object.
     if (!isParentNode(this.node)) {
-      if (Object.keys(this.map).length > 0) {
-        throw new MapError(
-          "If the node provided cannot have children, the children map should be empty.",
-        );
+      for (const id in this.map) {
+        const childDefinition = this.map[id];
+        this.validateMapItemForNonParent(id, childDefinition);
       }
       return;
     }
@@ -526,6 +528,17 @@ export class DefaultCore<
           `${this.constructor.name}: Child "${id}" cannot at the same be required and have no selector.`,
         );
       }
+    }
+  }
+
+  private validateMapItemForNonParent(
+    id: string,
+    item: WrapletChildDefinitionWithDefaults<M[keyof M], M>,
+  ): void {
+    if (item.required) {
+      throw new MapError(
+        `Dependency "${id}" error: If the node provided cannot have children, there should be no required children.`,
+      );
     }
   }
 
