@@ -1,6 +1,6 @@
 {
   "name": "wraplet",
-  "version": "0.39.0",
+  "version": "0.40.0",
   "description": "",
   "main": "dist/index.js",
   "type": "module",
