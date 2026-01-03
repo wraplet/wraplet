@@ -1,5 +1,5 @@
 import "../setup";
-import { StorageWrapper } from "../../src/storage";
+import { StorageWrapper, ElementAttributeStorage } from "../../src/storage";
 import { StorageValidationError } from "../../src";
 import {
   KeyValueStorage,
@@ -191,4 +191,65 @@ it("StorageWrapper getMultiple fills defaults for missing keys (covers default m
   // Request both keys; wrapper should fill default for the missing option2
   const result = await storage.getMultiple(["option1", "option2"]);
   expect(result).toEqual({ option1: "present", option2: false });
+});
+
+it("StorageWrapper merges its defaults with ElementAttributeStorage values", async () => {
+  const attribute = "data-test-wraplet";
+  type BaseOptions = {
+    option1: string;
+    option2: string;
+  };
+  type WrapperOptions = {
+    option1: string;
+    option2: string;
+    option3: string;
+  };
+
+  const element = document.createElement("div");
+  // Element storage has option1
+  element.setAttribute(attribute, '{"option1":"from element"}');
+
+  const baseValidators: Record<keyof BaseOptions, (value: unknown) => boolean> =
+    {
+      option1: (value) => typeof value === "string",
+      option2: (value) => typeof value === "string",
+    };
+
+  const baseStorage = new ElementAttributeStorage<BaseOptions>(
+    false,
+    element,
+    attribute,
+    {
+      option1: "base default 1",
+      option2: "base default 2",
+    },
+    baseValidators,
+  );
+
+  const wrapperValidators: Record<
+    keyof WrapperOptions,
+    (value: unknown) => boolean
+  > = {
+    option1: (value) => typeof value === "string",
+    option2: (value) => typeof value === "string",
+    option3: (value) => typeof value === "string",
+  };
+
+  const storage = new StorageWrapper<WrapperOptions>(
+    baseStorage as any,
+    {
+      option1: "wrapper default 1",
+      option2: "wrapper default 2",
+      option3: "wrapper default 3",
+    },
+    wrapperValidators,
+  );
+
+  const allData = await storage.getAll();
+
+  expect(allData).toEqual({
+    option1: "from element", // from element storage (attribute)
+    option2: "base default 2", // from element storage (base default)
+    option3: "wrapper default 3", // from wrapper storage (wrapper default)
+  });
 });
