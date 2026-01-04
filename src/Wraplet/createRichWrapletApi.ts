@@ -26,20 +26,17 @@ export const createRichWrapletApi = <
   let groupExtractor: GroupExtractor =
     args.groupExtractor || defaultGroupExtractor;
 
-  return {
-    ...createWrapletApi(args),
-    ...{
-      getNodeTreeChildren: (): Wraplet[] => {
-        return args.core.getNodeTreeChildren();
-      },
-
-      setGroupsExtractor: (extractor: GroupExtractor) => {
-        groupExtractor = extractor;
-      },
-
-      getGroups: () => {
-        return groupExtractor(args.core.node);
-      },
+  return Object.assign(createWrapletApi(args), {
+    getNodeTreeChildren: (): Wraplet[] => {
+      return args.core.getNodeTreeChildren();
     },
-  };
+
+    setGroupsExtractor: (extractor: GroupExtractor) => {
+      groupExtractor = extractor;
+    },
+
+    getGroups: () => {
+      return groupExtractor(args.core.node);
+    },
+  });
 };

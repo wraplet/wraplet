@@ -35,8 +35,10 @@ export { isWraplet } from "./Wraplet/types/Wraplet";
 
 export * from "./Wraplet/createRichWrapletApi";
 export * from "./Wraplet/createWrapletApi";
-export { createDefaultDestroyWrapper } from "./Wraplet/createDefaultDestroyWrapper";
-export { createDefaultInitializeWrapper } from "./Wraplet/createDefaultInitializeWrapper";
+export * from "./Wraplet/statusActions";
+export * from "./Wraplet/customizeDefaultWrapletApi";
+export { createDefaultDestroyCallback } from "./Wraplet/createDefaultDestroyCallback";
+export { createDefaultInitializeCallback } from "./Wraplet/createDefaultInitializeCallback";
 
 // NodeTree
 export type { NodeTreeParent } from "./NodeTreeManager/types/NodeTreeParent";

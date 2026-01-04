@@ -2,59 +2,53 @@ import { WrapletChildrenMap } from "./types/WrapletChildrenMap";
 import { DestroyListener } from "../Core/types/DestroyListener";
 import { WrapletApiFactoryArgs } from "./types/WrapletApiFactoryArgs";
 import { WrapletApi, WrapletApiDebug } from "./types/WrapletApi";
-import { StatusWritable } from "./types/Status";
-import { createDefaultDestroyWrapper } from "./createDefaultDestroyWrapper";
-import { createDefaultInitializeWrapper } from "./createDefaultInitializeWrapper";
+import { createDefaultInitializeCallback } from "../Wraplet/createDefaultInitializeCallback";
+import { createDefaultDestroyCallback } from "../Wraplet/createDefaultDestroyCallback";
 
 export const createWrapletApi = <N extends Node, M extends WrapletChildrenMap>(
   args: WrapletApiFactoryArgs<N, M>,
 ): WrapletApi<N> & WrapletApiDebug<N> => {
   const nodeAccessors: ((node: N) => void)[] = [];
 
+  const api: Partial<WrapletApi<N> & WrapletApiDebug<N>> = {};
+
   const destroyListeners = args.destroyListeners || [];
 
-  const destroyCallback = args.destroyCallback;
+  const destroyCallback =
+    args.destroyCallback ||
+    createDefaultDestroyCallback(
+      args.core,
+      args.wraplet,
+      destroyListeners,
+    ).bind(api);
 
-  const defaultStatus: StatusWritable = {
-    isGettingInitialized: false,
-    isDestroyed: false,
-    isInitialized: false,
-    isGettingDestroyed: false,
-  };
+  api.destroy = destroyCallback;
 
-  const status: StatusWritable = args.status || defaultStatus;
+  const initializeCallback =
+    args.initializeCallback ||
+    createDefaultInitializeCallback(args.core, async () => {
+      return api.destroy?.();
+    }).bind(api);
 
-  const initializeCallback = args.initializeCallback;
-
-  const destroyWrapper = createDefaultDestroyWrapper(
-    status,
-    args.core,
-    args.wraplet,
-    destroyListeners,
-    destroyCallback,
-  );
-
-  const initializeWrapper = createDefaultInitializeWrapper(
-    status,
-    args.core,
-    destroyWrapper,
-    initializeCallback,
-  );
-
-  return {
+  return Object.assign(api, {
     __nodeAccessors: nodeAccessors,
-    status: status,
+    status: {
+      isGettingInitialized: false,
+      isDestroyed: false,
+      isInitialized: false,
+      isGettingDestroyed: false,
+    },
     addDestroyListener: (callback: DestroyListener<N>) => {
       destroyListeners.push(callback);
     },
 
-    initialize: initializeWrapper,
+    initialize: initializeCallback,
 
-    destroy: destroyWrapper,
+    destroy: destroyCallback,
 
     accessNode: (callback: (node: N) => void) => {
       nodeAccessors.push(callback);
       callback(args.core.node);
     },
-  };
+  });
 };

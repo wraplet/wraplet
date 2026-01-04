@@ -1,12 +1,15 @@
 import "./setup";
 
-import { AbstractWraplet, WrapletChildrenMap } from "../src";
+import {
+  AbstractWraplet,
+  customizeDefaultWrapletApi,
+  Status,
+  WrapletChildrenMap,
+} from "../src";
 import { BaseElementTestWraplet } from "./resources/BaseElementTestWraplet";
 import { RequiredChildDestroyedError } from "../src/errors";
 import { ChildInstance } from "../src/Wraplet/types/ChildInstance";
 import { Core } from "../src";
-
-import { WrapletApiFactoryArgs } from "../src/Wraplet/types/WrapletApiFactoryArgs";
 
 const funcCounter = jest.fn();
 beforeEach(() => {
@@ -23,11 +26,25 @@ const testWrapletChildSelectorIndestructibleAttribute =
 const testWrapletChildSelectorMultipleAttribute =
   "data-test-child-selector-multiple";
 class TestWrapletChild extends AbstractWraplet {
-  public createWrapletApi(args: WrapletApiFactoryArgs) {
-    args.destroyCallback = async () => {
-      funcCounter();
-    };
-    return super.createWrapletApi(args);
+  status: Status = {
+    isGettingInitialized: false,
+    isInitialized: false,
+    isDestroyed: false,
+    isGettingDestroyed: false,
+  };
+
+  constructor(core: Core<Element>) {
+    super(core);
+
+    this.wraplet = customizeDefaultWrapletApi(
+      {
+        status: this.status,
+        destroy: async () => {
+          funcCounter();
+        },
+      },
+      this.wraplet,
+    );
   }
 }
 

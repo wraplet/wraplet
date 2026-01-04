@@ -146,7 +146,6 @@ describe("createWrapletApi", () => {
 
     await api.initialize();
     expect(customInit).toHaveBeenCalledTimes(1);
-    expect(mockCore.initializeChildren).toHaveBeenCalledTimes(1);
 
     await api.destroy();
     expect(customDestroy).toHaveBeenCalledTimes(1);

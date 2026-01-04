@@ -14,7 +14,6 @@ import { createRichWrapletApi } from "./Wraplet/createRichWrapletApi";
 import { Constructable } from "./utils/types/Utils";
 import { UnsupportedNodeTypeError } from "./errors";
 import { RichWrapletApi } from "./Wraplet/types/RichWrapletApi";
-import { RichWrapletApiFactoryArgs } from "./Wraplet/types/RichWrapletApiFactoryArgs";
 
 export abstract class AbstractWraplet<
   N extends Node = Node,
@@ -49,19 +48,13 @@ export abstract class AbstractWraplet<
     core.addDestroyChildListener(this.onChildDestroy.bind(this));
     core.addInstantiateChildListener(this.onChildInstantiate.bind(this));
 
-    this.wraplet = this.createWrapletApi({
+    core.instantiateChildren();
+
+    this.wraplet = createRichWrapletApi<N, M>({
       core: this.core,
       wraplet: this,
       destroyListeners: this.destroyListeners,
     });
-
-    core.instantiateChildren();
-  }
-
-  protected createWrapletApi(
-    args: RichWrapletApiFactoryArgs<N, M>,
-  ): RichWrapletApi<N> {
-    return createRichWrapletApi<N, M>(args);
   }
 
   protected get children(): WrapletChildren<M> {

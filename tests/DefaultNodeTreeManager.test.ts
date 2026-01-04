@@ -7,22 +7,44 @@ import {
   predictElementCount,
 } from "./resources/utils";
 import DefaultNodeTreeManager from "../src/NodeTreeManager/DefaultNodeTreeManager";
-import { AbstractWraplet, WrapletApi, WrapletChildrenMap } from "../src";
+import {
+  AbstractWraplet,
+  Core,
+  createDefaultDestroyCallback,
+  customizeDefaultWrapletApi,
+  Status,
+  WrapletApi,
+  WrapletChildrenMap,
+} from "../src";
 import { isParentNode } from "../src/NodeTreeManager/utils";
 import { Wraplet, WrapletSymbol } from "../src/Wraplet/types/Wraplet";
-
-import { WrapletApiFactoryArgs } from "../src/Wraplet/types/WrapletApiFactoryArgs";
 
 it("Test default node tree manager destroy tree", async () => {
   const func = jest.fn();
 
   class TestWraplet extends BaseElementTestWraplet {
-    public createWrapletApi(args: WrapletApiFactoryArgs<Element>) {
-      args.destroyCallback = async () => {
-        func();
-      };
+    status: Status = {
+      isGettingInitialized: false,
+      isInitialized: false,
+      isDestroyed: false,
+      isGettingDestroyed: false,
+    };
 
-      return super.createWrapletApi(args);
+    constructor(core: Core<Element>) {
+      super(core);
+
+      this.wraplet = customizeDefaultWrapletApi(
+        {
+          status: this.status,
+          destroy: createDefaultDestroyCallback(
+            this.core,
+            this,
+            this.destroyListeners,
+            async () => func(),
+          ),
+        },
+        this.wraplet,
+      );
     }
   }
 

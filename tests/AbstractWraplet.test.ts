@@ -1,5 +1,15 @@
 import "./setup";
-import { AbstractWraplet, DefaultCore, WrapletChildrenMap } from "../src";
+import {
+  AbstractWraplet,
+  customizeDefaultWrapletApi,
+  DefaultCore,
+  destructionCompleted,
+  destructionStarted,
+  initializationCompleted,
+  initializationStarted,
+  Status,
+  WrapletChildrenMap,
+} from "../src";
 import { BaseElementTestWraplet } from "./resources/BaseElementTestWraplet";
 import { ChildInstance } from "../src/Wraplet/types/ChildInstance";
 import {
@@ -174,50 +184,6 @@ describe("AbstractWraplet initialization", () => {
     await wraplet.wraplet.initialize();
 
     expect(instatiatedFunc).toHaveBeenCalledTimes(1);
-  });
-
-  it("Test wraplet initialization status", async () => {
-    const attribute = "data-test-wraplet";
-    const child1Attribute = `${attribute}-child1`;
-
-    let defaultStatus: boolean | null = null;
-
-    class TestWrapletChild1 extends AbstractWraplet {
-      public testMethod1(): boolean {
-        return true;
-      }
-    }
-
-    const map = {
-      child1: {
-        selector: `[${child1Attribute}]`,
-        Class: TestWrapletChild1,
-        multiple: false,
-        required: false,
-      },
-    } as const satisfies WrapletChildrenMap;
-
-    class TestWraplet extends BaseElementTestWraplet<typeof map> {
-      protected onChildInstantiate() {
-        defaultStatus = this.wraplet.status.isInitialized;
-      }
-    }
-
-    document.body.innerHTML = `
-<div ${attribute}>
-    <div ${child1Attribute}></div>
-</div>
-`;
-
-    const wraplet = TestWraplet.create(attribute, map);
-    if (!wraplet) {
-      throw Error("Wraplet not initialized.");
-    }
-
-    await wraplet.wraplet.initialize();
-
-    expect(defaultStatus).toEqual(false);
-    expect(wraplet.wraplet.status.isInitialized).toEqual(true);
   });
 
   it("Test that proper errors are thrown when accessing children when they are instantiated or not", async () => {
@@ -593,4 +559,136 @@ it("Test AbstractWraplet destroy during initialization", async () => {
   // Destruction is scheduled after initialization.
   expect(wraplet.wraplet.status.isGettingInitialized).toBe(true);
   expect(wraplet.wraplet.status.isGettingDestroyed).toBe(true);
+});
+
+it("Test AbstractWraplet custom initializer", async () => {
+  const initializerParent = jest.fn();
+  const destroyParent = jest.fn();
+
+  class TestWraplet extends AbstractWraplet<HTMLDivElement, typeof map> {
+    private readonly status: Status = {
+      isGettingInitialized: false,
+      isDestroyed: false,
+      isInitialized: false,
+      isGettingDestroyed: false,
+    };
+    constructor(core: Core<HTMLDivElement, typeof map>) {
+      super(core);
+
+      this.wraplet = customizeDefaultWrapletApi(
+        {
+          status: this.status,
+          initialize: this.initialize.bind(this),
+          destroy: this.destroy.bind(this),
+        },
+        this.wraplet,
+      );
+    }
+
+    async initialize(): Promise<void> {
+      if (!(await initializationStarted(this.status, this.core))) {
+        return;
+      }
+      initializerParent();
+      await initializationCompleted(this.status, this.destroy);
+    }
+
+    async destroy(): Promise<void> {
+      if (
+        !(await destructionStarted(
+          this.status,
+          this.core,
+          this,
+          this.destroyListeners,
+        ))
+      ) {
+        return;
+      }
+      destroyParent();
+      await destructionCompleted(this.status);
+    }
+
+    getChild() {
+      return this.children["child"];
+    }
+  }
+
+  const initializerChild = jest.fn();
+
+  class TestWrapletChild extends AbstractWraplet {
+    private readonly status: Status = {
+      isGettingInitialized: false,
+      isDestroyed: false,
+      isInitialized: false,
+      isGettingDestroyed: false,
+    };
+
+    constructor(core: Core) {
+      super(core);
+
+      this.wraplet = customizeDefaultWrapletApi(
+        {
+          status: this.status,
+          initialize: this.initialize.bind(this),
+          destroy: this.destroy.bind(this),
+        },
+        this.wraplet,
+      );
+    }
+
+    public async destroy(): Promise<void> {
+      if (
+        !(await destructionStarted(
+          this.status,
+          this.core,
+          this,
+          this.destroyListeners,
+        ))
+      ) {
+        return;
+      }
+      // Do nothing.
+      await destructionCompleted(this.status);
+    }
+
+    public async initialize(): Promise<void> {
+      if (!(await initializationStarted(this.status, this.core))) {
+        return;
+      }
+      initializerChild();
+      await initializationCompleted(this.status, this.destroy);
+    }
+  }
+
+  const element = document.createElement("div");
+  element.innerHTML = `<div data-child></div>`;
+
+  const map = {
+    child: {
+      selector: `[data-child]`,
+      multiple: false,
+      Class: TestWrapletChild,
+      required: false,
+    },
+  } as const satisfies WrapletChildrenMap;
+
+  const core = new DefaultCore<HTMLDivElement, typeof map>(element, map);
+  const wraplet = new TestWraplet(core);
+
+  await wraplet.initialize();
+
+  const child = wraplet.getChild();
+  if (!child) {
+    throw new Error("Child not found.");
+  }
+
+  expect(initializerParent).toHaveBeenCalledTimes(1);
+  expect(wraplet.wraplet.status.isInitialized).toBe(true);
+  expect(child.wraplet.status.isInitialized).toBe(true);
+  expect(initializerChild).toHaveBeenCalledTimes(1);
+
+  await wraplet.destroy();
+  expect(destroyParent).toHaveBeenCalledTimes(1);
+  expect(wraplet.wraplet.status.isDestroyed).toBe(true);
+  expect(child.wraplet.status.isDestroyed).toBe(true);
 });

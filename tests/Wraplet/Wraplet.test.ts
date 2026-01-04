@@ -3,7 +3,7 @@ import {
   DefaultCore,
   isWraplet,
   MapRepeat,
-  Status,
+  Wraplet,
   WrapletApi,
   WrapletChildrenMap,
 } from "../../src";
@@ -17,23 +17,20 @@ it("Test isWraplet", () => {
 
   expect(isWraplet(noWraplet)).toBe(false);
 
-  class WrapletClass implements WrapletApi {
+  class WrapletClass implements Wraplet {
     [WrapletSymbol]: true = true;
-
-    public status: Status = {
-      isGettingInitialized: false,
-      isInitialized: true,
-      isDestroyed: false,
-      isGettingDestroyed: false,
-    };
-
-    public accessNode(): void {}
-
-    public addDestroyListener(): void {}
-
-    public async destroy() {}
-
-    public async initialize() {}
+    wraplet: WrapletApi = {
+      destroy: async () => {},
+      initialize: async () => {},
+      status: {
+        isGettingInitialized: false,
+        isInitialized: false,
+        isDestroyed: false,
+        isGettingDestroyed: false,
+      },
+      addDestroyListener() {},
+      accessNode: () => {},
+    } as WrapletApi;
   }
 
   const wraplet = new WrapletClass();
