@@ -17,18 +17,19 @@ export const createWrapletApi = <N extends Node, M extends WrapletChildrenMap>(
 
   const destroyCallback =
     args.destroyCallback ||
-    createDefaultDestroyCallback(
-      args.core,
-      args.wraplet,
-      destroyListeners,
-    ).bind(api);
+    createDefaultDestroyCallback({
+      core: args.core,
+      wraplet: args.wraplet,
+      destroyListeners: destroyListeners,
+    }).bind(api);
 
   api.destroy = destroyCallback;
 
   const initializeCallback =
     args.initializeCallback ||
-    createDefaultInitializeCallback(args.core, async () => {
-      return api.destroy?.();
+    createDefaultInitializeCallback({
+      core: args.core,
+      destroyCallback: api.destroy,
     }).bind(api);
 
   return Object.assign(api, {

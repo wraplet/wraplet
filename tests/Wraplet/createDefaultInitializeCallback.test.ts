@@ -6,10 +6,10 @@ describe("createDefaultInitializeCallback", () => {
     const mockCore = {} as Core<any, any>;
     const destroyCallback = jest.fn().mockResolvedValue(undefined);
 
-    const initializeCallback = createDefaultInitializeCallback(
-      mockCore,
-      destroyCallback,
-    );
+    const initializeCallback = createDefaultInitializeCallback({
+      core: mockCore,
+      destroyCallback: destroyCallback,
+    });
 
     await expect(initializeCallback()).rejects.toThrow(
       "Cannot initialize without status available.",
@@ -34,10 +34,8 @@ describe("createDefaultInitializeCallback", () => {
     const customInitializeLogic = jest.fn().mockResolvedValue(undefined);
 
     const initializeCallback = createDefaultInitializeCallback(
-      mockCore,
-      destroyCallback,
+      { core: mockCore, destroyCallback: destroyCallback, status: status },
       customInitializeLogic,
-      status,
     );
 
     await initializeCallback();

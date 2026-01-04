@@ -8,11 +8,11 @@ describe("createDefaultDestroyCallback", () => {
     const mockWraplet = {} as Wraplet<any>;
     const destroyListeners: any[] = [];
 
-    const destroyCallback = createDefaultDestroyCallback(
-      mockCore,
-      mockWraplet,
-      destroyListeners,
-    );
+    const destroyCallback = createDefaultDestroyCallback({
+      core: mockCore,
+      wraplet: mockWraplet,
+      destroyListeners: destroyListeners,
+    });
 
     await expect(destroyCallback()).rejects.toThrow(
       "Cannot destroy without status available.",

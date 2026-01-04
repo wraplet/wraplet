@@ -37,9 +37,11 @@ it("Test default node tree manager destroy tree", async () => {
         {
           status: this.status,
           destroy: createDefaultDestroyCallback(
-            this.core,
-            this,
-            this.destroyListeners,
+            {
+              core: core,
+              wraplet: this,
+              destroyListeners: this.destroyListeners,
+            },
             async () => func(),
           ),
         },
