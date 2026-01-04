@@ -394,7 +394,7 @@ export class DefaultCore<
     id: K,
     wraplet: Wraplet,
   ) {
-    const destroyListener: DestroyListener<Node> = (<K extends keyof M>(
+    const destroyListener: DestroyListener = (<K extends keyof M>(
       wraplet: ChildInstance<M, K>,
     ) => {
       this.removeChild(wraplet, id);
@@ -402,7 +402,7 @@ export class DefaultCore<
       for (const listener of this.destroyChildListeners) {
         listener(wraplet, id);
       }
-    }) as DestroyListener<Node>;
+    }) as DestroyListener;
     // Listen for the child's destruction.
     wraplet.wraplet.addDestroyListener(destroyListener);
   }

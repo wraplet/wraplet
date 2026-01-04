@@ -10,7 +10,7 @@ export type WrapletApiFactoryArgs<
 > = {
   core: Core<N, M>;
   wraplet: Wraplet<N>;
-  destroyListeners?: DestroyListener<N>[];
+  destroyListeners?: DestroyListener<Wraplet<N>>[];
   initializeCallback?: WrapletApiFactoryBasicCallback;
   destroyCallback?: WrapletApiFactoryBasicCallback;
 };

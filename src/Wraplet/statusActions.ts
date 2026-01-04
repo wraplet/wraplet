@@ -39,7 +39,7 @@ export async function destructionStarted<
   status: StatusWritable,
   core: Core<N, M>,
   wraplet: W,
-  destroyListeners: DestroyListener<N>[],
+  destroyListeners: DestroyListener<W>[],
 ): Promise<boolean> {
   if (status.isDestroyed) {
     return false;

@@ -15,7 +15,7 @@ export function createDefaultDestroyCallback<
 >(
   core: Core<N, M>,
   wraplet: Wraplet<N>,
-  destroyListeners: DestroyListener<N>[],
+  destroyListeners: DestroyListener<Wraplet<N>>[],
   customDestroyLogic?: WrapletApiFactoryBasicCallback,
   status?: Status,
 ): () => Promise<void> {

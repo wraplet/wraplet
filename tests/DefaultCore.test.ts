@@ -29,14 +29,14 @@ describe("Test DefaultCore", () => {
       isDestroyed: false,
     };
 
-    private destroyListeners: DestroyListener<Node>[] = [];
+    private destroyListeners: DestroyListener[] = [];
 
     constructor(private core: Core) {}
 
     public wraplet: WrapletApi = {
       status: this.status,
 
-      addDestroyListener: (callback: DestroyListener<Node>) => {
+      addDestroyListener: (callback: DestroyListener) => {
         this.destroyListeners.push(callback);
       },
 
@@ -314,7 +314,7 @@ describe("Test DefaultCore", () => {
       protected isDestroyed = false;
 
       public received: unknown[];
-      private destroyListeners: DestroyListener<Node>[] = [];
+      private destroyListeners: DestroyListener[] = [];
 
       constructor(
         private core: Core,
@@ -329,7 +329,7 @@ describe("Test DefaultCore", () => {
         accessNode: (callback: (node: Node) => void) => {
           callback(this.core.node);
         },
-        addDestroyListener: (callback: DestroyListener<Node>): void => {
+        addDestroyListener: (callback: DestroyListener): void => {
           this.destroyListeners.push(callback);
         },
         destroy: async () => {

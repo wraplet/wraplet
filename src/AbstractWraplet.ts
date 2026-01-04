@@ -25,7 +25,7 @@ export abstract class AbstractWraplet<
   public [GroupableSymbol]: true = true;
   public [NodeTreeParentSymbol]: true = true;
 
-  protected destroyListeners: DestroyListener<N>[] = [];
+  protected destroyListeners: DestroyListener<Wraplet<N>>[] = [];
 
   public wraplet: RichWrapletApi<N>;
 

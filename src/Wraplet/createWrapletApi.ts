@@ -4,6 +4,7 @@ import { WrapletApiFactoryArgs } from "./types/WrapletApiFactoryArgs";
 import { WrapletApi, WrapletApiDebug } from "./types/WrapletApi";
 import { createDefaultInitializeCallback } from "../Wraplet/createDefaultInitializeCallback";
 import { createDefaultDestroyCallback } from "../Wraplet/createDefaultDestroyCallback";
+import { Wraplet } from "../Wraplet/types/Wraplet";
 
 export const createWrapletApi = <N extends Node, M extends WrapletChildrenMap>(
   args: WrapletApiFactoryArgs<N, M>,
@@ -38,7 +39,7 @@ export const createWrapletApi = <N extends Node, M extends WrapletChildrenMap>(
       isInitialized: false,
       isGettingDestroyed: false,
     },
-    addDestroyListener: (callback: DestroyListener<N>) => {
+    addDestroyListener: (callback: DestroyListener<Wraplet<N>>) => {
       destroyListeners.push(callback);
     },
 
