@@ -24,7 +24,7 @@ export { DefaultWrapletSetReadonly } from "./Set/DefaultWrapletSetReadonly";
 export { DefaultWrapletSet } from "./Set/DefaultWrapletSet";
 
 // Wraplet
-export type { Wraplet } from "./Wraplet/types/Wraplet";
+export type { Wraplet, WrapletSymbol } from "./Wraplet/types/Wraplet";
 export type { WrapletApi, WrapletApiDebug } from "./Wraplet/types/WrapletApi";
 export type { RichWrapletApi } from "./Wraplet/types/RichWrapletApi";
 export type { WrapletApiFactoryArgs } from "./Wraplet/types/WrapletApiFactoryArgs";
