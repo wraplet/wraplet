@@ -153,4 +153,17 @@ describe("Unsupported node type", () => {
 
     await expect(throwFunc).rejects.toThrow(UnsupportedNodeTypeError);
   });
+
+  it("should pass if descendant has been provided", async () => {
+    class TestWraplet extends AbstractWraplet<HTMLElement> {
+      protected supportedNodeTypes() {
+        return this.supportedNodeTypesGuard([HTMLElement]);
+      }
+    }
+
+    const div = document.createElement("div");
+    const core = new DefaultCore(div, {});
+
+    expect(() => new TestWraplet(core)).not.toThrow();
+  });
 });

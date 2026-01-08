@@ -36,9 +36,7 @@ export abstract class AbstractWraplet<
 
     const supportedNodeTypes = this.supportedNodeTypes();
     if (supportedNodeTypes !== null) {
-      if (
-        !supportedNodeTypes.includes(core.node.constructor as Constructable<N>)
-      ) {
+      if (!supportedNodeTypes.find((value) => core.node instanceof value)) {
         throw new UnsupportedNodeTypeError(
           `Node type ${core.node.constructor.name} is not supported by the ${this.constructor.name} wraplet.`,
         );
