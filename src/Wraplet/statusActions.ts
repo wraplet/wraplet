@@ -3,7 +3,10 @@ import { Core } from "../Core/types/Core";
 import { DestroyListener } from "../Core/types/DestroyListener";
 import { Wraplet } from "../Wraplet/types/Wraplet";
 import { WrapletChildrenMap } from "../Wraplet/types/WrapletChildrenMap";
-import {addWrapletToNode, removeWrapletFromNode} from "../NodeTreeManager/utils";
+import {
+  addWrapletToNode,
+  removeWrapletFromNode,
+} from "../NodeTreeManager/utils";
 
 export async function initializationStarted<
   N extends Node,
