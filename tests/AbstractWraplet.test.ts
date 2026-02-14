@@ -614,7 +614,7 @@ describe("AbstractWraplet", () => {
         }
 
         async initialize(): Promise<void> {
-          if (!(await initializationStarted(this.status, this.core))) {
+          if (!(await initializationStarted(this.status, this.core, this))) {
             return;
           }
           initializerParent();
@@ -633,7 +633,7 @@ describe("AbstractWraplet", () => {
             return;
           }
           destroyParent();
-          await destructionCompleted(this.status);
+          await destructionCompleted(this.status, this.core, this);
         }
 
         getChild() {
@@ -676,11 +676,11 @@ describe("AbstractWraplet", () => {
             return;
           }
           // Do nothing.
-          await destructionCompleted(this.status);
+          await destructionCompleted(this.status, this.core, this);
         }
 
         public async initialize(): Promise<void> {
-          if (!(await initializationStarted(this.status, this.core))) {
+          if (!(await initializationStarted(this.status, this.core, this))) {
             return;
           }
           initializerChild();

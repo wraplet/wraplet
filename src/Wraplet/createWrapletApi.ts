@@ -30,6 +30,8 @@ export const createWrapletApi = <N extends Node, M extends WrapletChildrenMap>(
     createDefaultInitializeCallback({
       core: args.core,
       destroyCallback: api.destroy,
+      wraplet: args.wraplet,
+      status: api.status,
     }).bind(api);
 
   return Object.assign(api, {

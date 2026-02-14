@@ -3,15 +3,21 @@ import { Core } from "../Core/types/Core";
 import { DestroyListener } from "../Core/types/DestroyListener";
 import { Wraplet } from "../Wraplet/types/Wraplet";
 import { WrapletChildrenMap } from "../Wraplet/types/WrapletChildrenMap";
+import {addWrapletToNode, removeWrapletFromNode} from "../NodeTreeManager/utils";
 
 export async function initializationStarted<
   N extends Node,
   M extends WrapletChildrenMap,
->(status: StatusWritable, core: Core<N, M>): Promise<boolean> {
+>(
+  status: StatusWritable,
+  core: Core<N, M>,
+  wraplet: Wraplet<N>,
+): Promise<boolean> {
   if (status.isInitialized) {
     return false;
   }
   status.isGettingInitialized = true;
+  addWrapletToNode(wraplet, core.node);
 
   await core.initializeChildren();
   return true;
@@ -61,16 +67,19 @@ export async function destructionStarted<
   }
 
   await core.destroy();
-  for (const listener of destroyListeners) {
+  for (const listener of destroyListeners.reverse()) {
     await listener(wraplet);
   }
 
   return true;
 }
 
-export async function destructionCompleted(
-  status: StatusWritable,
-): Promise<void> {
+export async function destructionCompleted<
+  N extends Node,
+  W extends Wraplet<N>,
+  M extends WrapletChildrenMap,
+>(status: StatusWritable, core: Core<N, M>, wraplet: W): Promise<void> {
+  removeWrapletFromNode(wraplet, core.node);
   status.isGettingDestroyed = false;
   status.isInitialized = false;
   status.isDestroyed = true;

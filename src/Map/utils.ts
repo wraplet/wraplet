@@ -3,7 +3,7 @@ import {
   WrapletChildDefinitionWithDefaults,
 } from "../Wraplet/types/WrapletChildDefinition";
 import {
-  isWrapletChildrenMapWithDefaults,
+  isWrapletChildrenMap,
   WrapletChildrenMap,
   WrapletChildrenMapWithDefaults,
 } from "../Wraplet/types/WrapletChildrenMap";
@@ -32,7 +32,7 @@ export function fillMapWithDefaults<M extends WrapletChildrenMap>(
     newMap[id] = addDefaultsToChildDefinition(def);
 
     const subMap = def["map"];
-    if (subMap && isWrapletChildrenMapWithDefaults(subMap)) {
+    if (subMap && isWrapletChildrenMap(subMap)) {
       newMap[id]["map"] = fillMapWithDefaults(subMap);
     }
   }

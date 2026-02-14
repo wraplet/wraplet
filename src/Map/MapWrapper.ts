@@ -1,5 +1,5 @@
 import {
-  isWrapletChildrenMapWithDefaults,
+  isWrapletChildrenMap,
   WrapletChildrenMap,
   WrapletChildrenMapWithDefaults,
 } from "../Wraplet/types/WrapletChildrenMap";
@@ -68,7 +68,7 @@ export class MapWrapper<M extends WrapletChildrenMap> {
       }
 
       const map = resultMap[pathPart]["map"];
-      if (isWrapletChildrenMapWithDefaults(map)) {
+      if (isWrapletChildrenMap(map)) {
         resultMap = map;
       } else if (isDynamicMap(map)) {
         resultMap = map.create(this.clone(path, false));
@@ -102,7 +102,7 @@ export class MapWrapper<M extends WrapletChildrenMap> {
         return true;
       }
 
-      if (!isWrapletChildrenMapWithDefaults(map)) {
+      if (!isWrapletChildrenMap(map)) {
         throw new Error("Invalid map type.");
       }
 

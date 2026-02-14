@@ -3,6 +3,9 @@ import "./setup";
 import {
   AbstractWraplet,
   customizeDefaultWrapletApi,
+  DefaultCore,
+  destructionCompleted,
+  destructionStarted,
   Status,
   WrapletChildrenMap,
 } from "../src";
@@ -40,7 +43,16 @@ class TestWrapletChild extends AbstractWraplet {
       {
         status: this.status,
         destroy: async () => {
+          await destructionStarted(
+            this.status,
+            this.core,
+            this,
+            this.destroyListeners,
+          );
+
           funcCounter();
+
+          await destructionCompleted(this.status, this.core, this);
         },
       },
       this.wraplet,
@@ -81,7 +93,7 @@ class TestWraplet extends BaseElementTestWraplet<typeof childrenMap> {}
 it("Test that 'destroy' is invoked on all children", async () => {
   document.body.innerHTML = `
 <div ${testWrapletSelectorAttribute}>
-    <div ${testWrapletChildSelectorSingleAttribute}  class="c1"></div>
+    <div ${testWrapletChildSelectorSingleAttribute} class="c1"></div>
     <div ${testWrapletChildSelectorIndestructibleAttribute} class="c-indestructible"></div>    
     <div ${testWrapletChildSelectorMultipleAttribute} class="c2"></div>
     <div ${testWrapletChildSelectorMultipleAttribute} class="c3"></div>
@@ -119,7 +131,8 @@ it("Test that children are removed from the nodes after being destroyed", async 
 
   for (const element of elements) {
     if (!element.wraplets) {
-      continue;
+      if (element.matches("html, head, body")) continue;
+      throw new Error("No wraplets found in the element.");
     }
     if (element.hasAttribute(testWrapletChildSelectorIndestructibleAttribute)) {
       expect(element.wraplets.size).toEqual(1);
@@ -318,4 +331,28 @@ it("Test isDestroyed values", async () => {
   expect(wraplet.wraplet.status.isDestroyed).toBe(false);
   await wraplet.wraplet.destroy();
   expect(wraplet.wraplet.status.isDestroyed).toBe(true);
+});
+
+it("Test order of invoked destroy listeners is reversed", async () => {
+  class TestWraplet extends AbstractWraplet {}
+
+  const element = document.createElement("div");
+  const core = new DefaultCore(element, {});
+  const wraplet = new TestWraplet(core);
+
+  await wraplet.wraplet.initialize();
+
+  let result: string = "";
+
+  wraplet.wraplet.addDestroyListener(async () => {
+    result += "1";
+  });
+
+  wraplet.wraplet.addDestroyListener(async () => {
+    result += "2";
+  });
+
+  await wraplet.wraplet.destroy();
+
+  expect(result).toEqual("21");
 });

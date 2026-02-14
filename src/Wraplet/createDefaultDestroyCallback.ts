@@ -49,6 +49,6 @@ export function createDefaultDestroyCallback<
       await customDestroyLogic();
     }
 
-    await destructionCompleted(outerStatus);
+    await destructionCompleted(outerStatus, args.core, args.wraplet);
   };
 }

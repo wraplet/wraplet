@@ -57,12 +57,13 @@ export async function destroyWrapletsRecursively(node: Node): Promise<void> {
     const wraplets = getWrapletsFromNode(node);
     for (const wraplet of wraplets) {
       if (
-        !wraplet.wraplet.status.isGettingDestroyed &&
-        !wraplet.wraplet.status.isDestroyed
+        wraplet.wraplet.status.isGettingDestroyed ||
+        wraplet.wraplet.status.isDestroyed
       ) {
-        await wraplet.wraplet.destroy();
+        continue;
       }
-      removeWrapletFromNode(wraplet, node);
+
+      await wraplet.wraplet.destroy();
     }
   });
 }

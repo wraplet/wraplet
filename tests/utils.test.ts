@@ -76,11 +76,18 @@ it("destroyWrapletsRecursively", async () => {
         {
           status: this.status,
           destroy: async () => {
-            if (!(await destructionStarted(this.status, this.core, this, []))) {
+            if (
+              !(await destructionStarted(
+                this.status,
+                this.core,
+                this,
+                this.destroyListeners,
+              ))
+            ) {
               return;
             }
             counter();
-            await destructionCompleted(this.status);
+            await destructionCompleted(this.status, this.core, this);
           },
         },
         this.wraplet,
@@ -91,8 +98,6 @@ it("destroyWrapletsRecursively", async () => {
   const core = new DefaultCore(element, {});
   const wraplet = new TestWraplet(core);
   await wraplet.wraplet.initialize();
-
-  addWrapletToNode(wraplet, element);
 
   expect((element.wraplets as WrapletSet).size).toBe(1);
   await destroyWrapletsRecursively(element);

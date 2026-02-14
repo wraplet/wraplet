@@ -9,6 +9,7 @@ describe("createDefaultInitializeCallback", () => {
     const initializeCallback = createDefaultInitializeCallback({
       core: mockCore,
       destroyCallback: destroyCallback,
+      wraplet: {} as any,
     });
 
     await expect(initializeCallback()).rejects.toThrow(
@@ -17,11 +18,15 @@ describe("createDefaultInitializeCallback", () => {
   });
 
   it("should call customInitializeLogic and complete initialization", async () => {
+    const mockWrapletApi = {
+      wraplet: {},
+    } as any;
     const mockCore = {
       status: {
         isInitialized: false,
         isGettingInitialized: false,
       },
+      node: {},
       initializeChildren: jest.fn().mockResolvedValue(undefined),
     } as any;
     const status = {
@@ -34,7 +39,12 @@ describe("createDefaultInitializeCallback", () => {
     const customInitializeLogic = jest.fn().mockResolvedValue(undefined);
 
     const initializeCallback = createDefaultInitializeCallback(
-      { core: mockCore, destroyCallback: destroyCallback, status: status },
+      {
+        core: mockCore,
+        destroyCallback: destroyCallback,
+        status: status,
+        wraplet: mockWrapletApi,
+      },
       customInitializeLogic,
     );
 

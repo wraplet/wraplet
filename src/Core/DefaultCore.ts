@@ -12,7 +12,7 @@ import {
 } from "../errors";
 import { Wraplet } from "../Wraplet/types/Wraplet";
 import {
-  isWrapletChildrenMapWithDefaults,
+  isWrapletChildrenMap,
   WrapletChildrenMap,
   WrapletChildrenMapWithDefaults,
 } from "../Wraplet/types/WrapletChildrenMap";
@@ -80,7 +80,7 @@ export class DefaultCore<
     if (!(node instanceof Node)) {
       throw new Error("The node provided to the Core is not a valid node.");
     }
-    if (isWrapletChildrenMapWithDefaults(map)) {
+    if (isWrapletChildrenMap(map)) {
       this.mapWrapper = new MapWrapper(map);
     } else if (map instanceof MapWrapper) {
       this.mapWrapper = map;
@@ -116,7 +116,7 @@ export class DefaultCore<
     this.statusWritable.isInitialized = true;
     this.statusWritable.isGettingInitialized = false;
 
-    // If destruction has been invoked in the meantime, we can finally do it, when initialization
+    // If destruction has been invoked in the meantime, we can finally do it when initialization
     // is finished.
     if (this.statusWritable.isGettingDestroyed) {
       await this.destroy();
@@ -500,12 +500,6 @@ export class DefaultCore<
       return;
     }
 
-    if (this.map[id].required && !this.statusWritable.isGettingDestroyed) {
-      throw new RequiredChildDestroyedError(
-        "Required child has been destroyed.",
-      );
-    }
-
     if (this.instantiatedChildren[id] === null) {
       throw new InternalLogicError(
         "Internal logic error. Destroyed child couldn't be removed because it's already null.",
@@ -514,6 +508,12 @@ export class DefaultCore<
 
     // @ts-expect-error The type is unknown because we are dealing with a generic here.
     this.instantiatedChildren[id] = null;
+
+    if (this.map[id].required && !this.status.isGettingDestroyed) {
+      throw new RequiredChildDestroyedError(
+        "Required child has been destroyed.",
+      );
+    }
   }
 
   private validateMapItem(

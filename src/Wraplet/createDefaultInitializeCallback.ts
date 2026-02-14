@@ -6,12 +6,14 @@ import {
   initializationCompleted,
   initializationStarted,
 } from "../Wraplet/statusActions";
+import { Wraplet } from "./types/Wraplet";
 
 export type DefaultInitializeCallbackArgs<
   N extends Node,
   M extends WrapletChildrenMap,
 > = {
   core: Core<N, M>;
+  wraplet: Wraplet<N>;
   destroyCallback: () => Promise<void>;
   status?: Status;
 };
@@ -33,7 +35,7 @@ export function createDefaultInitializeCallback<
     }
     // @ts-expect-error "this" is a fallback if status is not provided.
     const outerStatus: Status = args.status || this.status;
-    if (!(await initializationStarted(outerStatus, args.core))) {
+    if (!(await initializationStarted(outerStatus, args.core, args.wraplet))) {
       return;
     }
 
