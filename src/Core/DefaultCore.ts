@@ -583,12 +583,16 @@ export class DefaultCore<
       initOptionsPartial,
     );
 
-    for (const listener of initOptions.instantiateChildListeners) {
-      this.instantiateChildListeners.push(listener);
+    if (initOptions.instantiateChildListeners) {
+      for (const listener of initOptions.instantiateChildListeners) {
+        this.instantiateChildListeners.push(listener);
+      }
     }
 
-    for (const listener of initOptions.destroyChildListeners) {
-      this.destroyChildListeners.push(listener);
+    if (initOptions.destroyChildListeners) {
+      for (const listener of initOptions.destroyChildListeners) {
+        this.destroyChildListeners.push(listener);
+      }
     }
   }
 

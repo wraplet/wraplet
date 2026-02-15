@@ -39,7 +39,15 @@ function isChildrenMapItem(item: Record<string, unknown>): boolean {
     }
   }
 
-  return true;
+  if (typeof item["Class"] !== "function") {
+    return false;
+  }
+
+  if (typeof item["required"] !== "boolean") {
+    return false;
+  }
+
+  return typeof item["multiple"] === "boolean";
 }
 
 export function isWrapletChildrenMap(

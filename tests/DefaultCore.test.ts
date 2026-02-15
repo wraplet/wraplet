@@ -696,4 +696,20 @@ describe("Test DefaultCore", () => {
 
     expect(func).toHaveBeenCalledTimes(2);
   });
+
+  it("Test DefaultCore initOptions with empty listeners", async () => {
+    const node = document.createElement("div");
+    const core = new DefaultCore(
+      node,
+      {},
+      {
+        instantiateChildListeners: undefined,
+        destroyChildListeners: undefined,
+      },
+    );
+    core.instantiateChildren();
+    await core.initializeChildren();
+    await core.destroy();
+    expect(core.status.isDestroyed).toBe(true);
+  });
 });
