@@ -46,9 +46,9 @@ export type { NodeTreeParent } from "./NodeTreeManager/types/NodeTreeParent";
 // Groupable
 export type { Groupable } from "./types/Groupable";
 
-// WrapletChildrenMap
-export type { WrapletChildrenMap } from "./Wraplet/types/WrapletChildrenMap";
-export type { SelectorCallback } from "./Wraplet/types/WrapletChildDefinition";
+// WrapletDependencyMap
+export type { WrapletDependencyMap } from "./Wraplet/types/WrapletDependencyMap";
+export type { SelectorCallback } from "./Wraplet/types/WrapletDependencyDefinition";
 
 // Utils
 export type { Constructable } from "./utils/types/Utils";

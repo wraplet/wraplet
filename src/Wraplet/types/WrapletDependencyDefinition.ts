@@ -1,5 +1,5 @@
 import { Wraplet } from "./Wraplet";
-import { WrapletChildrenMap } from "./WrapletChildrenMap";
+import { WrapletDependencyMap } from "./WrapletDependencyMap";
 import { CoreInitOptions } from "../../Core/types/CoreInitOptions";
 import { DynamicMap } from "../../Map/types/DynamicMap";
 import { Constructable } from "../../utils/types/Utils";
@@ -8,8 +8,8 @@ export type SelectorCallback<N extends ParentNode = ParentNode> = (
   node: N,
 ) => Node[];
 
-export type WrapletChildDefinition<
-  M extends WrapletChildrenMap = WrapletChildrenMap,
+export type WrapletDependencyDefinition<
+  M extends WrapletDependencyMap = WrapletDependencyMap,
 > = {
   selector?: string | SelectorCallback;
   Class: Constructable<Wraplet<any>>;
@@ -21,9 +21,9 @@ export type WrapletChildDefinition<
   destructible?: boolean;
 };
 
-export type WrapletChildDefinitionWithDefaults<
-  T extends WrapletChildDefinition = WrapletChildDefinition,
-  M extends WrapletChildrenMap = WrapletChildrenMap,
+export type WrapletDependencyDefinitionWithDefaults<
+  T extends WrapletDependencyDefinition = WrapletDependencyDefinition,
+  M extends WrapletDependencyMap = WrapletDependencyMap,
 > = T & {
   args: unknown[];
   destructible: boolean;

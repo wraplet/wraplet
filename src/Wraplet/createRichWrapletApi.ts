@@ -1,4 +1,4 @@
-import { WrapletChildrenMap } from "./types/WrapletChildrenMap";
+import { WrapletDependencyMap } from "./types/WrapletDependencyMap";
 import { Wraplet } from "./types/Wraplet";
 import { defaultGroupableAttribute, GroupExtractor } from "../types/Groupable";
 import { WrapletApiDebug } from "./types/WrapletApi";
@@ -8,7 +8,7 @@ import { RichWrapletApiFactoryArgs } from "./types/RichWrapletApiFactoryArgs";
 
 export const createRichWrapletApi = <
   N extends Node,
-  M extends WrapletChildrenMap,
+  M extends WrapletDependencyMap,
 >(
   args: RichWrapletApiFactoryArgs<N, M>,
 ): RichWrapletApi<N> & WrapletApiDebug<N> => {
@@ -27,8 +27,8 @@ export const createRichWrapletApi = <
     args.groupExtractor || defaultGroupExtractor;
 
   return Object.assign(createWrapletApi(args), {
-    getNodeTreeChildren: (): Wraplet[] => {
-      return args.core.getNodeTreeChildren();
+    getChildrenDependencies: (): Wraplet[] => {
+      return args.core.getChildrenDependencies();
     },
 
     setGroupsExtractor: (extractor: GroupExtractor) => {

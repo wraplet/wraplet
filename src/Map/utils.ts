@@ -1,17 +1,17 @@
 import {
-  WrapletChildDefinition,
-  WrapletChildDefinitionWithDefaults,
-} from "../Wraplet/types/WrapletChildDefinition";
+  WrapletDependencyDefinition,
+  WrapletDependencyDefinitionWithDefaults,
+} from "../Wraplet/types/WrapletDependencyDefinition";
 import {
-  isWrapletChildrenMap,
-  WrapletChildrenMap,
-  WrapletChildrenMapWithDefaults,
-} from "../Wraplet/types/WrapletChildrenMap";
+  isWrapletDependencyMap,
+  WrapletDependencyMap,
+  WrapletDependencyMapWithDefaults,
+} from "../Wraplet/types/WrapletDependencyMap";
 
-export function addDefaultsToChildDefinition<
-  M extends WrapletChildrenMap,
-  T extends WrapletChildDefinition<M>,
->(definition: T): WrapletChildDefinitionWithDefaults<T, M> {
+export function addDefaultsToDependencyDefinition<
+  M extends WrapletDependencyMap,
+  T extends WrapletDependencyDefinition<M>,
+>(definition: T): WrapletDependencyDefinitionWithDefaults<T, M> {
   return {
     ...{
       args: [],
@@ -23,18 +23,18 @@ export function addDefaultsToChildDefinition<
   };
 }
 
-export function fillMapWithDefaults<M extends WrapletChildrenMap>(
+export function fillMapWithDefaults<M extends WrapletDependencyMap>(
   map: M,
-): WrapletChildrenMapWithDefaults<M> {
-  const newMap: Partial<WrapletChildrenMapWithDefaults> = {};
+): WrapletDependencyMapWithDefaults<M> {
+  const newMap: Partial<WrapletDependencyMapWithDefaults> = {};
   for (const id in map) {
     const def = map[id];
-    newMap[id] = addDefaultsToChildDefinition(def);
+    newMap[id] = addDefaultsToDependencyDefinition(def);
 
     const subMap = def["map"];
-    if (subMap && isWrapletChildrenMap(subMap)) {
+    if (subMap && isWrapletDependencyMap(subMap)) {
       newMap[id]["map"] = fillMapWithDefaults(subMap);
     }
   }
-  return newMap as WrapletChildrenMapWithDefaults<M>;
+  return newMap as WrapletDependencyMapWithDefaults<M>;
 }

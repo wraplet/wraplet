@@ -1,27 +1,27 @@
-import { isWrapletChildrenMap } from "../../src/Wraplet/types/WrapletChildrenMap";
+import { isWrapletDependencyMap } from "../../src/Wraplet/types/WrapletDependencyMap";
 import {
-  WrapletChildDefinition,
-  WrapletChildDefinitionWithDefaults,
-} from "../../src/Wraplet/types/WrapletChildDefinition";
+  WrapletDependencyDefinition,
+  WrapletDependencyDefinitionWithDefaults,
+} from "../../src/Wraplet/types/WrapletDependencyDefinition";
 
 describe("isWrapletChildrenMap", () => {
   it("should return false if input is not a simple object", () => {
-    expect(isWrapletChildrenMap(null)).toBe(false);
-    expect(isWrapletChildrenMap([])).toBe(false);
-    expect(isWrapletChildrenMap(123)).toBe(false);
-    expect(isWrapletChildrenMap("string")).toBe(false);
-    expect(isWrapletChildrenMap(new Date())).toBe(false);
+    expect(isWrapletDependencyMap(null)).toBe(false);
+    expect(isWrapletDependencyMap([])).toBe(false);
+    expect(isWrapletDependencyMap(123)).toBe(false);
+    expect(isWrapletDependencyMap("string")).toBe(false);
+    expect(isWrapletDependencyMap(new Date())).toBe(false);
   });
 
   it("should return false if one of the properties is not a simple object", () => {
     expect(
-      isWrapletChildrenMap({
+      isWrapletDependencyMap({
         child1: { selector: ".test" },
         child2: null,
       }),
     ).toBe(false);
     expect(
-      isWrapletChildrenMap({
+      isWrapletDependencyMap({
         child1: [],
       }),
     ).toBe(false);
@@ -29,7 +29,7 @@ describe("isWrapletChildrenMap", () => {
 
   it("should return false if a child definition has an unknown key", () => {
     expect(
-      isWrapletChildrenMap({
+      isWrapletDependencyMap({
         child1: { selector: ".test", unknownKey: true },
       }),
     ).toBe(false);
@@ -37,7 +37,7 @@ describe("isWrapletChildrenMap", () => {
 
   it("should return false if a child definition has an invalid type for a required field", () => {
     expect(
-      isWrapletChildrenMap({
+      isWrapletDependencyMap({
         child1: {
           Class: "not a function",
           selector: ".test",
@@ -48,7 +48,7 @@ describe("isWrapletChildrenMap", () => {
     ).toBe(false);
 
     expect(
-      isWrapletChildrenMap({
+      isWrapletDependencyMap({
         child1: {
           Class: class {},
           selector: ".test",
@@ -59,7 +59,7 @@ describe("isWrapletChildrenMap", () => {
     ).toBe(false);
 
     expect(
-      isWrapletChildrenMap({
+      isWrapletDependencyMap({
         child1: {
           Class: class {},
           selector: ".test",
@@ -72,14 +72,14 @@ describe("isWrapletChildrenMap", () => {
 
   it("should return true for a valid WrapletChildrenMap", () => {
     expect(
-      isWrapletChildrenMap({
+      isWrapletDependencyMap({
         // Minimal child definition
         child1: {
           Class: class {} as any,
           selector: ".test",
           required: false,
           multiple: false,
-        } satisfies WrapletChildDefinition,
+        } satisfies WrapletDependencyDefinition,
         // Full child definition
         child2: {
           selector: ".test2",
@@ -90,12 +90,12 @@ describe("isWrapletChildrenMap", () => {
           coreOptions: {},
           map: {},
           args: [],
-        } satisfies WrapletChildDefinitionWithDefaults,
+        } satisfies WrapletDependencyDefinitionWithDefaults,
       }),
     ).toBe(true);
   });
 
   it("should return true for an empty object", () => {
-    expect(isWrapletChildrenMap({})).toBe(true);
+    expect(isWrapletDependencyMap({})).toBe(true);
   });
 });

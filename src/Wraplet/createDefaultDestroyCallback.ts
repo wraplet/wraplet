@@ -3,7 +3,7 @@ import { WrapletApiFactoryBasicCallback } from "./types/WrapletApiFactoryBasicCa
 import { Core } from "../Core/types/Core";
 import { Wraplet } from "./types/Wraplet";
 import { DestroyListener } from "../Core/types/DestroyListener";
-import { WrapletChildrenMap } from "./types/WrapletChildrenMap";
+import { WrapletDependencyMap } from "./types/WrapletDependencyMap";
 import {
   destructionCompleted,
   destructionStarted,
@@ -11,7 +11,7 @@ import {
 
 export type DefaultDestroyCallbackArgs<
   N extends Node,
-  M extends WrapletChildrenMap,
+  M extends WrapletDependencyMap,
 > = {
   core: Core<N, M>;
   wraplet: Wraplet<N>;
@@ -21,7 +21,7 @@ export type DefaultDestroyCallbackArgs<
 
 export function createDefaultDestroyCallback<
   N extends Node,
-  M extends WrapletChildrenMap,
+  M extends WrapletDependencyMap,
 >(
   args: DefaultDestroyCallbackArgs<N, M>,
   customDestroyLogic?: WrapletApiFactoryBasicCallback,

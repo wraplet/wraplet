@@ -1,5 +1,5 @@
 import "./setup";
-import { AbstractWraplet, DefaultCore, WrapletChildrenMap } from "../src";
+import { AbstractWraplet, DefaultCore, WrapletDependencyMap } from "../src";
 import { BaseElementTestWraplet } from "./resources/BaseElementTestWraplet";
 import { Core } from "../src/Core/types/Core";
 
@@ -26,7 +26,7 @@ describe("Test passing arguments", () => {
       required: false,
       args: [],
     },
-  } as const satisfies WrapletChildrenMap;
+  } as const satisfies WrapletDependencyMap;
 
   class TestWraplet<E extends Element = Element> extends BaseElementTestWraplet<
     typeof childrenMap

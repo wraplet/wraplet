@@ -1,9 +1,13 @@
-import { InstantiateChildListener } from "./InstantiateChildListener";
-import { WrapletChildrenMap } from "../../Wraplet/types/WrapletChildrenMap";
-import { DestroyChildListener } from "./DestroyChildListener";
+import { DependencyInstantiatedListener } from "./DependencyInstantiatedListener";
+import { WrapletDependencyMap } from "../../Wraplet/types/WrapletDependencyMap";
+import { DependencyDestroyedListener } from "./DestroyDependencyListener";
 
-export type CoreInitOptions<M extends WrapletChildrenMap = WrapletChildrenMap> =
-  {
-    instantiateChildListeners?: InstantiateChildListener<M, keyof M>[];
-    destroyChildListeners?: DestroyChildListener<M, keyof M>[];
-  };
+export type CoreInitOptions<
+  M extends WrapletDependencyMap = WrapletDependencyMap,
+> = {
+  dependencyInstantiatedListeners?: DependencyInstantiatedListener<
+    M,
+    keyof M
+  >[];
+  dependencyDestroyedListeners?: DependencyDestroyedListener<M, keyof M>[];
+};

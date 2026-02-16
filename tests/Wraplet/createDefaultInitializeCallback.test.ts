@@ -27,7 +27,7 @@ describe("createDefaultInitializeCallback", () => {
         isGettingInitialized: false,
       },
       node: {},
-      initializeChildren: jest.fn().mockResolvedValue(undefined),
+      initializeDependencies: jest.fn().mockResolvedValue(undefined),
     } as any;
     const status = {
       isInitialized: false,

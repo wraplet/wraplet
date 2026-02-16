@@ -1,16 +1,16 @@
 import {
-  WrapletChildDefinition,
-  WrapletChildDefinitionWithDefaults,
-} from "./WrapletChildDefinition";
+  WrapletDependencyDefinition,
+  WrapletDependencyDefinitionWithDefaults,
+} from "./WrapletDependencyDefinition";
 
-export type WrapletChildrenMap = {
-  [id: string]: WrapletChildDefinition;
+export type WrapletDependencyMap = {
+  [id: string]: WrapletDependencyDefinition;
 };
 
-export type WrapletChildrenMapWithDefaults<
-  M extends WrapletChildrenMap = WrapletChildrenMap,
+export type WrapletDependencyMapWithDefaults<
+  M extends WrapletDependencyMap = WrapletDependencyMap,
 > = {
-  [key in keyof M]: WrapletChildDefinitionWithDefaults<M[key], M>;
+  [key in keyof M]: WrapletDependencyDefinitionWithDefaults<M[key], M>;
 };
 
 function isSimpleObject(input: unknown): input is Record<string, unknown> {
@@ -21,7 +21,7 @@ function isSimpleObject(input: unknown): input is Record<string, unknown> {
   );
 }
 
-function isChildrenMapItem(item: Record<string, unknown>): boolean {
+function isDependencyMapItem(item: Record<string, unknown>): boolean {
   for (const key of Object.keys(item)) {
     if (
       ![
@@ -50,9 +50,9 @@ function isChildrenMapItem(item: Record<string, unknown>): boolean {
   return typeof item["multiple"] === "boolean";
 }
 
-export function isWrapletChildrenMap(
+export function isWrapletDependencyMap(
   object: unknown,
-): object is WrapletChildrenMapWithDefaults {
+): object is WrapletDependencyMapWithDefaults {
   if (!isSimpleObject(object)) {
     return false;
   }
@@ -63,7 +63,7 @@ export function isWrapletChildrenMap(
     }
 
     const item = object[key];
-    if (!isChildrenMapItem(item)) {
+    if (!isDependencyMapItem(item)) {
       return false;
     }
   }

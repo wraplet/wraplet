@@ -1,8 +1,8 @@
 import { MapWrapper } from "./MapWrapper";
 import {
-  WrapletChildrenMap,
-  WrapletChildrenMapWithDefaults,
-} from "../Wraplet/types/WrapletChildrenMap";
+  WrapletDependencyMap,
+  WrapletDependencyMapWithDefaults,
+} from "../Wraplet/types/WrapletDependencyMap";
 import { DynamicMap, DynamicMapSymbol } from "./types/DynamicMap";
 
 export class MapRepeat implements DynamicMap {
@@ -14,9 +14,9 @@ export class MapRepeat implements DynamicMap {
     }
   }
 
-  public create<M extends WrapletChildrenMap>(
+  public create<M extends WrapletDependencyMap>(
     parentMapClone: MapWrapper<M>,
-  ): WrapletChildrenMapWithDefaults<M> {
+  ): WrapletDependencyMapWithDefaults<M> {
     for (let i = 0; i < this.levels; i++) {
       parentMapClone.down();
     }

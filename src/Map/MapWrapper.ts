@@ -1,21 +1,21 @@
 import {
-  isWrapletChildrenMap,
-  WrapletChildrenMap,
-  WrapletChildrenMapWithDefaults,
-} from "../Wraplet/types/WrapletChildrenMap";
+  isWrapletDependencyMap,
+  WrapletDependencyMap,
+  WrapletDependencyMapWithDefaults,
+} from "../Wraplet/types/WrapletDependencyMap";
 import { fillMapWithDefaults } from "./utils";
 import { isDynamicMap } from "./types/DynamicMap";
 
-type RecursiveMapKeys<T extends WrapletChildrenMap> = {
-  [K in keyof T]: T[K] extends { map: infer M extends WrapletChildrenMap }
+type RecursiveMapKeys<T extends WrapletDependencyMap> = {
+  [K in keyof T]: T[K] extends { map: infer M extends WrapletDependencyMap }
     ? K | RecursiveMapKeys<M>
     : K;
 }[keyof T];
 
-export class MapWrapper<M extends WrapletChildrenMap> {
-  private readonly fullMap: WrapletChildrenMapWithDefaults<M>;
+export class MapWrapper<M extends WrapletDependencyMap> {
+  private readonly fullMap: WrapletDependencyMapWithDefaults<M>;
   private startingPath: string[];
-  private currentMap: WrapletChildrenMapWithDefaults<M> | null = null;
+  private currentMap: WrapletDependencyMapWithDefaults<M> | null = null;
   public path: string[];
   private currentPath: string[] = [];
 
@@ -40,11 +40,11 @@ export class MapWrapper<M extends WrapletChildrenMap> {
     }
   }
 
-  public getStartingMap(): WrapletChildrenMapWithDefaults<M> {
+  public getStartingMap(): WrapletDependencyMapWithDefaults<M> {
     return this.resolve(this.startingPath);
   }
 
-  public getCurrentMap(): WrapletChildrenMapWithDefaults<M> {
+  public getCurrentMap(): WrapletDependencyMapWithDefaults<M> {
     if (!this.currentMap || this.currentPath != this.path) {
       this.currentMap = this.resolve(this.path);
       this.currentPath = this.path;
@@ -57,8 +57,8 @@ export class MapWrapper<M extends WrapletChildrenMap> {
    * @param path
    * @private
    */
-  private findMap(path: string[]): WrapletChildrenMapWithDefaults<M> {
-    let resultMap: WrapletChildrenMapWithDefaults<M> = this.fullMap;
+  private findMap(path: string[]): WrapletDependencyMapWithDefaults<M> {
+    let resultMap: WrapletDependencyMapWithDefaults<M> = this.fullMap;
 
     for (const pathPart of path) {
       if (!resultMap[pathPart]) {
@@ -68,7 +68,7 @@ export class MapWrapper<M extends WrapletChildrenMap> {
       }
 
       const map = resultMap[pathPart]["map"];
-      if (isWrapletChildrenMap(map)) {
+      if (isWrapletDependencyMap(map)) {
         resultMap = map;
       } else if (isDynamicMap(map)) {
         resultMap = map.create(this.clone(path, false));
@@ -91,7 +91,7 @@ export class MapWrapper<M extends WrapletChildrenMap> {
   }
 
   private pathExists(path: string[]): boolean {
-    let tempMap: WrapletChildrenMapWithDefaults = this.fullMap;
+    let tempMap: WrapletDependencyMapWithDefaults = this.fullMap;
     for (const pathPart of path) {
       if (!Object.hasOwn(tempMap, pathPart)) {
         return false;
@@ -102,7 +102,7 @@ export class MapWrapper<M extends WrapletChildrenMap> {
         return true;
       }
 
-      if (!isWrapletChildrenMap(map)) {
+      if (!isWrapletDependencyMap(map)) {
         throw new Error("Invalid map type.");
       }
 
@@ -125,15 +125,15 @@ export class MapWrapper<M extends WrapletChildrenMap> {
   public clone(
     path: string[],
     resolveImmediately: boolean = true,
-  ): MapWrapper<WrapletChildrenMapWithDefaults<M>> {
-    return new MapWrapper<WrapletChildrenMapWithDefaults<M>>(
+  ): MapWrapper<WrapletDependencyMapWithDefaults<M>> {
+    return new MapWrapper<WrapletDependencyMapWithDefaults<M>>(
       this.fullMap,
       path,
       resolveImmediately,
     );
   }
 
-  public resolve(path: string[]): WrapletChildrenMapWithDefaults<M> {
+  public resolve(path: string[]): WrapletDependencyMapWithDefaults<M> {
     return this.findMap(path);
   }
 }

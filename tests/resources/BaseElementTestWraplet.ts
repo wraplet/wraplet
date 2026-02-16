@@ -1,29 +1,29 @@
 /* istanbul ignore file */
-import { AbstractWraplet, WrapletChildrenMap } from "../../src";
-import { WrapletChildren } from "../../src/Wraplet/types/WrapletChildren";
+import { AbstractWraplet, WrapletDependencyMap } from "../../src";
+import { WrapletDependencies } from "../../src/Wraplet/types/WrapletDependencies";
 import { Core } from "../../src";
 
 export abstract class BaseElementTestWraplet<
-  M extends WrapletChildrenMap = WrapletChildrenMap,
+  M extends WrapletDependencyMap = WrapletDependencyMap,
 > extends AbstractWraplet<Element, M> {
   constructor(core: Core<Element, M>) {
     super(core);
   }
 
-  public getChild<C extends keyof M>(name: C): WrapletChildren<M>[C] {
-    return this.children[name];
+  public getDependency<C extends keyof M>(name: C): WrapletDependencies<M>[C] {
+    return this.deps[name];
   }
 
-  public hasChild(name: keyof M): boolean {
-    return !!this.children[name];
+  public hasDependency(name: keyof M): boolean {
+    return !!this.deps[name];
   }
 
   public static create<
-    M extends WrapletChildrenMap,
+    M extends WrapletDependencyMap,
     C extends BaseElementTestWraplet<M> = BaseElementTestWraplet<M>,
   >(
     selectorAttribute: string,
-    map: WrapletChildrenMap,
+    map: WrapletDependencyMap,
     element: ParentNode = document,
     args: unknown[] = [],
   ): C | null {
@@ -37,7 +37,7 @@ export abstract class BaseElementTestWraplet<
 
   public static createAll<C extends BaseElementTestWraplet>(
     selectorAttribute: string,
-    map: WrapletChildrenMap = {},
+    map: WrapletDependencyMap = {},
     node: ParentNode = document,
   ): C[] {
     return this.createWraplets<Element>(

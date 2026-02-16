@@ -1,7 +1,7 @@
 import "../setup";
 import { MapWrapper } from "../../src/Map/MapWrapper";
 import { BaseElementTestWraplet } from "../resources/BaseElementTestWraplet";
-import { MapRepeat, WrapletChildrenMap } from "../../src";
+import { MapRepeat, WrapletDependencyMap } from "../../src";
 import { fillMapWithDefaults } from "../../src/Map/utils";
 
 it("Test MapWrapper traverse", () => {
@@ -13,7 +13,7 @@ it("Test MapWrapper traverse", () => {
       required: false,
       map: MapRepeat.create(1),
     },
-  } as const satisfies WrapletChildrenMap;
+  } as const satisfies WrapletDependencyMap;
 
   const map = {
     child: {
@@ -23,7 +23,7 @@ it("Test MapWrapper traverse", () => {
       required: false,
       map: mapChildMap,
     },
-  } as const satisfies WrapletChildrenMap;
+  } as const satisfies WrapletDependencyMap;
 
   const mapWrapper = new MapWrapper(map, ["child"]);
 
@@ -66,7 +66,7 @@ it("Test MapWrapper current map not found", () => {
       multiple: false,
       required: false,
     },
-  } as const satisfies WrapletChildrenMap;
+  } as const satisfies WrapletDependencyMap;
 
   const wrapper = new MapWrapper(map);
 
@@ -91,7 +91,7 @@ it("Test MapWrapper invalid map type", () => {
       required: false,
       map: class InvalidMapObject {} as any,
     },
-  } as const satisfies WrapletChildrenMap;
+  } as const satisfies WrapletDependencyMap;
 
   const wrapper = new MapWrapper(map);
 
@@ -115,7 +115,7 @@ it("Test MapWrapper delayed resolve", () => {
       multiple: false,
       required: false,
     },
-  } as const satisfies WrapletChildrenMap;
+  } as const satisfies WrapletDependencyMap;
 
   const wrapper = new MapWrapper(map);
 

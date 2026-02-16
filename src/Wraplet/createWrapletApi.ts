@@ -1,4 +1,4 @@
-import { WrapletChildrenMap } from "./types/WrapletChildrenMap";
+import { WrapletDependencyMap } from "./types/WrapletDependencyMap";
 import { DestroyListener } from "../Core/types/DestroyListener";
 import { WrapletApiFactoryArgs } from "./types/WrapletApiFactoryArgs";
 import { WrapletApi, WrapletApiDebug } from "./types/WrapletApi";
@@ -6,7 +6,10 @@ import { createDefaultInitializeCallback } from "../Wraplet/createDefaultInitial
 import { createDefaultDestroyCallback } from "../Wraplet/createDefaultDestroyCallback";
 import { Wraplet } from "../Wraplet/types/Wraplet";
 
-export const createWrapletApi = <N extends Node, M extends WrapletChildrenMap>(
+export const createWrapletApi = <
+  N extends Node,
+  M extends WrapletDependencyMap,
+>(
   args: WrapletApiFactoryArgs<N, M>,
 ): WrapletApi<N> & WrapletApiDebug<N> => {
   const nodeAccessors: ((node: N) => void)[] = [];

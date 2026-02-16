@@ -1,10 +1,10 @@
-import { WrapletChildren } from "../../Wraplet/types/WrapletChildren";
+import { WrapletDependencies } from "../../Wraplet/types/WrapletDependencies";
 import {
-  WrapletChildrenMap,
-  WrapletChildrenMapWithDefaults,
-} from "../../Wraplet/types/WrapletChildrenMap";
-import { DestroyChildListener } from "./DestroyChildListener";
-import { InstantiateChildListener } from "./InstantiateChildListener";
+  WrapletDependencyMap,
+  WrapletDependencyMapWithDefaults,
+} from "../../Wraplet/types/WrapletDependencyMap";
+import { DependencyDestroyedListener } from "./DestroyDependencyListener";
+import { DependencyInstantiatedListener } from "./DependencyInstantiatedListener";
 import { Wraplet } from "../../Wraplet/types/Wraplet";
 import { WrapletCreator } from "./WrapletCreator";
 import { is } from "../../utils/is";
@@ -14,12 +14,12 @@ const CoreSymbol = Symbol("Core");
 export { CoreSymbol };
 
 /**
- * Children manager interface that defines the public API for managing wraplet relationships
+ * Dependency manager interface that defines the public API for managing wraplet relationships
  * and lifecycles.
  */
 export interface Core<
   N extends Node = Node,
-  M extends WrapletChildrenMap = {},
+  M extends WrapletDependencyMap = {},
 > {
   [CoreSymbol]: true;
 
@@ -31,7 +31,7 @@ export interface Core<
   /**
    * The children map that defines the relationships between nodes.
    */
-  map: WrapletChildrenMapWithDefaults<M>;
+  map: WrapletDependencyMapWithDefaults<M>;
 
   /**
    * Node attached to the current wraplet.
@@ -39,34 +39,36 @@ export interface Core<
   node: N;
 
   /**
-   * Instantiate children based on the map and the current node.
+   * Instantiate dependencies based on the map and the current node.
    */
-  instantiateChildren(): void;
+  instantiateDependencies(): void;
 
   /**
-   * Initialize children.
+   * Initialize dependencies.
    */
-  initializeChildren(): Promise<void>;
+  initializeDependencies(): Promise<void>;
 
   /**
-   * Synchronize the children instances with the DOM.
+   * Synchronize the dependencies instances with the DOM.
    */
-  syncChildren(): Promise<void>;
+  syncDependencies(): Promise<void>;
 
   /**
-   * Add a listener that will be called when a child is destroyed.
+   * Add a listener that will be called when a dependency is destroyed.
    */
-  addDestroyChildListener(callback: DestroyChildListener<M, keyof M>): void;
-
-  /**
-   * Add a listener that will be called when a child is instantiated.
-   */
-  addInstantiateChildListener(
-    callback: InstantiateChildListener<M, keyof M>,
+  addDependencyDestroyedListener(
+    callback: DependencyDestroyedListener<M, keyof M>,
   ): void;
 
   /**
-   * Destroy all children.
+   * Add a listener that will be called when a dependency is instantiated.
+   */
+  addDependencyInstantiatedListener(
+    callback: DependencyInstantiatedListener<M, keyof M>,
+  ): void;
+
+  /**
+   * Destroy all dependencies.
    */
   destroy(): Promise<void>;
 
@@ -80,19 +82,19 @@ export interface Core<
     options?: AddEventListenerOptions | boolean,
   ): void;
 
-  getNodeTreeChildren(): Wraplet[];
+  getChildrenDependencies(): Wraplet[];
 
   /**
    * Allows for overriding the default wraplet creation process.
    */
   setWrapletCreator(
-    wrapletCreator: WrapletCreator<Node, WrapletChildrenMap>,
+    wrapletCreator: WrapletCreator<Node, WrapletDependencyMap>,
   ): void;
 
   /**
-   * Get the instantiated children.
+   * Get the available dependencies.
    */
-  readonly children: WrapletChildren<M>;
+  readonly dependencies: WrapletDependencies<M>;
 }
 
 export function isCore(object: unknown): object is Core {

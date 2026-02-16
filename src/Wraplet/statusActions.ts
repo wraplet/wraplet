@@ -2,7 +2,7 @@ import { StatusWritable } from "../Wraplet/types/Status";
 import { Core } from "../Core/types/Core";
 import { DestroyListener } from "../Core/types/DestroyListener";
 import { Wraplet } from "../Wraplet/types/Wraplet";
-import { WrapletChildrenMap } from "../Wraplet/types/WrapletChildrenMap";
+import { WrapletDependencyMap } from "./types/WrapletDependencyMap";
 import {
   addWrapletToNode,
   removeWrapletFromNode,
@@ -10,7 +10,7 @@ import {
 
 export async function initializationStarted<
   N extends Node,
-  M extends WrapletChildrenMap,
+  M extends WrapletDependencyMap,
 >(
   status: StatusWritable,
   core: Core<N, M>,
@@ -22,7 +22,7 @@ export async function initializationStarted<
   status.isGettingInitialized = true;
   addWrapletToNode(wraplet, core.node);
 
-  await core.initializeChildren();
+  await core.initializeDependencies();
   return true;
 }
 
@@ -43,7 +43,7 @@ export async function initializationCompleted(
 export async function destructionStarted<
   N extends Node,
   W extends Wraplet<N>,
-  M extends WrapletChildrenMap,
+  M extends WrapletDependencyMap,
 >(
   status: StatusWritable,
   core: Core<N, M>,
@@ -80,7 +80,7 @@ export async function destructionStarted<
 export async function destructionCompleted<
   N extends Node,
   W extends Wraplet<N>,
-  M extends WrapletChildrenMap,
+  M extends WrapletDependencyMap,
 >(status: StatusWritable, core: Core<N, M>, wraplet: W): Promise<void> {
   removeWrapletFromNode(wraplet, core.node);
   status.isGettingDestroyed = false;

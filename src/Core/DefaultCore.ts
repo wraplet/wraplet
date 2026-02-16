@@ -1,25 +1,25 @@
-import { WrapletChildren } from "../Wraplet/types/WrapletChildren";
+import { WrapletDependencies } from "../Wraplet/types/WrapletDependencies";
 import { Nullable } from "../utils/types/Utils";
 import {
-  ChildrenAreAlreadyDestroyedError,
-  ChildrenAreNotAvailableError,
-  ChildrenTooManyFoundError,
+  DependenciesAreAlreadyDestroyedError,
+  DependenciesAreNotAvailableError,
+  TooManyChildrenFoundError,
   InternalLogicError,
   MapError,
-  MissingRequiredChildError,
-  RequiredChildDestroyedError,
+  MissingRequiredDependencyError,
+  RequiredDependencyDestroyedError,
   UnsupportedNodeTypeError,
 } from "../errors";
 import { Wraplet } from "../Wraplet/types/Wraplet";
 import {
-  isWrapletChildrenMap,
-  WrapletChildrenMap,
-  WrapletChildrenMapWithDefaults,
-} from "../Wraplet/types/WrapletChildrenMap";
+  isWrapletDependencyMap,
+  WrapletDependencyMap,
+  WrapletDependencyMapWithDefaults,
+} from "../Wraplet/types/WrapletDependencyMap";
 import { isParentNode } from "../NodeTreeManager/utils";
-import { InstantiateChildListener } from "./types/InstantiateChildListener";
-import { ChildInstance } from "../Wraplet/types/ChildInstance";
-import { DestroyChildListener } from "./types/DestroyChildListener";
+import { DependencyInstantiatedListener } from "./types/DependencyInstantiatedListener";
+import { DependencyInstance } from "../Wraplet/types/DependencyInstance";
+import { DependencyDestroyedListener } from "./types/DestroyDependencyListener";
 import { CoreInitOptions } from "./types/CoreInitOptions";
 import { Core, CoreSymbol } from "./types/Core";
 import { DestroyListener } from "./types/DestroyListener";
@@ -27,8 +27,8 @@ import { isWrapletSet, WrapletSet } from "../Set/types/WrapletSet";
 import { DefaultWrapletSet } from "../Set/DefaultWrapletSet";
 import {
   SelectorCallback,
-  WrapletChildDefinitionWithDefaults,
-} from "../Wraplet/types/WrapletChildDefinition";
+  WrapletDependencyDefinitionWithDefaults,
+} from "../Wraplet/types/WrapletDependencyDefinition";
 import { NodeTreeParentSymbol } from "../NodeTreeManager/types/NodeTreeParent";
 import { MapWrapper } from "../Map/MapWrapper";
 import { WrapletCreator, WrapletCreatorArgs } from "./types/WrapletCreator";
@@ -45,11 +45,11 @@ type ListenerData = {
 
 export class DefaultCore<
   N extends Node = Node,
-  M extends WrapletChildrenMap = {},
+  M extends WrapletDependencyMap = {},
 > implements Core<N, M> {
   public [CoreSymbol]: true = true;
   public [NodeTreeParentSymbol]: true = true;
-  private childrenAreInstantiated: boolean = false;
+  private dependenciesAreInstantiated: boolean = false;
   private statusWritable: StatusWritable = {
     isDestroyed: false,
     isGettingDestroyed: false,
@@ -62,14 +62,19 @@ export class DefaultCore<
   }
 
   public mapWrapper: MapWrapper<M>;
-  private instantiatedChildren: Partial<WrapletChildren<M>> = {};
+  private instantiatedDependencies: Partial<WrapletDependencies<M>> = {};
 
-  private destroyChildListeners: DestroyChildListener<M, keyof M>[] = [];
-  private instantiateChildListeners: InstantiateChildListener<M, keyof M>[] =
-    [];
+  private destroyedDependencyListeners: DependencyDestroyedListener<
+    M,
+    keyof M
+  >[] = [];
+  private instantiatedDependencyListeners: DependencyInstantiatedListener<
+    M,
+    keyof M
+  >[] = [];
   private listeners: ListenerData[] = [];
 
-  private wrapletCreator: WrapletCreator<Node, WrapletChildrenMap> =
+  private wrapletCreator: WrapletCreator<Node, WrapletDependencyMap> =
     defaultWrapletCreator;
 
   constructor(
@@ -80,7 +85,7 @@ export class DefaultCore<
     if (!(node instanceof Node)) {
       throw new Error("The node provided to the Core is not a valid node.");
     }
-    if (isWrapletChildrenMap(map)) {
+    if (isWrapletDependencyMap(map)) {
       this.mapWrapper = new MapWrapper(map);
     } else if (map instanceof MapWrapper) {
       this.mapWrapper = map;
@@ -89,28 +94,28 @@ export class DefaultCore<
     }
 
     this.processInitOptions(initOptions);
-    this.instantiatedChildren = {};
+    this.instantiatedDependencies = {};
   }
 
   /**
    * Initialize core.
    *
    * We couldn't put this step in the constructor, because during initialization some wraplet
-   * processing occurs (instantiate child listeners) that needs access to the children manager,
-   * so the children manager has to exist already.
+   * processing occurs (instantiate dependency listeners) that needs access to the Core,
+   * so the Core has to exist already.
    */
-  public async initializeChildren() {
+  public async initializeDependencies() {
     this.statusWritable.isGettingInitialized = true;
 
-    const childInstances: Wraplet[] = Object.values(
-      this.instantiatedChildren,
-    ).flatMap((child) => {
-      if (!child) return [];
-      return isWrapletSet(child) ? Array.from(child) : [child];
+    const dependencyInstances: Wraplet[] = Object.values(
+      this.instantiatedDependencies,
+    ).flatMap((dependency) => {
+      if (!dependency) return [];
+      return isWrapletSet(dependency) ? Array.from(dependency) : [dependency];
     });
 
     await Promise.all(
-      childInstances.map((child) => child.wraplet.initialize()),
+      dependencyInstances.map((dependency) => dependency.wraplet.initialize()),
     );
 
     this.statusWritable.isInitialized = true;
@@ -123,32 +128,32 @@ export class DefaultCore<
     }
   }
 
-  public get map(): WrapletChildrenMapWithDefaults<M> {
-    return this.mapWrapper.getStartingMap() as WrapletChildrenMapWithDefaults<M>;
+  public get map(): WrapletDependencyMapWithDefaults<M> {
+    return this.mapWrapper.getStartingMap() as WrapletDependencyMapWithDefaults<M>;
   }
 
-  public instantiateChildren(): void {
-    const children: Partial<Nullable<WrapletChildren<M>>> =
-      this.instantiatedChildren;
+  public instantiateDependencies(): void {
+    const dependencies: Partial<Nullable<WrapletDependencies<M>>> =
+      this.instantiatedDependencies;
     // We check if are dealing with the ParentNode object.
     if (!isParentNode(this.node)) {
       for (const id in this.map) {
-        const childDefinition = this.map[id];
-        this.validateMapItemForNonParent(id, childDefinition);
+        const dependencyDefinition = this.map[id];
+        this.validateMapItemForNonParent(id, dependencyDefinition);
       }
       return;
     }
     for (const id in this.map) {
-      const childDefinition = this.map[id];
-      const multiple = childDefinition.multiple;
+      const dependencyDefinition = this.map[id];
+      const multiple = dependencyDefinition.multiple;
 
       const mapWrapper = this.mapWrapper.clone([...this.mapWrapper.path, id]);
 
-      this.validateMapItem(id, childDefinition);
+      this.validateMapItem(id, dependencyDefinition);
       if (multiple) {
         // We can assert as much because items
-        children[id] = this.instantiateMultipleWrapletsChild(
-          childDefinition,
+        dependencies[id] = this.instantiateMultipleDependencies(
+          dependencyDefinition,
           mapWrapper,
           this.node,
           id,
@@ -156,45 +161,45 @@ export class DefaultCore<
         continue;
       }
 
-      children[id] = this.instantiateSingleWrapletChild(
-        childDefinition,
+      dependencies[id] = this.instantiateSingleWrapletDependency(
+        dependencyDefinition,
         mapWrapper,
         this.node,
         id,
       );
     }
-    if (!this.childrenAreInstantiated) {
-      this.instantiatedChildren = this.wrapChildren(
-        children as WrapletChildren<M>,
+    if (!this.dependenciesAreInstantiated) {
+      this.instantiatedDependencies = this.wrapDependencies(
+        dependencies as WrapletDependencies<M>,
       );
-      this.childrenAreInstantiated = true;
+      this.dependenciesAreInstantiated = true;
     }
   }
 
-  public async syncChildren(): Promise<void> {
-    this.instantiateChildren();
-    await this.initializeChildren();
+  public async syncDependencies(): Promise<void> {
+    this.instantiateDependencies();
+    await this.initializeDependencies();
   }
 
-  public getNodeTreeChildren(): Wraplet[] {
-    const children: Wraplet[] = [];
-    for (const child of Object.values(this.children)) {
-      if (child === null) {
+  public getChildrenDependencies(): Wraplet[] {
+    const dependencies: Wraplet[] = [];
+    for (const dependency of Object.values(this.dependencies)) {
+      if (dependency === null) {
         continue;
       }
-      if (isWrapletSet(child)) {
-        for (const item of child) {
-          children.push(item);
+      if (isWrapletSet(dependency)) {
+        for (const item of dependency) {
+          dependencies.push(item);
         }
       } else {
-        children.push(child);
+        dependencies.push(dependency);
       }
     }
 
     // Return only descendants.
-    return children.filter((child) => {
+    return dependencies.filter((dependency) => {
       let result = false;
-      child.wraplet.accessNode((childsNode) => {
+      dependency.wraplet.accessNode((childsNode) => {
         result = this.node.contains(childsNode);
       });
       return result;
@@ -202,23 +207,23 @@ export class DefaultCore<
   }
 
   private findExistingWraplet(id: keyof M, childElement: Node): Wraplet | null {
-    // If a child doesn't have instantiated wraplets yet, then return null.
+    // If an element doesn't have instantiated wraplets yet, then return null.
     if (
-      this.instantiatedChildren === undefined ||
-      !this.instantiatedChildren[id]
+      this.instantiatedDependencies === undefined ||
+      !this.instantiatedDependencies[id]
     ) {
       return null;
     }
-    const existingChild = this.instantiatedChildren[id];
+    const existingDependency = this.instantiatedDependencies[id];
     // Handle multiple.
     if (this.map[id]["multiple"]) {
-      if (!isWrapletSet<Wraplet<N>>(existingChild)) {
+      if (!isWrapletSet<Wraplet<N>>(existingDependency)) {
         throw new InternalLogicError(
           "Internal logic error. Expected a WrapletSet.",
         );
       }
 
-      const existingWraplets = existingChild.find((wraplet) => {
+      const existingWraplets = existingDependency.find((wraplet) => {
         let result = false;
 
         wraplet.wraplet.accessNode((node) => {
@@ -244,49 +249,49 @@ export class DefaultCore<
     }
 
     // Handle single.
-    return existingChild as Wraplet<N>;
+    return existingDependency as Wraplet<N>;
   }
 
-  private instantiateSingleWrapletChild<T extends keyof M>(
-    childDefinition: WrapletChildDefinitionWithDefaults<M[T], M>,
-    childMap: MapWrapper<WrapletChildrenMapWithDefaults<M>>,
+  private instantiateSingleWrapletDependency<T extends keyof M>(
+    dependencyDefinition: WrapletDependencyDefinitionWithDefaults<M[T], M>,
+    dependencyMap: MapWrapper<WrapletDependencyMapWithDefaults<M>>,
     node: ParentNode,
     id: Extract<T, string>,
-  ): WrapletChildren<M>[T] | null {
-    if (!childDefinition.selector) {
+  ): WrapletDependencies<M>[T] | null {
+    if (!dependencyDefinition.selector) {
       return null;
     }
-    const selector = childDefinition.selector;
+    const selector = dependencyDefinition.selector;
 
     // Find children elements based on the map.
-    const childElements = this.findChildren(selector, node);
+    const childrenElements = this.findChildrenElements(selector, node);
 
-    this.validateElements(id, childElements, childDefinition);
+    this.validateElements(id, childrenElements, dependencyDefinition);
 
-    if (childElements.length === 0) {
+    if (childrenElements.length === 0) {
       return null;
     }
 
-    if (childElements.length > 1) {
-      throw new ChildrenTooManyFoundError(
-        `${this.constructor.name}: More than one element was found for the "${id}" child. Selector used: "${selector}".`,
+    if (childrenElements.length > 1) {
+      throw new TooManyChildrenFoundError(
+        `${this.constructor.name}: More than one element was found for the "${id}" dependency. Selector used: "${selector}".`,
       );
     }
 
-    const childElement = childElements[0];
+    const childElement = childrenElements[0];
 
     return this.instantiateWrapletItem<T>(
       id,
-      childDefinition,
-      childMap,
+      dependencyDefinition,
+      dependencyMap,
       childElement,
-    ) as WrapletChildren<M>[T];
+    ) as WrapletDependencies<M>[T];
   }
 
   private instantiateWrapletItem<T extends keyof M>(
     id: Extract<T, string>,
-    childDefinition: WrapletChildDefinitionWithDefaults<M[T], M>,
-    childMap: MapWrapper<WrapletChildrenMapWithDefaults<M>>,
+    dependencyDefinition: WrapletDependencyDefinitionWithDefaults<M[T], M>,
+    dependencyMap: MapWrapper<WrapletDependencyMapWithDefaults<M>>,
     node: Node,
   ): Wraplet | null {
     // Re-use existing wraplet.
@@ -295,18 +300,18 @@ export class DefaultCore<
       return existingWraplet;
     }
 
-    const wrapletClass = childDefinition.Class;
-    const creatorArgs: WrapletCreatorArgs<Node, WrapletChildrenMap> = {
+    const wrapletClass = dependencyDefinition.Class;
+    const creatorArgs: WrapletCreatorArgs<Node, WrapletDependencyMap> = {
       id: id,
       Class: wrapletClass,
       element: node,
-      map: childMap,
-      initOptions: childDefinition.coreOptions,
-      args: childDefinition.args,
+      map: dependencyMap,
+      initOptions: dependencyDefinition.coreOptions,
+      args: dependencyDefinition.args,
     };
 
     creatorArgs.args = creatorArgs.args.map((arg) => {
-      if (isArgCreator<Node, WrapletChildrenMap>(arg)) {
+      if (isArgCreator<Node, WrapletDependencyMap>(arg)) {
         return arg.createArg(creatorArgs);
       }
       return arg;
@@ -316,9 +321,9 @@ export class DefaultCore<
       wraplet = this.wrapletCreator(creatorArgs, this.constructor as any);
     } catch (e) {
       if (e instanceof UnsupportedNodeTypeError) {
-        if (!childDefinition.required) {
+        if (!dependencyDefinition.required) {
           console.warn(
-            `${e.message} Skipping instantiation of the "${id}" child.`,
+            `${e.message} Skipping instantiation of the "${id}" dependency.`,
           );
           return null;
         }
@@ -327,31 +332,31 @@ export class DefaultCore<
     }
     this.prepareIndividualWraplet(id, wraplet);
 
-    for (const listener of this.instantiateChildListeners) {
-      listener(wraplet as ChildInstance<M>, id);
+    for (const listener of this.instantiatedDependencyListeners) {
+      listener(wraplet as DependencyInstance<M>, id);
     }
 
     return wraplet;
   }
 
-  private instantiateMultipleWrapletsChild<T extends keyof M>(
-    childDefinition: WrapletChildDefinitionWithDefaults<M[T], M>,
-    childMap: MapWrapper<WrapletChildrenMapWithDefaults<M>>,
+  private instantiateMultipleDependencies<T extends keyof M>(
+    dependencyDefinition: WrapletDependencyDefinitionWithDefaults<M[T], M>,
+    dependencyMap: MapWrapper<WrapletDependencyMapWithDefaults<M>>,
     node: ParentNode,
     id: Extract<T, string>,
-  ): WrapletChildren<M>[keyof WrapletChildren<M>] {
-    const selector = childDefinition.selector;
+  ): WrapletDependencies<M>[keyof WrapletDependencies<M>] {
+    const selector = dependencyDefinition.selector;
     if (!selector) {
-      return new DefaultWrapletSet() as WrapletChildren<M>[keyof WrapletChildren<M>];
+      return new DefaultWrapletSet() as WrapletDependencies<M>[keyof WrapletDependencies<M>];
     }
 
     // Find children elements based on the map.
-    const childElements = this.findChildren(selector, node);
-    this.validateElements(id, childElements, childDefinition);
+    const childElements = this.findChildrenElements(selector, node);
+    this.validateElements(id, childElements, dependencyDefinition);
 
     const items: WrapletSet =
-      this.instantiatedChildren && this.instantiatedChildren[id]
-        ? (this.instantiatedChildren[id] as WrapletSet<Wraplet<N>>)
+      this.instantiatedDependencies && this.instantiatedDependencies[id]
+        ? (this.instantiatedDependencies[id] as WrapletSet<Wraplet<N>>)
         : new DefaultWrapletSet<Wraplet<N>>();
     for (const childElement of childElements) {
       const existingWraplet = this.findExistingWraplet(id, childElement);
@@ -360,8 +365,8 @@ export class DefaultCore<
       }
       const wraplet = this.instantiateWrapletItem(
         id,
-        childDefinition,
-        childMap,
+        dependencyDefinition,
+        dependencyMap,
         childElement,
       );
       if (wraplet) {
@@ -369,23 +374,23 @@ export class DefaultCore<
       }
     }
 
-    return items as WrapletChildren<M>[keyof WrapletChildren<M>];
+    return items as WrapletDependencies<M>[keyof WrapletDependencies<M>];
   }
 
-  public addDestroyChildListener(
-    callback: DestroyChildListener<M, keyof M>,
+  public addDependencyDestroyedListener(
+    callback: DependencyDestroyedListener<M, keyof M>,
   ): void {
-    this.destroyChildListeners.push(callback);
+    this.destroyedDependencyListeners.push(callback);
   }
 
-  public addInstantiateChildListener(
-    callback: InstantiateChildListener<M, keyof M>,
+  public addDependencyInstantiatedListener(
+    callback: DependencyInstantiatedListener<M, keyof M>,
   ): void {
-    this.instantiateChildListeners.push(callback);
+    this.instantiatedDependencyListeners.push(callback);
   }
 
   public setWrapletCreator(
-    wrapletCreator: WrapletCreator<Node, WrapletChildrenMap>,
+    wrapletCreator: WrapletCreator<Node, WrapletDependencyMap>,
   ): void {
     this.wrapletCreator = wrapletCreator;
   }
@@ -395,25 +400,25 @@ export class DefaultCore<
     wraplet: Wraplet,
   ) {
     const destroyListener: DestroyListener = (<K extends keyof M>(
-      wraplet: ChildInstance<M, K>,
+      wraplet: DependencyInstance<M, K>,
     ) => {
-      this.removeChild(wraplet, id);
+      this.removeDependency(wraplet, id);
 
-      for (const listener of this.destroyChildListeners) {
+      for (const listener of this.destroyedDependencyListeners) {
         listener(wraplet, id);
       }
     }) as DestroyListener;
-    // Listen for the child's destruction.
+    // Listen for the dependency's destruction.
     wraplet.wraplet.addDestroyListener(destroyListener);
   }
 
   /**
-   * This method removes from nodes references to this wraplet and its children recursively.
+   * This method removes from nodes references to this wraplet and its dependencies recursively.
    */
   public async destroy(): Promise<void> {
     if (this.statusWritable.isDestroyed) {
-      throw new ChildrenAreAlreadyDestroyedError(
-        "Children are already destroyed.",
+      throw new DependenciesAreAlreadyDestroyedError(
+        "Dependencies are already destroyed.",
       );
     }
     this.statusWritable.isGettingDestroyed = true;
@@ -444,14 +449,14 @@ export class DefaultCore<
 
     this.listeners.length = 0;
 
-    await this.destroyChildren();
+    await this.destroyDependencies();
 
     this.statusWritable.isInitialized = false;
     this.statusWritable.isDestroyed = true;
     this.statusWritable.isGettingDestroyed = false;
   }
 
-  private findChildren<PN extends ParentNode>(
+  private findChildrenElements<PN extends ParentNode>(
     selector: string | SelectorCallback<PN>,
     node: PN,
   ): Node[] {
@@ -478,54 +483,54 @@ export class DefaultCore<
     node.addEventListener(eventName, callback, options);
   }
 
-  public get children(): WrapletChildren<M> {
-    if (!this.childrenAreInstantiated) {
-      throw new ChildrenAreNotAvailableError(
-        "Wraplet is not yet fully initialized. You can fetch partial children with the 'uninitializedChildren' property.",
+  public get dependencies(): WrapletDependencies<M> {
+    if (!this.dependenciesAreInstantiated) {
+      throw new DependenciesAreNotAvailableError(
+        "Wraplet is not yet fully initialized. You can fetch partial dependencies with the 'instantiatedDependencies' property.",
       );
     }
-    return this.instantiatedChildren as WrapletChildren<M>;
+    return this.instantiatedDependencies as WrapletDependencies<M>;
   }
 
-  private removeChild<K extends Extract<keyof M, string>>(
-    wraplet: ChildInstance<M, K>,
+  private removeDependency<K extends Extract<keyof M, string>>(
+    wraplet: DependencyInstance<M, K>,
     id: K,
   ): void {
-    if (isWrapletSet(this.instantiatedChildren[id])) {
-      if (!this.instantiatedChildren[id].delete(wraplet)) {
+    if (isWrapletSet(this.instantiatedDependencies[id])) {
+      if (!this.instantiatedDependencies[id].delete(wraplet)) {
         throw new InternalLogicError(
-          "Internal logic error. Destroyed child couldn't be removed because it's not among the children.",
+          "Internal logic error. Destroyed dependency couldn't be removed because it already doesn't exist.",
         );
       }
       return;
     }
 
-    if (this.instantiatedChildren[id] === null) {
+    if (this.instantiatedDependencies[id] === null) {
       throw new InternalLogicError(
-        "Internal logic error. Destroyed child couldn't be removed because it's already null.",
+        "Internal logic error. Destroyed dependency couldn't be removed because it already doesn't exist.",
       );
     }
 
     // @ts-expect-error The type is unknown because we are dealing with a generic here.
-    this.instantiatedChildren[id] = null;
+    this.instantiatedDependencies[id] = null;
 
     if (this.map[id].required && !this.status.isGettingDestroyed) {
-      throw new RequiredChildDestroyedError(
-        "Required child has been destroyed.",
+      throw new RequiredDependencyDestroyedError(
+        "Required dependency has been destroyed.",
       );
     }
   }
 
   private validateMapItem(
     id: string,
-    item: WrapletChildDefinitionWithDefaults<M[keyof M], M>,
+    item: WrapletDependencyDefinitionWithDefaults<M[keyof M], M>,
   ): void {
     const selector = item.selector;
     const isRequired = item.required;
     if (!selector) {
       if (isRequired) {
         throw new MapError(
-          `${this.constructor.name}: Child "${id}" cannot at the same be required and have no selector.`,
+          `${this.constructor.name}: Dependency "${id}" cannot at the same be required and have no selector.`,
         );
       }
     }
@@ -533,11 +538,11 @@ export class DefaultCore<
 
   private validateMapItemForNonParent(
     id: string,
-    item: WrapletChildDefinitionWithDefaults<M[keyof M], M>,
+    item: WrapletDependencyDefinitionWithDefaults<M[keyof M], M>,
   ): void {
     if (item.required) {
       throw new MapError(
-        `Dependency "${id}" error: If the node provided cannot have children, there should be no required children.`,
+        `Dependency "${id}" error: If the node provided cannot have children, there should be no required dependencies.`,
       );
     }
   }
@@ -545,23 +550,25 @@ export class DefaultCore<
   private validateElements(
     id: Extract<keyof M, string>,
     elements: Node[],
-    mapItem: WrapletChildDefinitionWithDefaults<M[keyof M], M>,
+    mapItem: WrapletDependencyDefinitionWithDefaults<M[keyof M], M>,
   ): void {
     if (elements.length === 0 && mapItem.required) {
-      throw new MissingRequiredChildError(
+      throw new MissingRequiredDependencyError(
         `${this.constructor.name}: Couldn't find a node for the wraplet "${id}". Selector used: "${mapItem.selector}".`,
       );
     }
   }
 
   /**
-   * Set up a proxy to check if children have not been destroyed before fetching them.
+   * Set up a proxy to check if dependencies have not been destroyed before fetching them.
    */
-  private wrapChildren(children: WrapletChildren<M>): WrapletChildren<M> {
-    return new Proxy(children, {
+  private wrapDependencies(
+    dependencies: WrapletDependencies<M>,
+  ): WrapletDependencies<M> {
+    return new Proxy(dependencies, {
       get: function get(target, name: string) {
         if (!(name in target)) {
-          throw new Error(`Child '${name}' has not been found.`);
+          throw new Error(`Dependency '${name}' has not been found.`);
         }
         return target[name];
       },
@@ -570,8 +577,8 @@ export class DefaultCore<
 
   private defaultInitOptions(): CoreInitOptions<M> {
     return {
-      instantiateChildListeners: [],
-      destroyChildListeners: [],
+      dependencyInstantiatedListeners: [],
+      dependencyDestroyedListeners: [],
     };
   }
 
@@ -583,30 +590,30 @@ export class DefaultCore<
       initOptionsPartial,
     );
 
-    if (initOptions.instantiateChildListeners) {
-      for (const listener of initOptions.instantiateChildListeners) {
-        this.instantiateChildListeners.push(listener);
+    if (initOptions.dependencyInstantiatedListeners) {
+      for (const listener of initOptions.dependencyInstantiatedListeners) {
+        this.instantiatedDependencyListeners.push(listener);
       }
     }
 
-    if (initOptions.destroyChildListeners) {
-      for (const listener of initOptions.destroyChildListeners) {
-        this.destroyChildListeners.push(listener);
+    if (initOptions.dependencyDestroyedListeners) {
+      for (const listener of initOptions.dependencyDestroyedListeners) {
+        this.destroyedDependencyListeners.push(listener);
       }
     }
   }
 
-  private async destroyChildren(): Promise<void> {
-    for (const [key, child] of Object.entries(this.children)) {
-      if (!child || !this.map[key]["destructible"]) {
+  private async destroyDependencies(): Promise<void> {
+    for (const [key, dependency] of Object.entries(this.dependencies)) {
+      if (!dependency || !this.map[key]["destructible"]) {
         continue;
       }
-      if (isWrapletSet(child)) {
-        for (const item of child) {
+      if (isWrapletSet(dependency)) {
+        for (const item of dependency) {
           await item.wraplet.destroy();
         }
       } else {
-        await child.wraplet.destroy();
+        await dependency.wraplet.destroy();
       }
     }
   }

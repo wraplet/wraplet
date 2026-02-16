@@ -1,4 +1,4 @@
-import { WrapletChildrenMap } from "./types/WrapletChildrenMap";
+import { WrapletDependencyMap } from "./types/WrapletDependencyMap";
 import { Status } from "./types/Status";
 import { Core } from "../Core/types/Core";
 import { WrapletApiFactoryBasicCallback } from "./types/WrapletApiFactoryBasicCallback";
@@ -10,7 +10,7 @@ import { Wraplet } from "./types/Wraplet";
 
 export type DefaultInitializeCallbackArgs<
   N extends Node,
-  M extends WrapletChildrenMap,
+  M extends WrapletDependencyMap,
 > = {
   core: Core<N, M>;
   wraplet: Wraplet<N>;
@@ -23,7 +23,7 @@ export type DefaultInitializeCallbackArgs<
  */
 export function createDefaultInitializeCallback<
   N extends Node,
-  M extends WrapletChildrenMap,
+  M extends WrapletDependencyMap,
 >(
   args: DefaultInitializeCallbackArgs<N, M>,
   customInitializeLogic?: WrapletApiFactoryBasicCallback,

@@ -1,7 +1,7 @@
 import {
-  WrapletChildrenMap,
-  WrapletChildrenMapWithDefaults,
-} from "../../Wraplet/types/WrapletChildrenMap";
+  WrapletDependencyMap,
+  WrapletDependencyMapWithDefaults,
+} from "../../Wraplet/types/WrapletDependencyMap";
 import { MapWrapper } from "../MapWrapper";
 import { is } from "../../utils/is";
 
@@ -10,9 +10,9 @@ export { DynamicMapSymbol };
 
 export interface DynamicMap {
   [DynamicMapSymbol]: true;
-  create<M extends WrapletChildrenMap>(
+  create<M extends WrapletDependencyMap>(
     parentMapClone: MapWrapper<M>,
-  ): WrapletChildrenMapWithDefaults<M>;
+  ): WrapletDependencyMapWithDefaults<M>;
 }
 
 export function isDynamicMap(object: unknown): object is DynamicMap {

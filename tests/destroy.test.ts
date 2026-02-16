@@ -7,11 +7,11 @@ import {
   destructionCompleted,
   destructionStarted,
   Status,
-  WrapletChildrenMap,
+  WrapletDependencyMap,
 } from "../src";
 import { BaseElementTestWraplet } from "./resources/BaseElementTestWraplet";
-import { RequiredChildDestroyedError } from "../src/errors";
-import { ChildInstance } from "../src/Wraplet/types/ChildInstance";
+import { RequiredDependencyDestroyedError } from "../src/errors";
+import { DependencyInstance } from "../src/Wraplet/types/DependencyInstance";
 import { Core } from "../src";
 
 const funcCounter = jest.fn();
@@ -20,15 +20,15 @@ beforeEach(() => {
 });
 
 const testWrapletSelectorAttribute = "data-test-selector";
-const testWrapletChildSelectorSingleAttribute =
-  "data-test-child-selector-single";
-const testWrapletChildSelectorSingleOptionalAttribute =
-  "data-test-child-selector-single-optional";
-const testWrapletChildSelectorIndestructibleAttribute =
-  "data-test-child-indestructible";
-const testWrapletChildSelectorMultipleAttribute =
-  "data-test-child-selector-multiple";
-class TestWrapletChild extends AbstractWraplet {
+const testWrapletDependencySelectorSingleAttribute =
+  "data-test-dependency-selector-single";
+const testWrapletDependencySelectorSingleOptionalAttribute =
+  "data-test-dependency-selector-single-optional";
+const testWrapletDependencySelectorIndestructibleAttribute =
+  "data-test-dependency-indestructible";
+const testWrapletDependencySelectorMultipleAttribute =
+  "data-test-dependency-selector-multiple";
+class TestWrapletDependency extends AbstractWraplet {
   status: Status = {
     isGettingInitialized: false,
     isInitialized: false,
@@ -60,48 +60,51 @@ class TestWrapletChild extends AbstractWraplet {
   }
 }
 
-const childrenMap = {
-  child: {
-    selector: `[${testWrapletChildSelectorSingleAttribute}]`,
-    Class: TestWrapletChild,
+const dependenciesMap = {
+  dependency: {
+    selector: `[${testWrapletDependencySelectorSingleAttribute}]`,
+    Class: TestWrapletDependency,
     multiple: false,
     required: false,
   },
-  childIndestuctible: {
-    selector: `[${testWrapletChildSelectorIndestructibleAttribute}]`,
-    Class: TestWrapletChild,
+  dependencyIndestuctible: {
+    selector: `[${testWrapletDependencySelectorIndestructibleAttribute}]`,
+    Class: TestWrapletDependency,
     multiple: false,
     required: false,
     destructible: false,
   },
-  childOptional: {
-    selector: `[${testWrapletChildSelectorSingleOptionalAttribute}]`,
-    Class: TestWrapletChild,
+  dependencyOptional: {
+    selector: `[${testWrapletDependencySelectorSingleOptionalAttribute}]`,
+    Class: TestWrapletDependency,
     multiple: false,
     required: false,
   },
-  children: {
-    selector: `[${testWrapletChildSelectorMultipleAttribute}]`,
-    Class: TestWrapletChild,
+  dependencies: {
+    selector: `[${testWrapletDependencySelectorMultipleAttribute}]`,
+    Class: TestWrapletDependency,
     multiple: true,
     required: false,
   },
-} as const satisfies WrapletChildrenMap;
+} as const satisfies WrapletDependencyMap;
 
-class TestWraplet extends BaseElementTestWraplet<typeof childrenMap> {}
+class TestWraplet extends BaseElementTestWraplet<typeof dependenciesMap> {}
 
-it("Test that 'destroy' is invoked on all children", async () => {
+it("Test that 'destroy' is invoked on all dependencies", async () => {
   document.body.innerHTML = `
 <div ${testWrapletSelectorAttribute}>
-    <div ${testWrapletChildSelectorSingleAttribute} class="c1"></div>
-    <div ${testWrapletChildSelectorIndestructibleAttribute} class="c-indestructible"></div>    
-    <div ${testWrapletChildSelectorMultipleAttribute} class="c2"></div>
-    <div ${testWrapletChildSelectorMultipleAttribute} class="c3"></div>
-    <div ${testWrapletChildSelectorMultipleAttribute} class="c4"></div>
-    <div ${testWrapletChildSelectorMultipleAttribute} class="c5"></div>
+    <div ${testWrapletDependencySelectorSingleAttribute} class="c1"></div>
+    <div ${testWrapletDependencySelectorIndestructibleAttribute} class="c-indestructible"></div>    
+    <div ${testWrapletDependencySelectorMultipleAttribute} class="c2"></div>
+    <div ${testWrapletDependencySelectorMultipleAttribute} class="c3"></div>
+    <div ${testWrapletDependencySelectorMultipleAttribute} class="c4"></div>
+    <div ${testWrapletDependencySelectorMultipleAttribute} class="c5"></div>
 </div>
 `;
-  const wraplet = TestWraplet.create(testWrapletSelectorAttribute, childrenMap);
+  const wraplet = TestWraplet.create(
+    testWrapletSelectorAttribute,
+    dependenciesMap,
+  );
   if (!wraplet) {
     throw new Error("Wraplet not created.");
   }
@@ -110,18 +113,21 @@ it("Test that 'destroy' is invoked on all children", async () => {
   expect(funcCounter).toHaveBeenCalledTimes(5);
 });
 
-it("Test that children are removed from the nodes after being destroyed", async () => {
+it("Test that dependencies are removed from the nodes after being destroyed", async () => {
   document.body.innerHTML = `
 <div ${testWrapletSelectorAttribute}>
-    <div ${testWrapletChildSelectorSingleAttribute}></div>
-    <div ${testWrapletChildSelectorIndestructibleAttribute}></div>    
-    <div ${testWrapletChildSelectorMultipleAttribute}></div>
-    <div ${testWrapletChildSelectorMultipleAttribute}></div>
-    <div ${testWrapletChildSelectorMultipleAttribute}></div>
-    <div ${testWrapletChildSelectorMultipleAttribute}></div>
+    <div ${testWrapletDependencySelectorSingleAttribute}></div>
+    <div ${testWrapletDependencySelectorIndestructibleAttribute}></div>    
+    <div ${testWrapletDependencySelectorMultipleAttribute}></div>
+    <div ${testWrapletDependencySelectorMultipleAttribute}></div>
+    <div ${testWrapletDependencySelectorMultipleAttribute}></div>
+    <div ${testWrapletDependencySelectorMultipleAttribute}></div>
 </div>
 `;
-  const wraplet = TestWraplet.create(testWrapletSelectorAttribute, childrenMap);
+  const wraplet = TestWraplet.create(
+    testWrapletSelectorAttribute,
+    dependenciesMap,
+  );
   if (!wraplet) {
     throw new Error("Wraplet not initialized.");
   }
@@ -134,7 +140,9 @@ it("Test that children are removed from the nodes after being destroyed", async 
       if (element.matches("html, head, body")) continue;
       throw new Error("No wraplets found in the element.");
     }
-    if (element.hasAttribute(testWrapletChildSelectorIndestructibleAttribute)) {
+    if (
+      element.hasAttribute(testWrapletDependencySelectorIndestructibleAttribute)
+    ) {
       expect(element.wraplets.size).toEqual(1);
     } else {
       expect(element.wraplets.size).toEqual(0);
@@ -144,7 +152,7 @@ it("Test that children are removed from the nodes after being destroyed", async 
 
 it("Test that listeneres are being detached during destruction", async () => {
   const listener = jest.fn();
-  class TestWrapletChild extends AbstractWraplet {
+  class TestWrapletDependency extends AbstractWraplet {
     constructor(core: Core) {
       super(core);
 
@@ -154,27 +162,27 @@ it("Test that listeneres are being detached during destruction", async () => {
     }
   }
   const mainAttribute = "data-test-main";
-  const childAttribute = "data-test-child";
-  const childrenMap = {
-    child: {
-      selector: `[${childAttribute}]`,
-      Class: TestWrapletChild,
+  const dependencyAttribute = "data-test-dependency";
+  const dependenciesMap = {
+    dependency: {
+      selector: `[${dependencyAttribute}]`,
+      Class: TestWrapletDependency,
       multiple: false,
       required: false,
     },
-  } as const satisfies WrapletChildrenMap;
+  } as const satisfies WrapletDependencyMap;
 
-  class TestWraplet extends BaseElementTestWraplet<typeof childrenMap> {}
+  class TestWraplet extends BaseElementTestWraplet<typeof dependenciesMap> {}
 
   document.body.innerHTML = `
 <div ${mainAttribute}>
-    <div ${childAttribute}></div>
+    <div ${dependencyAttribute}></div>
 </div>
 `;
 
-  const main = TestWraplet.create<typeof childrenMap, TestWraplet>(
+  const main = TestWraplet.create<typeof dependenciesMap, TestWraplet>(
     mainAttribute,
-    childrenMap,
+    dependenciesMap,
   );
 
   if (!main) {
@@ -183,45 +191,47 @@ it("Test that listeneres are being detached during destruction", async () => {
 
   await main.wraplet.initialize();
 
-  const child = main.getChild("child");
-  if (!child) {
-    throw new Error("Child not found.");
+  const dependency = main.getDependency("dependency");
+  if (!dependency) {
+    throw new Error("Dependency not found.");
   }
 
-  const childNode = document.querySelector(`[${childAttribute}]`) as Element;
-  childNode.dispatchEvent(new Event("click"));
+  const dependencyNode = document.querySelector(
+    `[${dependencyAttribute}]`,
+  ) as Element;
+  dependencyNode.dispatchEvent(new Event("click"));
   await main.wraplet.destroy();
-  childNode.dispatchEvent(new Event("click"));
+  dependencyNode.dispatchEvent(new Event("click"));
 
   expect(listener).toHaveBeenCalledTimes(1);
 });
 
-it("Test that if the required child has been destroyed then throw exception", async () => {
+it("Test that if the required dependency has been destroyed then throw exception", async () => {
   const mainAttribute = "data-test-main";
-  const childAttribute = "data-test-child";
+  const dependencyAttribute = "data-test-dependency";
 
-  class TestWrapletChild extends AbstractWraplet {}
+  class TestWrapletDependency extends AbstractWraplet {}
 
-  const childrenMap = {
-    child: {
-      selector: `[${childAttribute}]`,
-      Class: TestWrapletChild,
+  const dependenciesMap = {
+    dependency: {
+      selector: `[${dependencyAttribute}]`,
+      Class: TestWrapletDependency,
       multiple: false,
       required: true,
     },
-  } as const satisfies WrapletChildrenMap;
+  } as const satisfies WrapletDependencyMap;
 
-  class TestWraplet extends BaseElementTestWraplet<typeof childrenMap> {}
+  class TestWraplet extends BaseElementTestWraplet<typeof dependenciesMap> {}
 
   document.body.innerHTML = `
 <div ${mainAttribute}>
-    <div ${childAttribute}></div>
+    <div ${dependencyAttribute}></div>
 </div>
 `;
 
-  const wraplet = TestWraplet.create<typeof childrenMap, TestWraplet>(
+  const wraplet = TestWraplet.create<typeof dependenciesMap, TestWraplet>(
     mainAttribute,
-    childrenMap,
+    dependenciesMap,
   );
   if (!wraplet) {
     throw new Error("Wraplet not created.");
@@ -229,85 +239,85 @@ it("Test that if the required child has been destroyed then throw exception", as
 
   await wraplet.wraplet.initialize();
 
-  const child = wraplet.getChild("child");
-  if (!child) {
-    throw new Error("Child not found.");
+  const dependency = wraplet.getDependency("dependency");
+  if (!dependency) {
+    throw new Error("Dependency not found.");
   }
 
   await expect(async () => {
-    await child.wraplet.destroy();
-  }).rejects.toThrow(RequiredChildDestroyedError);
+    await dependency.wraplet.destroy();
+  }).rejects.toThrow(RequiredDependencyDestroyedError);
 });
 
-it("Destroy child listener", async () => {
+it("Destroy dependency listener", async () => {
   const mainAttribute = "data-test-main";
-  const childAttribute = "data-test-child";
+  const dependencyAttribute = "data-test-dependency";
 
   const func = jest.fn();
 
-  class TestWrapletChild extends AbstractWraplet {}
+  class TestWrapletDependency extends AbstractWraplet {}
 
-  const childrenMap = {
-    child: {
-      selector: `[${childAttribute}]`,
-      Class: TestWrapletChild,
+  const dependenciesMap = {
+    dependency: {
+      selector: `[${dependencyAttribute}]`,
+      Class: TestWrapletDependency,
       multiple: false,
       required: false,
     },
-  } as const satisfies WrapletChildrenMap;
+  } as const satisfies WrapletDependencyMap;
 
-  class TestWraplet extends BaseElementTestWraplet<typeof childrenMap> {
-    protected onChildDestroy<K extends keyof typeof childrenMap>(
-      child: ChildInstance<typeof childrenMap, K>,
+  class TestWraplet extends BaseElementTestWraplet<typeof dependenciesMap> {
+    protected onDependencyDestroyed<K extends keyof typeof dependenciesMap>(
+      dependency: DependencyInstance<typeof dependenciesMap, K>,
       id: K,
     ) {
-      expect(id).toEqual("child");
-      expect(child).toBeInstanceOf(TestWrapletChild);
+      expect(id).toEqual("dependency");
+      expect(dependency).toBeInstanceOf(TestWrapletDependency);
       func();
     }
   }
 
   document.body.innerHTML = `
 <div ${mainAttribute}>
-    <div ${childAttribute}></div>
+    <div ${dependencyAttribute}></div>
 </div>
 `;
 
-  const wraplet = TestWraplet.create<typeof childrenMap, TestWraplet>(
+  const wraplet = TestWraplet.create<typeof dependenciesMap, TestWraplet>(
     mainAttribute,
-    childrenMap,
+    dependenciesMap,
   );
   if (!wraplet) {
     throw new Error("Wraplet not created.");
   }
   await wraplet.wraplet.initialize();
 
-  const child = wraplet.getChild("child");
-  if (!child) {
-    throw new Error("Child not found.");
+  const dependency = wraplet.getDependency("dependency");
+  if (!dependency) {
+    throw new Error("Dependency not found.");
   }
-  await child.wraplet.destroy();
+  await dependency.wraplet.destroy();
 
   expect(func).toHaveBeenCalledTimes(1);
 });
 
 it("Test isDestroyed values", async () => {
   const mainAttribute = "data-test-main";
-  const childAttribute = "data-test-child";
+  const dependencyAttribute = "data-test-dependency";
 
-  class TestWrapletChild extends AbstractWraplet {}
+  class TestWrapletDependency extends AbstractWraplet {}
 
-  const childrenMap = {
-    child: {
-      selector: `[${childAttribute}]`,
-      Class: TestWrapletChild,
+  const dependenciesMap = {
+    dependency: {
+      selector: `[${dependencyAttribute}]`,
+      Class: TestWrapletDependency,
       multiple: false,
       required: false,
     },
-  } as const satisfies WrapletChildrenMap;
+  } as const satisfies WrapletDependencyMap;
 
-  class TestWraplet extends BaseElementTestWraplet<typeof childrenMap> {
-    protected onChildDestroy() {
+  class TestWraplet extends BaseElementTestWraplet<typeof dependenciesMap> {
+    protected onDependencyDestroyed() {
       expect(this.wraplet.status.isGettingDestroyed).toBe(true);
       expect(this.wraplet.status.isDestroyed).toBe(false);
     }
@@ -315,13 +325,13 @@ it("Test isDestroyed values", async () => {
 
   document.body.innerHTML = `
 <div ${mainAttribute}>
-    <div ${childAttribute}></div>
+    <div ${dependencyAttribute}></div>
 </div>
 `;
 
-  const wraplet = TestWraplet.create<typeof childrenMap, TestWraplet>(
+  const wraplet = TestWraplet.create<typeof dependenciesMap, TestWraplet>(
     mainAttribute,
-    childrenMap,
+    dependenciesMap,
   );
   if (!wraplet) {
     throw new Error("Wraplet not created.");

@@ -69,9 +69,9 @@ describe("Unsupported node type", () => {
     await parent.wraplet.initialize();
 
     // One span should be instantiated, one div should be skipped.
-    expect(parent.wraplet.getNodeTreeChildren()).toHaveLength(1);
+    expect(parent.wraplet.getChildrenDependencies()).toHaveLength(1);
     expect(consoleSpy).toHaveBeenCalledWith(
-      'Node type HTMLDivElement is not supported by the UnsupportedChildWraplet wraplet. Skipping instantiation of the "children" child.',
+      'Node type HTMLDivElement is not supported by the UnsupportedChildWraplet wraplet. Skipping instantiation of the "children" dependency.',
     );
 
     consoleSpy.mockRestore();

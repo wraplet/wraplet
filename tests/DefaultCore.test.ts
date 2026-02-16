@@ -5,12 +5,12 @@ import {
   DefaultWrapletSet,
   Status,
   WrapletApi,
-  WrapletChildrenMap,
+  WrapletDependencyMap,
 } from "../src";
 import {
-  ChildrenAreAlreadyDestroyedError,
-  ChildrenAreNotAvailableError,
-  ChildrenTooManyFoundError,
+  DependenciesAreAlreadyDestroyedError,
+  DependenciesAreNotAvailableError,
+  TooManyChildrenFoundError,
   MapError,
 } from "../src";
 import { Core } from "../src";
@@ -41,7 +41,7 @@ describe("Test DefaultCore", () => {
       },
 
       initialize: async () => {
-        await this.core.initializeChildren();
+        await this.core.initializeDependencies();
         this.status.isInitialized = true;
       },
 
@@ -66,20 +66,20 @@ describe("Test DefaultCore", () => {
         multiple: false,
         required: true,
       },
-    } as const satisfies WrapletChildrenMap;
+    } as const satisfies WrapletDependencyMap;
 
     const node = document.createTextNode("test");
 
     const func1 = () => {
       const childrenManager = new DefaultCore(node, map);
-      childrenManager.instantiateChildren();
+      childrenManager.instantiateDependencies();
     };
 
     expect(func1).toThrow(MapError);
 
     const func2 = () => {
       const childrenManager = new DefaultCore(node, {});
-      childrenManager.instantiateChildren();
+      childrenManager.instantiateDependencies();
     };
 
     expect(func2).not.toThrow(MapError);
@@ -93,24 +93,24 @@ describe("Test DefaultCore", () => {
         multiple: false,
         required: false,
       },
-    } as const satisfies WrapletChildrenMap;
+    } as const satisfies WrapletDependencyMap;
 
     const node = document.createTextNode("test");
 
     const core = new DefaultCore(node, map);
     expect(() => {
-      core.instantiateChildren();
+      core.instantiateDependencies();
     }).not.toThrow();
   });
 
   it("should throw ChildrenAreNotAvailableError when accessing children before they are instantiated", () => {
     const node = document.createElement("div");
-    const map = {} as const satisfies WrapletChildrenMap;
+    const map = {} as const satisfies WrapletDependencyMap;
     const core = new DefaultCore(node, map);
 
-    expect(() => core.children).toThrow(ChildrenAreNotAvailableError);
-    expect(() => core.children).toThrow(
-      "Wraplet is not yet fully initialized. You can fetch partial children with the 'uninitializedChildren' property.",
+    expect(() => core.dependencies).toThrow(DependenciesAreNotAvailableError);
+    expect(() => core.dependencies).toThrow(
+      "Wraplet is not yet fully initialized. You can fetch partial dependencies with the 'instantiatedDependencies' property.",
     );
   });
 
@@ -128,18 +128,18 @@ describe("Test DefaultCore", () => {
         multiple: true,
         required: false,
       },
-    } as const satisfies WrapletChildrenMap;
+    } as const satisfies WrapletDependencyMap;
 
     const core: Core<Node, typeof map> = new DefaultCore(node, map);
 
     const func = async () => {
-      core.instantiateChildren();
-      await core.initializeChildren();
+      core.instantiateDependencies();
+      await core.initializeDependencies();
       // For an unexplained reason "children" child turned out to be not an array.
-      (core.children as any)["children"] = {
+      (core.dependencies as any)["children"] = {
         isDestroyed: () => false,
       };
-      await core.syncChildren();
+      await core.syncDependencies();
     };
 
     await expect(func).rejects.toThrow(
@@ -157,17 +157,17 @@ describe("Test DefaultCore", () => {
         multiple: false,
         required: false,
       },
-    } as const satisfies WrapletChildrenMap;
+    } as const satisfies WrapletDependencyMap;
 
     const core: Core<Node, typeof map> = new DefaultCore(node, map);
 
     const func = async () => {
-      core.instantiateChildren();
-      await core.initializeChildren();
+      core.instantiateDependencies();
+      await core.initializeDependencies();
     };
 
     await expect(func).resolves.not.toThrow();
-    expect(core.children["children"]).toBeNull();
+    expect(core.dependencies["children"]).toBeNull();
   });
 
   it("Test DefaultCore too many elements found", async () => {
@@ -181,16 +181,16 @@ describe("Test DefaultCore", () => {
         multiple: false,
         required: false,
       },
-    } as const satisfies WrapletChildrenMap;
+    } as const satisfies WrapletDependencyMap;
 
     const core: Core<Node, typeof map> = new DefaultCore(node, map);
 
     const func = async () => {
-      core.instantiateChildren();
-      await core.initializeChildren();
+      core.instantiateDependencies();
+      await core.initializeDependencies();
     };
 
-    await expect(func).rejects.toThrow(ChildrenTooManyFoundError);
+    await expect(func).rejects.toThrow(TooManyChildrenFoundError);
   });
 
   it("Test DefaultCore multiple without selector", async () => {
@@ -203,14 +203,14 @@ describe("Test DefaultCore", () => {
         multiple: true,
         required: false,
       },
-    } as const satisfies WrapletChildrenMap;
+    } as const satisfies WrapletDependencyMap;
 
     const core: Core<Node, typeof map> = new DefaultCore(node, map);
 
-    core.instantiateChildren();
-    await core.initializeChildren();
+    core.instantiateDependencies();
+    await core.initializeDependencies();
 
-    expect(core.children["children"]).toBeInstanceOf(DefaultWrapletSet);
+    expect(core.dependencies["children"]).toBeInstanceOf(DefaultWrapletSet);
   });
 
   it("Test DefaultCore destroy children listeners", async () => {
@@ -231,23 +231,23 @@ describe("Test DefaultCore", () => {
         multiple: false,
         required: false,
       },
-    } as const satisfies WrapletChildrenMap;
+    } as const satisfies WrapletDependencyMap;
 
     const core: Core<Node, typeof map> = new DefaultCore(node, map);
 
     const func = jest.fn();
-    core.addDestroyChildListener(() => {
+    core.addDependencyDestroyedListener(() => {
       func();
     });
 
-    core.instantiateChildren();
-    await core.initializeChildren();
+    core.instantiateDependencies();
+    await core.initializeDependencies();
 
-    for (const child of core.children.children.values()) {
+    for (const child of core.dependencies.children.values()) {
       await child.wraplet.destroy();
     }
 
-    core.children.child?.wraplet.destroy();
+    core.dependencies.child?.wraplet.destroy();
 
     expect(func).toHaveBeenCalledTimes(3);
   });
@@ -269,29 +269,29 @@ describe("Test DefaultCore", () => {
         multiple: false,
         required: false,
       },
-    } as const satisfies WrapletChildrenMap;
+    } as const satisfies WrapletDependencyMap;
 
     const func = jest.fn();
 
     const core: Core<Node, typeof map> = new DefaultCore(node, map);
-    core.addInstantiateChildListener(() => {
+    core.addDependencyInstantiatedListener(() => {
       func();
     });
 
-    core.instantiateChildren();
-    await core.initializeChildren();
+    core.instantiateDependencies();
+    await core.initializeDependencies();
     expect(func).toHaveBeenCalledTimes(2);
     const newChildrenItem = document.createElement("div");
     newChildrenItem.setAttribute("data-children", "");
     node.appendChild(newChildrenItem);
-    core.syncChildren();
+    core.syncDependencies();
     expect(func).toHaveBeenCalledTimes(3);
 
     const newChildItem = document.createElement("div");
     newChildrenItem.setAttribute("data-child", "");
     node.appendChild(newChildItem);
 
-    core.syncChildren();
+    core.syncDependencies();
     expect(func).toHaveBeenCalledTimes(4);
   });
 
@@ -358,11 +358,11 @@ describe("Test DefaultCore", () => {
         required: true,
         args: [argCreator, 42, "plain"],
       },
-    } as const satisfies WrapletChildrenMap;
+    } as const satisfies WrapletDependencyMap;
 
     const core: Core<Node, typeof map> = new DefaultCore(node, map);
-    core.instantiateChildren();
-    await core.initializeChildren();
+    core.instantiateDependencies();
+    await core.initializeDependencies();
 
     // ArgCreator should be called once with proper WrapletCreatorArgs
     expect(createArgMock).toHaveBeenCalledTimes(1);
@@ -372,7 +372,7 @@ describe("Test DefaultCore", () => {
     expect(callArg.args).toEqual([createdValue, 42, "plain"]);
 
     // The constructed wraplet should receive the processed value instead of the ArgCreator instance
-    const child = core.children.child;
+    const child = core.dependencies.child;
     expect(child.received).toEqual([createdValue, 42, "plain"]);
   });
 
@@ -394,19 +394,19 @@ describe("Test DefaultCore", () => {
         multiple: false,
         required: false,
       },
-    } as const satisfies WrapletChildrenMap;
+    } as const satisfies WrapletDependencyMap;
 
     const core: Core<Node, typeof map> = new DefaultCore(node, map);
 
-    core.instantiateChildren();
-    await core.initializeChildren();
+    core.instantiateDependencies();
+    await core.initializeDependencies();
 
     const func = async () => {
       await core.destroy();
       await core.destroy();
     };
 
-    await expect(func).rejects.toThrow(ChildrenAreAlreadyDestroyedError);
+    await expect(func).rejects.toThrow(DependenciesAreAlreadyDestroyedError);
   });
 
   it("Test DefaultCore child disappeared from parent before being destroyed", async () => {
@@ -427,29 +427,29 @@ describe("Test DefaultCore", () => {
         multiple: false,
         required: false,
       },
-    } as const satisfies WrapletChildrenMap;
+    } as const satisfies WrapletDependencyMap;
 
     const core: Core<Node, typeof map> = new DefaultCore(node, map);
 
-    core.instantiateChildren();
-    await core.initializeChildren();
+    core.instantiateDependencies();
+    await core.initializeDependencies();
 
-    const child = core.children["child"];
-    (core.children as any)["child"] = null;
+    const child = core.dependencies["child"];
+    (core.dependencies as any)["child"] = null;
 
     const func1 = async () => {
       await child?.wraplet.destroy();
     };
 
     await expect(func1).rejects.toThrow(
-      "Internal logic error. Destroyed child couldn't be removed because it's already null.",
+      "Internal logic error. Destroyed dependency couldn't be removed because it already doesn't exist.",
     );
 
     // Re-sync children to fix an issue.
-    core.syncChildren();
-    expect(core.children["child"]).not.toBeNull();
+    core.syncDependencies();
+    expect(core.dependencies["child"]).not.toBeNull();
 
-    const childrenItems = core.children["children"];
+    const childrenItems = core.dependencies["children"];
     const childrenItem = Array.from(childrenItems)[0];
     childrenItems.delete(childrenItem);
 
@@ -458,26 +458,26 @@ describe("Test DefaultCore", () => {
     };
 
     await expect(func2).rejects.toThrow(
-      "Internal logic error. Destroyed child couldn't be removed because it's not among the children.",
+      "Internal logic error. Destroyed dependency couldn't be removed because it already doesn't exist.",
     );
   });
 
   it("Test DefaultCore user accessing non-existing children", async () => {
     const node = document.createElement("div");
 
-    const map = {} as const satisfies WrapletChildrenMap;
+    const map = {} as const satisfies WrapletDependencyMap;
 
     const core: Core<Node, typeof map> = new DefaultCore(node, map);
 
-    core.instantiateChildren();
-    await core.initializeChildren();
+    core.instantiateDependencies();
+    await core.initializeDependencies();
 
     const func = () => {
       // eslint-disable-next-line @typescript-eslint/no-unused-expressions
-      (core.children as any)["child"];
+      (core.dependencies as any)["child"];
     };
 
-    expect(func).toThrow("Child 'child' has not been found.");
+    expect(func).toThrow("Dependency 'child' has not been found.");
   });
 
   it("Test DefaultCore with selector callback", async () => {
@@ -494,14 +494,14 @@ describe("Test DefaultCore", () => {
         multiple: true,
         required: false,
       },
-    } as const satisfies WrapletChildrenMap;
+    } as const satisfies WrapletDependencyMap;
 
     const core: Core<Node, typeof map> = new DefaultCore(node, map);
 
-    core.instantiateChildren();
-    await core.initializeChildren();
+    core.instantiateDependencies();
+    await core.initializeDependencies();
 
-    expect(core.children["children"].size).toBe(2);
+    expect(core.dependencies["children"].size).toBe(2);
   });
 
   it("Test DefaultCore multiple instances wrapping the same element error", async () => {
@@ -518,21 +518,21 @@ describe("Test DefaultCore", () => {
         multiple: true,
         required: false,
       },
-    } as const satisfies WrapletChildrenMap;
+    } as const satisfies WrapletDependencyMap;
 
     const core: Core<Node, typeof map> = new DefaultCore(node, map);
-    core.instantiateChildren();
-    await core.initializeChildren();
+    core.instantiateDependencies();
+    await core.initializeDependencies();
 
     const childElement = node.querySelector(`[${attribute}]`) as Element;
 
     const secondWraplet = new TestWrapletClass(
       new DefaultCore(childElement, {}),
     );
-    core.children["children"].add(secondWraplet);
+    core.dependencies["children"].add(secondWraplet);
 
     const func = async () => {
-      await core.syncChildren();
+      await core.syncDependencies();
     };
 
     await expect(func).rejects.toThrow(
@@ -561,12 +561,12 @@ describe("Test DefaultCore", () => {
         multiple: false,
         required: false,
       },
-    } as const satisfies WrapletChildrenMap;
+    } as const satisfies WrapletDependencyMap;
 
     const core = new DefaultCore(node, map);
-    core.instantiateChildren();
+    core.instantiateDependencies();
 
-    const initPromise = core.initializeChildren();
+    const initPromise = core.initializeDependencies();
     const destroyPromise = core.destroy();
 
     await Promise.all([initPromise, destroyPromise]);
@@ -600,26 +600,26 @@ describe("Test DefaultCore", () => {
         multiple: true,
         required: false,
       },
-    } as const satisfies WrapletChildrenMap;
+    } as const satisfies WrapletDependencyMap;
 
     const funcInstantiate = jest.fn();
     const funcDestroy = jest.fn();
     const core: Core<Node, typeof map> = new DefaultCore(node, map, {
-      instantiateChildListeners: [
+      dependencyInstantiatedListeners: [
         (child) => {
           funcInstantiate();
           expect(child).toBeInstanceOf(TestWrapletClass);
         },
       ],
-      destroyChildListeners: [
+      dependencyDestroyedListeners: [
         (child) => {
           funcDestroy();
           expect(child).toBeInstanceOf(TestWrapletClass);
         },
       ],
     });
-    core.instantiateChildren();
-    await core.initializeChildren();
+    core.instantiateDependencies();
+    await core.initializeDependencies();
 
     await core.destroy();
 
@@ -639,7 +639,7 @@ describe("Test DefaultCore", () => {
 
   it("should throw error if the node provided to the Core is not a valid node", () => {
     const invalidNode = {} as any;
-    const map = {} as const satisfies WrapletChildrenMap;
+    const map = {} as const satisfies WrapletDependencyMap;
 
     expect(() => new DefaultCore(invalidNode, map)).toThrow(
       "The node provided to the Core is not a valid node.",
@@ -663,7 +663,7 @@ describe("Test DefaultCore", () => {
         multiple: false,
         required: true,
       },
-    } as const satisfies WrapletChildrenMap;
+    } as const satisfies WrapletDependencyMap;
 
     const element = document.createElement("div");
 
@@ -679,7 +679,7 @@ describe("Test DefaultCore", () => {
 
     const func = jest.fn();
 
-    const creator: WrapletCreator<Node, WrapletChildrenMap> = (args) => {
+    const creator: WrapletCreator<Node, WrapletDependencyMap> = (args) => {
       expect(["child", "children"]).toContain(args.id);
       func();
       const core = new DefaultCore(args.element, {}, args.initOptions);
@@ -688,11 +688,11 @@ describe("Test DefaultCore", () => {
 
     core.setWrapletCreator(creator);
 
-    core.instantiateChildren();
-    await core.initializeChildren();
+    core.instantiateDependencies();
+    await core.initializeDependencies();
 
-    expect(core.children.child).toBeInstanceOf(TestWrapletClass);
-    expect(core.children.children.size).toBe(1);
+    expect(core.dependencies.child).toBeInstanceOf(TestWrapletClass);
+    expect(core.dependencies.children.size).toBe(1);
 
     expect(func).toHaveBeenCalledTimes(2);
   });
@@ -703,12 +703,12 @@ describe("Test DefaultCore", () => {
       node,
       {},
       {
-        instantiateChildListeners: undefined,
-        destroyChildListeners: undefined,
+        dependencyInstantiatedListeners: undefined,
+        dependencyDestroyedListeners: undefined,
       },
     );
-    core.instantiateChildren();
-    await core.initializeChildren();
+    core.instantiateDependencies();
+    await core.initializeDependencies();
     await core.destroy();
     expect(core.status.isDestroyed).toBe(true);
   });

@@ -6,7 +6,7 @@ export { NodeTreeParentSymbol };
 export interface NodeTreeParent {
   [NodeTreeParentSymbol]: true;
   wraplet: {
-    getNodeTreeChildren(): Wraplet[];
+    getChildrenDependencies(): Wraplet[];
   };
 }
 

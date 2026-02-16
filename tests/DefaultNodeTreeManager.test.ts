@@ -14,7 +14,7 @@ import {
   customizeDefaultWrapletApi,
   Status,
   WrapletApi,
-  WrapletChildrenMap,
+  WrapletDependencyMap,
 } from "../src";
 import { isParentNode } from "../src/NodeTreeManager/utils";
 import { Wraplet, WrapletSymbol } from "../src/Wraplet/types/Wraplet";
@@ -119,16 +119,16 @@ it("Test default node tree manager initialize tree", async () => {
 });
 
 it("Test wraplet tree manager initialization performance", async () => {
-  class TestWrapletChild extends AbstractWraplet<Element> {}
+  class TestWrapletDependency extends AbstractWraplet<Element> {}
 
   const map = {
-    child: {
+    dependency: {
       selector: `[data-id-0-1-0-0]`,
       multiple: false,
-      Class: TestWrapletChild,
+      Class: TestWrapletDependency,
       required: true,
     },
-  } as const satisfies WrapletChildrenMap;
+  } as const satisfies WrapletDependencyMap;
 
   class TestWraplet extends AbstractWraplet<Node, typeof map> {
     public static create(node: ParentNode, attribute: string): TestWraplet[] {
@@ -169,32 +169,32 @@ it("Test wraplet tree manager initialization performance", async () => {
 });
 
 it("Test searching for wraplets in the node tree manager", async () => {
-  class TestWrapletChild extends AbstractWraplet<Element> {
+  class TestWrapletDependency extends AbstractWraplet<Element> {
     public getValue(): string | null {
       return this.node.getAttribute("data-value");
     }
   }
 
   const map = {
-    child1: {
-      selector: `[data-child-1]`,
+    dependency1: {
+      selector: `[data-dependency-1]`,
       multiple: false,
-      Class: TestWrapletChild,
+      Class: TestWrapletDependency,
       required: true,
     },
-    child2: {
-      selector: `[data-child-2]`,
+    dependency2: {
+      selector: `[data-dependency-2]`,
       multiple: false,
-      Class: TestWrapletChild,
+      Class: TestWrapletDependency,
       required: true,
     },
-    children: {
-      selector: `[data-children]`,
+    dependencies: {
+      selector: `[data-dependencies]`,
       multiple: true,
-      Class: TestWrapletChild,
+      Class: TestWrapletDependency,
       required: false,
     },
-  } as const satisfies WrapletChildrenMap;
+  } as const satisfies WrapletDependencyMap;
 
   class TestWraplet extends AbstractWraplet<Node, typeof map> {
     public static create(node: ParentNode, attribute: string): TestWraplet[] {
@@ -204,10 +204,10 @@ it("Test searching for wraplets in the node tree manager", async () => {
 
   document.body.innerHTML = `
 <div data-parent>
-    <div data-child-1 data-value="1"></div>
-    <div data-child-2></div>
-    <div data-children></div>
-    <div data-children></div>
+    <div data-dependency-1 data-value="1"></div>
+    <div data-dependency-2></div>
+    <div data-dependencies></div>
+    <div data-dependencies></div>
 </div>
 `;
 
@@ -243,7 +243,7 @@ it("Test searching for wraplets in the node tree manager", async () => {
   const items = set.find((item: Wraplet) => {
     if (item instanceof TestWraplet) {
       return true;
-    } else if (item instanceof TestWrapletChild) {
+    } else if (item instanceof TestWrapletDependency) {
       return item.getValue() === "1";
     }
 
@@ -251,7 +251,7 @@ it("Test searching for wraplets in the node tree manager", async () => {
   });
 
   // We don't use "toHaveLength" because jest would attempt to display values of the properties, of items, which would
-  // result in error because "children" properties access is validated.
+  // result in error because "dependencies" properties access is validated.
   expect(items.length).toBe(2);
 });
 

@@ -5,7 +5,7 @@ import {
   MapRepeat,
   Wraplet,
   WrapletApi,
-  WrapletChildrenMap,
+  WrapletDependencyMap,
 } from "../../src";
 import { WrapletSymbol } from "../../src/Wraplet/types/Wraplet";
 import { BaseElementTestWraplet } from "../resources/BaseElementTestWraplet";
@@ -41,14 +41,14 @@ it("Test isWraplet", () => {
 describe("Test recursive wraplets", () => {
   it("Test directly recursive wraplets", async () => {
     const attribute = "data-item";
-    const childAttribute = `${attribute}-child`;
+    const dependencyAttribute = `${attribute}-dependency`;
 
     class TestWraplet extends BaseElementTestWraplet<typeof map> {}
 
     // The circular dependency between the map and the TestWraplet confuses TypeScript. That's
     // why we need to clarify the map's type.
     const map: {
-      readonly child: {
+      readonly dependency: {
         readonly selector: (node: ParentNode) => Element[];
         readonly Class: typeof TestWraplet;
         readonly multiple: false;
@@ -56,10 +56,10 @@ describe("Test recursive wraplets", () => {
         readonly map: any;
       };
     } = {
-      child: {
+      dependency: {
         selector: (node) => {
-          return Array.from(node.children).filter((child) =>
-            child.hasAttribute(childAttribute),
+          return Array.from(node.children).filter((dependency) =>
+            dependency.hasAttribute(dependencyAttribute),
           );
         },
         Class: TestWraplet,
@@ -67,14 +67,14 @@ describe("Test recursive wraplets", () => {
         required: false,
         map: MapRepeat.create(1),
       },
-    } as const satisfies WrapletChildrenMap;
+    } as const satisfies WrapletDependencyMap;
 
     document.body.innerHTML = `
 <div ${attribute}>
-    <div ${childAttribute}>
-        <div ${childAttribute}>
-            <div ${childAttribute}>
-                <div ${childAttribute}></div>
+    <div ${dependencyAttribute}>
+        <div ${dependencyAttribute}>
+            <div ${dependencyAttribute}>
+                <div ${dependencyAttribute}></div>
             </div>
         </div>
     </div>
@@ -89,15 +89,15 @@ describe("Test recursive wraplets", () => {
     await wraplet.wraplet.initialize();
     const func = jest.fn();
 
-    let child = wraplet.getChild("child");
+    let dependency = wraplet.getDependency("dependency");
     func();
 
-    if (!child) {
-      throw new Error("Child not found.");
+    if (!dependency) {
+      throw new Error("Dependency not found.");
     }
 
-    while ((child = child.getChild("child"))) {
-      expect(child).toBeInstanceOf(TestWraplet);
+    while ((dependency = dependency.getDependency("dependency"))) {
+      expect(dependency).toBeInstanceOf(TestWraplet);
       func();
     }
 
@@ -106,34 +106,34 @@ describe("Test recursive wraplets", () => {
 
   it("Test two-level recursive wraplets", async () => {
     const attribute = "data-item";
-    const childAttribute = `${attribute}-child`;
+    const dependencyAttribute = `${attribute}-dependency`;
 
-    class TestWrapletChild<
-      M extends WrapletChildrenMap = WrapletChildrenMap,
+    class TestWrapletDependency<
+      M extends WrapletDependencyMap = WrapletDependencyMap,
     > extends BaseElementTestWraplet<M> {}
 
     class TestWraplet<
-      M extends WrapletChildrenMap = WrapletChildrenMap,
+      M extends WrapletDependencyMap = WrapletDependencyMap,
     > extends BaseElementTestWraplet<M> {}
 
-    // The circular dependency between the map and the TestWrapletChild confuses TypeScript. That's
+    // The circular dependency between the map and the TestWrapletDependency confuses TypeScript. That's
     // why we need to clarify the map's type.
     const map = {
-      child: {
+      dependency: {
         selector: (node) => {
-          return Array.from(node.children).filter((child) =>
-            child.hasAttribute(childAttribute),
+          return Array.from(node.children).filter((dependency) =>
+            dependency.hasAttribute(dependencyAttribute),
           );
         },
-        // This allows us to reference TestWrapletChild later, when it will be defined.
-        Class: TestWrapletChild,
+        // This allows us to reference TestWrapletDependency later, when it will be defined.
+        Class: TestWrapletDependency,
         multiple: false,
         required: false,
         map: {
-          childParent: {
+          dependencyParent: {
             selector: (node) => {
-              return Array.from(node.children).filter((child) =>
-                child.hasAttribute(attribute),
+              return Array.from(node.children).filter((dependency) =>
+                dependency.hasAttribute(attribute),
               );
             },
             Class: TestWraplet,
@@ -143,15 +143,15 @@ describe("Test recursive wraplets", () => {
           },
         },
       },
-    } as const satisfies WrapletChildrenMap;
+    } as const satisfies WrapletDependencyMap;
 
     document.body.innerHTML = `
 <div ${attribute} data-level="1">
-    <div ${childAttribute} data-level="1-child">
+    <div ${dependencyAttribute} data-level="1-dependency">
         <div ${attribute} data-level="2">
-            <div ${childAttribute} data-level="2-child">
+            <div ${dependencyAttribute} data-level="2-dependency">
                 <div ${attribute} data-level="3">
-                    <div ${childAttribute} data-level="3-child"></div>
+                    <div ${dependencyAttribute} data-level="3-dependency"></div>
                 </div>
             </div>
         </div>
@@ -159,10 +159,10 @@ describe("Test recursive wraplets", () => {
 </div>
   `;
 
-    function getParent<M extends WrapletChildrenMap>(
-      child: TestWrapletChild<M>,
+    function getParent<M extends WrapletDependencyMap>(
+      dependency: TestWrapletDependency<M>,
     ): TestWraplet {
-      const parent = child.getChild("childParent");
+      const parent = dependency.getDependency("dependencyParent");
       if (!parent) {
         throw new Error("Parent not found.");
       }
@@ -173,18 +173,18 @@ describe("Test recursive wraplets", () => {
       return parent;
     }
 
-    function getChild<M extends WrapletChildrenMap>(
+    function getDependency<M extends WrapletDependencyMap>(
       parent: TestWraplet<M>,
-    ): TestWrapletChild {
-      const child = parent.getChild("child");
-      if (!child) {
-        throw new Error("Child not found.");
+    ): TestWrapletDependency {
+      const dependency = parent.getDependency("dependency");
+      if (!dependency) {
+        throw new Error("Dependency not found.");
       }
-      expect(child).toBeInstanceOf(TestWrapletChild);
-      if (!(child instanceof TestWrapletChild)) {
+      expect(dependency).toBeInstanceOf(TestWrapletDependency);
+      if (!(dependency instanceof TestWrapletDependency)) {
         throw new Error("Parent is not an instance of TestWraplet.");
       }
-      return child;
+      return dependency;
     }
 
     const mainElement = document.querySelector(`[${attribute}]`);
@@ -205,10 +205,10 @@ describe("Test recursive wraplets", () => {
 
     await parent1.wraplet.initialize();
 
-    const child1 = getChild(parent1);
-    const parent2 = getParent(child1);
-    const child2 = getChild(parent2);
-    const parent3 = getParent(child2);
-    getChild(parent3);
+    const dependency1 = getDependency(parent1);
+    const parent2 = getParent(dependency1);
+    const dependency2 = getDependency(parent2);
+    const parent3 = getParent(dependency2);
+    getDependency(parent3);
   });
 });

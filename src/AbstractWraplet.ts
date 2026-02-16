@@ -1,8 +1,8 @@
-import { WrapletChildrenMap } from "./Wraplet/types/WrapletChildrenMap";
-import { WrapletChildren } from "./Wraplet/types/WrapletChildren";
+import { WrapletDependencyMap } from "./Wraplet/types/WrapletDependencyMap";
+import { WrapletDependencies } from "./Wraplet/types/WrapletDependencies";
 import { Wraplet, WrapletSymbol } from "./Wraplet/types/Wraplet";
 import { DestroyListener } from "./Core/types/DestroyListener";
-import { ChildInstance } from "./Wraplet/types/ChildInstance";
+import { DependencyInstance } from "./Wraplet/types/DependencyInstance";
 import { Groupable, GroupableSymbol } from "./types/Groupable";
 import {
   NodeTreeParent,
@@ -17,7 +17,7 @@ import { RichWrapletApi } from "./Wraplet/types/RichWrapletApi";
 
 export abstract class AbstractWraplet<
   N extends Node = Node,
-  M extends WrapletChildrenMap = {},
+  M extends WrapletDependencyMap = {},
 >
   implements Wraplet<N>, Groupable, NodeTreeParent
 {
@@ -43,10 +43,12 @@ export abstract class AbstractWraplet<
       }
     }
 
-    core.addDestroyChildListener(this.onChildDestroy.bind(this));
-    core.addInstantiateChildListener(this.onChildInstantiate.bind(this));
+    core.addDependencyDestroyedListener(this.onDependencyDestroyed.bind(this));
+    core.addDependencyInstantiatedListener(
+      this.onDependencyInstantiated.bind(this),
+    );
 
-    core.instantiateChildren();
+    core.instantiateDependencies();
 
     this.wraplet = createRichWrapletApi<N, M>({
       core: this.core,
@@ -55,26 +57,30 @@ export abstract class AbstractWraplet<
     });
   }
 
-  protected get children(): WrapletChildren<M> {
-    return this.core.children;
+  protected get deps(): WrapletDependencies<M> {
+    return this.core.dependencies;
   }
 
   /**
-   * This method will be ivoked if one of the wraplet's children has been destroyed.
+   * This method will be ivoked if one of the wraplet's dependencies has been destroyed.
    */
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  protected onChildDestroy(child: ChildInstance<M, keyof M>, id: keyof M) {}
+  protected onDependencyDestroyed(
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    dependency: DependencyInstance<M, keyof M>,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    id: keyof M,
+  ) {}
 
   protected get node(): N {
     return this.core.node;
   }
 
   /**
-   * This method will be invoked if one of the wraplet's children has been instantiated.
+   * This method will be invoked if one of the wraplet's dependencies has been instantiated.
    */
-  protected onChildInstantiate(
+  protected onDependencyInstantiated(
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    child: ChildInstance<M, keyof M>,
+    dependency: DependencyInstance<M, keyof M>,
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     id: keyof M,
   ) {}
@@ -99,28 +105,28 @@ export abstract class AbstractWraplet<
 
   /**
    * This method makes sure that the given instance is an instance of a class belonging to the
-   * given child.
+   * given dependency.
    *
    * @param item
    * @param actualUnknownId
    * @param onlyId
-   *   By hardcoding onlyId you can filter out any other children. It allows you to learn not only
-   *   that the class is correct, but also that the child is correct (in case multiple children can
-   *   use the same class).
+   *   By hardcoding onlyId you can filter out any other dependencies. It allows you to learn not
+   *   only that the class is correct, but also that the dependency is correct (in the case multiple
+   *   dependencies can use the same class).
    * @protected
    */
-  protected isChildInstance<K extends keyof M>(
-    item: ChildInstance<M, keyof M>,
+  protected isDependencyInstance<K extends keyof M>(
+    item: DependencyInstance<M, keyof M>,
     actualUnknownId: keyof M,
     onlyId: K | null = null,
-  ): item is ChildInstance<M, K> {
+  ): item is DependencyInstance<M, K> {
     return (
       actualUnknownId === (onlyId || actualUnknownId) &&
       item instanceof this.core.map[actualUnknownId]["Class"]
     );
   }
 
-  protected static createCore<N extends Node, M extends WrapletChildrenMap>(
+  protected static createCore<N extends Node, M extends WrapletDependencyMap>(
     node: N,
     map: M,
   ): Core<N, M> {
@@ -135,7 +141,7 @@ export abstract class AbstractWraplet<
     T extends AbstractWraplet<N, any> = never,
   >(
     node: ParentNode,
-    map: WrapletChildrenMap,
+    map: WrapletDependencyMap,
     attribute: string,
     additional_args: unknown[] = [],
   ): T[] {

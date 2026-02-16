@@ -17,17 +17,19 @@ export default class DefaultNodeTreeManager implements NodeTreeManager {
   }
 
   public async initializeNodeTree(node: Node): Promise<void> {
+    // Run initializers against the given node.
     for (const initializer of this.initializers) {
-      const wraplets = await initializer(node);
-      for (const wraplet of wraplets) {
-        this.items.add(wraplet);
-        if (isNodeTreeParent(wraplet)) {
-          const children = wraplet.wraplet.getNodeTreeChildren();
-          for (const child of children) {
-            this.items.add(child);
+      const instantiatedWraplets = await initializer(node);
+      for (const instantiatedWraplet of instantiatedWraplets) {
+        this.items.add(instantiatedWraplet);
+        if (isNodeTreeParent(instantiatedWraplet)) {
+          const nodeTreeWraplets =
+            instantiatedWraplet.wraplet.getChildrenDependencies();
+          for (const nodeTreeWraplet of nodeTreeWraplets) {
+            this.items.add(nodeTreeWraplet);
           }
         }
-        wraplet.wraplet.addDestroyListener(async (wraplet) => {
+        instantiatedWraplet.wraplet.addDestroyListener(async (wraplet) => {
           this.items.delete(wraplet);
         });
       }

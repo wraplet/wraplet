@@ -8,10 +8,10 @@ import {
   initializationCompleted,
   initializationStarted,
   Status,
-  WrapletChildrenMap,
+  WrapletDependencyMap,
 } from "../src";
 import { BaseElementTestWraplet } from "./resources/BaseElementTestWraplet";
-import { ChildInstance } from "../src/Wraplet/types/ChildInstance";
+import { DependencyInstance } from "../src/Wraplet/types/DependencyInstance";
 import {
   defaultGroupableAttribute,
   GroupExtractor,
@@ -19,20 +19,20 @@ import {
 import { Core } from "../src";
 
 const testWrapletSelectorAttribute = "data-test-selector";
-const testWrapletChildSelectorAttribute = `${testWrapletSelectorAttribute}-child`;
+const testWrapletDependencySelectorAttribute = `${testWrapletSelectorAttribute}-dependency`;
 
-class TestWrapletChild extends AbstractWraplet {}
+class TestWrapletDependency extends AbstractWraplet {}
 
-const childrenMap = {
-  child: {
-    selector: `[${testWrapletChildSelectorAttribute}]`,
-    Class: TestWrapletChild,
+const dependenciesMap = {
+  dependency: {
+    selector: `[${testWrapletDependencySelectorAttribute}]`,
+    Class: TestWrapletDependency,
     multiple: false,
     required: false,
   },
-} as const satisfies WrapletChildrenMap;
+} as const satisfies WrapletDependencyMap;
 
-class TestWraplet extends BaseElementTestWraplet<typeof childrenMap> {
+class TestWraplet extends BaseElementTestWraplet<typeof dependenciesMap> {
   public hasNode(): boolean {
     return !!this.node;
   }
@@ -56,16 +56,16 @@ describe("AbstractWraplet", () => {
     });
 
     it("should initialize a wraplet successfully", () => {
-      document.body.innerHTML = `<div ${testWrapletSelectorAttribute}><div ${testWrapletChildSelectorAttribute}></div></div>`;
+      document.body.innerHTML = `<div ${testWrapletSelectorAttribute}><div ${testWrapletDependencySelectorAttribute}></div></div>`;
       const wraplet = TestWraplet.create(
         testWrapletSelectorAttribute,
-        childrenMap,
+        dependenciesMap,
       );
       expect(wraplet).toBeTruthy();
     });
 
     it("should initialize multiple wraplets successfully", () => {
-      document.body.innerHTML = `<div ${testWrapletSelectorAttribute}></div><div ${testWrapletSelectorAttribute}><div ${testWrapletChildSelectorAttribute}></div></div>`;
+      document.body.innerHTML = `<div ${testWrapletSelectorAttribute}></div><div ${testWrapletSelectorAttribute}><div ${testWrapletDependencySelectorAttribute}></div></div>`;
       const wraplets = TestWraplet.createAll(testWrapletSelectorAttribute);
       expect(wraplets.length).toEqual(2);
     });
@@ -96,9 +96,9 @@ describe("AbstractWraplet", () => {
   describe("Node Access", () => {
     it("should confirm the wraplet has an element", () => {
       document.body.innerHTML = `<div ${testWrapletSelectorAttribute}></div>`;
-      const wraplet = TestWraplet.create<typeof childrenMap, TestWraplet>(
+      const wraplet = TestWraplet.create<typeof dependenciesMap, TestWraplet>(
         testWrapletSelectorAttribute,
-        childrenMap,
+        dependenciesMap,
       );
       if (!wraplet) {
         throw Error("Wraplet not initialized.");
@@ -110,7 +110,7 @@ describe("AbstractWraplet", () => {
       document.body.innerHTML = `<div ${testWrapletSelectorAttribute}></div>`;
       const wraplet = TestWraplet.create(
         testWrapletSelectorAttribute,
-        childrenMap,
+        dependenciesMap,
       );
       if (!wraplet) {
         throw Error("Wraplet not initialized.");
@@ -125,60 +125,60 @@ describe("AbstractWraplet", () => {
     });
   });
 
-  describe("Child Management", () => {
-    it("should trigger listener on child instantiation", async () => {
+  describe("Dependency Management", () => {
+    it("should trigger listener on dependency instantiation", async () => {
       const attribute = "data-test-wraplet";
-      const child1Attribute = `${attribute}-child1`;
-      const child2Attribute = `${attribute}-child2`;
+      const dependency1Attribute = `${attribute}-dependency1`;
+      const dependency2Attribute = `${attribute}-dependency2`;
 
       const instatiatedFunc = jest.fn();
 
-      class TestWrapletChild1 extends AbstractWraplet {
+      class TestWrapletDependency1 extends AbstractWraplet {
         public testMethod1(): boolean {
           instatiatedFunc();
           return true;
         }
       }
 
-      class TestWrapletChild2 extends AbstractWraplet {
+      class TestWrapletDependency2 extends AbstractWraplet {
         public testMethod2(): boolean {
           return true;
         }
       }
 
       const map = {
-        child1: {
-          selector: `[${child1Attribute}]`,
-          Class: TestWrapletChild1,
+        dependency1: {
+          selector: `[${dependency1Attribute}]`,
+          Class: TestWrapletDependency1,
           multiple: false,
           required: false,
         },
-        child2: {
-          selector: `[${child2Attribute}]`,
-          Class: TestWrapletChild2,
+        dependency2: {
+          selector: `[${dependency2Attribute}]`,
+          Class: TestWrapletDependency2,
           multiple: false,
           required: false,
         },
-      } as const satisfies WrapletChildrenMap;
+      } as const satisfies WrapletDependencyMap;
 
       class TestWraplet extends BaseElementTestWraplet<typeof map> {
-        protected onChildInstantiate<K extends keyof typeof map>(
-          child: ChildInstance<typeof map, K>,
+        protected onDependencyInstantiated<K extends keyof typeof map>(
+          dependency: DependencyInstance<typeof map, K>,
           id: K,
         ) {
-          if (this.isChildInstance(child, id, "child1")) {
-            child.testMethod1();
+          if (this.isDependencyInstance(dependency, id, "dependency1")) {
+            dependency.testMethod1();
           }
-          if (!this.isChildInstance(child, id)) {
-            throw new Error("Invalid child instance.");
+          if (!this.isDependencyInstance(dependency, id)) {
+            throw new Error("Invalid dependency instance.");
           }
         }
       }
 
       document.body.innerHTML = `
 <div ${attribute}>
-    <div ${child1Attribute}></div>
-    <div ${child2Attribute}></div>
+    <div ${dependency1Attribute}></div>
+    <div ${dependency2Attribute}></div>
 </div>
 `;
 
@@ -194,34 +194,34 @@ describe("AbstractWraplet", () => {
       expect(instatiatedFunc).toHaveBeenCalledTimes(1);
     });
 
-    it("should not throw errors when accessing children whether they are instantiated or not", async () => {
+    it("should not throw errors when accessing dependencies whether they are instantiated or not", async () => {
       const attribute = "data-test-wraplet";
-      const child1Attribute = `${attribute}-child1`;
+      const dependency1Attribute = `${attribute}-dependency1`;
 
-      class TestWrapletChild1 extends AbstractWraplet {
+      class TestWrapletDependency1 extends AbstractWraplet {
         public testMethod1(): boolean {
           return true;
         }
       }
 
       const map = {
-        child1: {
-          selector: `[${child1Attribute}]`,
-          Class: TestWrapletChild1,
+        dependency1: {
+          selector: `[${dependency1Attribute}]`,
+          Class: TestWrapletDependency1,
           multiple: false,
           required: false,
         },
-      } as const satisfies WrapletChildrenMap;
+      } as const satisfies WrapletDependencyMap;
 
       class TestWraplet extends BaseElementTestWraplet<typeof map> {
-        public getChildrenInstantiated() {
-          return this.children;
+        public getDependenciesInstantiated() {
+          return this.deps;
         }
       }
 
       document.body.innerHTML = `
 <div ${attribute}>
-    <div ${child1Attribute}></div>
+    <div ${dependency1Attribute}></div>
 </div>
 `;
 
@@ -234,7 +234,7 @@ describe("AbstractWraplet", () => {
       }
 
       const funcInstantiated = () => {
-        wraplet.getChildrenInstantiated();
+        wraplet.getDependenciesInstantiated();
       };
 
       expect(funcInstantiated).not.toThrow();
@@ -243,8 +243,8 @@ describe("AbstractWraplet", () => {
       expect(funcInstantiated).not.toThrow();
     });
 
-    it("should pass arguments to children correctly", async () => {
-      class TestWrapletChild extends AbstractWraplet {
+    it("should pass arguments to dependencies correctly", async () => {
+      class TestWrapletDependency extends AbstractWraplet {
         constructor(
           core: Core,
           public arg1: string,
@@ -256,24 +256,24 @@ describe("AbstractWraplet", () => {
       const arg1Value = "arg1";
 
       const map = {
-        child: {
-          selector: `[data-child]`,
+        dependency: {
+          selector: `[data-dependency]`,
           multiple: false,
-          Class: TestWrapletChild,
+          Class: TestWrapletDependency,
           required: true,
           args: [arg1Value],
         },
-      } as const satisfies WrapletChildrenMap;
+      } as const satisfies WrapletDependencyMap;
 
       class TestWraplet extends BaseElementTestWraplet<typeof map> {
-        public getChildArg1Value(): string {
-          return this.children.child.arg1;
+        public getDependencyArg1Value(): string {
+          return this.deps.dependency.arg1;
         }
       }
 
       document.body.innerHTML = `
 <div data-wraplet>
-  <div data-child></div>
+  <div data-dependency></div>
 </div>
 `;
       const wraplet = TestWraplet.create<typeof map, TestWraplet>(
@@ -286,60 +286,60 @@ describe("AbstractWraplet", () => {
 
       await wraplet.wraplet.initialize();
 
-      expect(wraplet.getChildArg1Value()).toEqual(arg1Value);
+      expect(wraplet.getDependencyArg1Value()).toEqual(arg1Value);
     });
   });
 
   describe("Syncing", () => {
-    it("should sync children correctly and be idempotent", async () => {
+    it("should sync dependencies correctly and be idempotent", async () => {
       const mainAttribute = "data-main-wraplet";
-      const childrenAttribute = "data-children-wraplet";
-      const childAttribute = "data-child-wraplet";
+      const dependenciesAttribute = "data-dependencies-wraplet";
+      const dependencyAttribute = "data-dependency-wraplet";
 
-      const funcInstantiateChildren = jest.fn();
-      const funcInstantiateSingleChild = jest.fn();
+      const funcInstantiateDependencies = jest.fn();
+      const funcInstantiateSingleDependency = jest.fn();
 
-      class TestWrapletChild extends AbstractWraplet {
+      class TestWrapletDependency extends AbstractWraplet {
         constructor(core: Core) {
-          funcInstantiateChildren();
+          funcInstantiateDependencies();
           super(core);
         }
       }
 
-      class TestWrapletSingleChild extends AbstractWraplet {
+      class TestWrapletSingleDependency extends AbstractWraplet {
         constructor(core: Core) {
-          funcInstantiateSingleChild();
+          funcInstantiateSingleDependency();
           super(core);
         }
       }
 
-      const childrenMap = {
-        children: {
-          selector: `[${childrenAttribute}]`,
-          Class: TestWrapletChild,
+      const dependenciesMap = {
+        dependencies: {
+          selector: `[${dependenciesAttribute}]`,
+          Class: TestWrapletDependency,
           multiple: true,
           required: true,
         },
-        singleChild: {
-          selector: `[${childAttribute}]`,
-          Class: TestWrapletSingleChild,
+        singleDependency: {
+          selector: `[${dependencyAttribute}]`,
+          Class: TestWrapletSingleDependency,
           multiple: false,
           required: false,
         },
-      } as const satisfies WrapletChildrenMap;
+      } as const satisfies WrapletDependencyMap;
 
-      class TestWraplet extends BaseElementTestWraplet<typeof childrenMap> {
-        public async syncChildren(): Promise<void> {
-          await this.core.syncChildren();
+      class TestWraplet extends BaseElementTestWraplet<typeof dependenciesMap> {
+        public async syncDependencies(): Promise<void> {
+          await this.core.syncDependencies();
         }
-        public getChildrenArray() {
-          return this.children;
+        public getDependenciesArray() {
+          return this.deps;
         }
       }
 
       document.body.innerHTML = `
 <div ${mainAttribute}>
-    <div ${childrenAttribute}></div>
+    <div ${dependenciesAttribute}></div>
 </div>
 `;
 
@@ -348,9 +348,9 @@ describe("AbstractWraplet", () => {
         throw Error("The main element has not been found.");
       }
 
-      const wraplet = TestWraplet.create<typeof childrenMap, TestWraplet>(
+      const wraplet = TestWraplet.create<typeof dependenciesMap, TestWraplet>(
         mainAttribute,
-        childrenMap,
+        dependenciesMap,
       );
       if (!wraplet) {
         throw new Error("The main wraplet has not been created.");
@@ -359,83 +359,83 @@ describe("AbstractWraplet", () => {
       await wraplet.wraplet.initialize();
 
       // Test if syncing is idempotent.
-      await wraplet.syncChildren();
-      expect(wraplet.getChild("children").size).toBe(1);
-      await wraplet.syncChildren();
-      expect(wraplet.getChild("children").size).toBe(1);
+      await wraplet.syncDependencies();
+      expect(wraplet.getDependency("dependencies").size).toBe(1);
+      await wraplet.syncDependencies();
+      expect(wraplet.getDependency("dependencies").size).toBe(1);
 
-      const newChildElement = document.createElement("div");
-      newChildElement.setAttribute(childrenAttribute, "");
-      mainElement.appendChild(newChildElement);
+      const newDependencyElement = document.createElement("div");
+      newDependencyElement.setAttribute(dependenciesAttribute, "");
+      mainElement.appendChild(newDependencyElement);
 
-      const newSingleChildElement = document.createElement("div");
-      newSingleChildElement.setAttribute(childAttribute, "");
-      mainElement.appendChild(newSingleChildElement);
+      const newSingleDependencyElement = document.createElement("div");
+      newSingleDependencyElement.setAttribute(dependencyAttribute, "");
+      mainElement.appendChild(newSingleDependencyElement);
 
       function expectations(wraplet: TestWraplet) {
-        // Make sure that "children" has only two elements.
-        expect(wraplet.getChild("children").size).toBe(2);
-        // Make sure that only two children wraplets have been initialized.
-        expect(funcInstantiateChildren).toHaveBeenCalledTimes(2);
-        expect(funcInstantiateSingleChild).toHaveBeenCalledTimes(1);
+        // Make sure that "dependencies" has only two elements.
+        expect(wraplet.getDependency("dependencies").size).toBe(2);
+        // Make sure that only two dependencies wraplets have been initialized.
+        expect(funcInstantiateDependencies).toHaveBeenCalledTimes(2);
+        expect(funcInstantiateSingleDependency).toHaveBeenCalledTimes(1);
       }
 
-      const topChildrenBefore = wraplet.getChildrenArray();
-      const childrenBefore = wraplet.getChild("children");
+      const topDependenciesBefore = wraplet.getDependenciesArray();
+      const dependenciesBefore = wraplet.getDependency("dependencies");
 
       // Test if syncing is idempotent.
-      await wraplet.syncChildren();
+      await wraplet.syncDependencies();
       expectations(wraplet);
-      await wraplet.syncChildren();
+      await wraplet.syncDependencies();
       expectations(wraplet);
 
-      const topChildrenAfter = wraplet.getChildrenArray();
-      const childrenAfter = wraplet.getChild("children");
+      const topDependenciesAfter = wraplet.getDependenciesArray();
+      const dependenciesAfter = wraplet.getDependency("dependencies");
 
       // We make sure that the arrays didn't change.
-      expect(topChildrenBefore).toBe(topChildrenAfter);
-      expect(childrenBefore).toBe(childrenAfter);
+      expect(topDependenciesBefore).toBe(topDependenciesAfter);
+      expect(dependenciesBefore).toBe(dependenciesAfter);
     });
   });
 
   describe("Groupable", () => {
     const customGroupableAttribute = "data-custom-groupable";
 
-    class TestWrapletChild extends AbstractWraplet<Element> {
+    class TestWrapletDependency extends AbstractWraplet<Element> {
       public getValue(): string | null {
         return this.node.getAttribute("data-value");
       }
     }
 
     const map = {
-      child1: {
-        selector: `[data-child-1]`,
+      dependency1: {
+        selector: `[data-dependency-1]`,
         multiple: false,
-        Class: TestWrapletChild,
+        Class: TestWrapletDependency,
         required: true,
       },
-      child2: {
-        selector: `[data-child-2]`,
+      dependency2: {
+        selector: `[data-dependency-2]`,
         multiple: false,
-        Class: TestWrapletChild,
+        Class: TestWrapletDependency,
         required: true,
       },
-      child3: {
-        selector: `[data-child-3]`,
+      dependency3: {
+        selector: `[data-dependency-3]`,
         multiple: false,
-        Class: TestWrapletChild,
+        Class: TestWrapletDependency,
         required: true,
       },
-    } as const satisfies WrapletChildrenMap;
+    } as const satisfies WrapletDependencyMap;
 
     class TestWraplet extends BaseElementTestWraplet<typeof map> {}
 
     beforeEach(() => {
       document.body.innerHTML = `
 <div data-parent>
-    <div data-child-1 ${defaultGroupableAttribute}="group1,group2" ${customGroupableAttribute}="group1"></div>
-    <div data-child-2 ${defaultGroupableAttribute}="group2" ${customGroupableAttribute}="group1,group2"></div>
-    <div data-child-3></div>
+    <div data-dependency-1 ${defaultGroupableAttribute}="group1,group2" ${customGroupableAttribute}="group1"></div>
+    <div data-dependency-2 ${defaultGroupableAttribute}="group2" ${customGroupableAttribute}="group1,group2"></div>
+    <div data-dependency-3></div>
 </div>
 `;
     });
@@ -450,13 +450,13 @@ describe("AbstractWraplet", () => {
       }
       await wraplet.wraplet.initialize();
 
-      const child1 = wraplet.getChild("child1");
-      const child2 = wraplet.getChild("child2");
-      const child3 = wraplet.getChild("child3");
+      const dependency1 = wraplet.getDependency("dependency1");
+      const dependency2 = wraplet.getDependency("dependency2");
+      const dependency3 = wraplet.getDependency("dependency3");
 
-      expect(child1.wraplet.getGroups()).toEqual(["group1", "group2"]);
-      expect(child2.wraplet.getGroups()).toEqual(["group2"]);
-      expect(child3.wraplet.getGroups()).toEqual([]);
+      expect(dependency1.wraplet.getGroups()).toEqual(["group1", "group2"]);
+      expect(dependency2.wraplet.getGroups()).toEqual(["group2"]);
+      expect(dependency3.wraplet.getGroups()).toEqual([]);
     });
 
     it("should handle custom groups extractor correctly", async () => {
@@ -469,8 +469,8 @@ describe("AbstractWraplet", () => {
       }
       await wraplet.wraplet.initialize();
 
-      const child1 = wraplet.getChild("child1");
-      const child2 = wraplet.getChild("child2");
+      const dependency1 = wraplet.getDependency("dependency1");
+      const dependency2 = wraplet.getDependency("dependency2");
 
       const newGroupExtractor: GroupExtractor = (node: Node) => {
         if (!(node instanceof Element)) {
@@ -485,11 +485,11 @@ describe("AbstractWraplet", () => {
         return value.split(",");
       };
 
-      child1.wraplet.setGroupsExtractor(newGroupExtractor);
-      child2.wraplet.setGroupsExtractor(newGroupExtractor);
+      dependency1.wraplet.setGroupsExtractor(newGroupExtractor);
+      dependency2.wraplet.setGroupsExtractor(newGroupExtractor);
 
-      expect(child1.wraplet.getGroups()).toEqual(["group1"]);
-      expect(child2.wraplet.getGroups()).toEqual(["group1", "group2"]);
+      expect(dependency1.wraplet.getGroups()).toEqual(["group1"]);
+      expect(dependency2.wraplet.getGroups()).toEqual(["group1", "group2"]);
     });
 
     it("should return empty groups when node is not an element", () => {
@@ -510,37 +510,37 @@ describe("AbstractWraplet", () => {
   describe("NodeTreeParent", () => {
     it("should correctly implement the NodeTreeParent interface", async () => {
       const attribute = "data-test-wraplet";
-      class TestWrapletChild extends AbstractWraplet<Element> {}
+      class TestWrapletDependency extends AbstractWraplet<Element> {}
 
       const map = {
-        child1: {
-          selector: `[data-child-1]`,
+        dependency1: {
+          selector: `[data-dependency-1]`,
           multiple: false,
-          Class: TestWrapletChild,
+          Class: TestWrapletDependency,
           required: true,
         },
-        child2: {
-          selector: `[data-child-2]`,
+        dependency2: {
+          selector: `[data-dependency-2]`,
           multiple: false,
-          Class: TestWrapletChild,
+          Class: TestWrapletDependency,
           required: true,
         },
-        children: {
-          selector: `[data-children]`,
+        dependencies: {
+          selector: `[data-dependencies]`,
           multiple: true,
-          Class: TestWrapletChild,
+          Class: TestWrapletDependency,
           required: true,
         },
-      } as const satisfies WrapletChildrenMap;
+      } as const satisfies WrapletDependencyMap;
 
       class TestWraplet extends BaseElementTestWraplet<typeof map> {}
 
       document.body.innerHTML = `
 <div ${attribute}>
-  <div data-child-1></div>
-  <div data-child-2></div>
-  <div data-children></div>
-  <div data-children></div>
+  <div data-dependency-1></div>
+  <div data-dependency-2></div>
+  <div data-dependencies></div>
+  <div data-dependencies></div>
 </div>
 `;
       const wraplet = TestWraplet.create<typeof map, TestWraplet>(
@@ -553,8 +553,8 @@ describe("AbstractWraplet", () => {
 
       await wraplet.wraplet.initialize();
 
-      const nodeTreeChildren = wraplet.wraplet.getNodeTreeChildren();
-      expect(nodeTreeChildren.length).toBe(4);
+      const nodeTreeDependencies = wraplet.wraplet.getChildrenDependencies();
+      expect(nodeTreeDependencies.length).toBe(4);
     });
   });
 
@@ -636,14 +636,14 @@ describe("AbstractWraplet", () => {
           await destructionCompleted(this.status, this.core, this);
         }
 
-        getChild() {
-          return this.children["child"];
+        getDependency() {
+          return this.deps["dependency"];
         }
       }
 
-      const initializerChild = jest.fn();
+      const initializerDependency = jest.fn();
 
-      class TestWrapletChild extends AbstractWraplet {
+      class TestWrapletDependency extends AbstractWraplet {
         private readonly status: Status = {
           isGettingInitialized: false,
           isDestroyed: false,
@@ -683,42 +683,42 @@ describe("AbstractWraplet", () => {
           if (!(await initializationStarted(this.status, this.core, this))) {
             return;
           }
-          initializerChild();
+          initializerDependency();
           await initializationCompleted(this.status, this.destroy);
         }
       }
 
       const element = document.createElement("div");
-      element.innerHTML = `<div data-child></div>`;
+      element.innerHTML = `<div data-dependency></div>`;
 
       const map = {
-        child: {
-          selector: `[data-child]`,
+        dependency: {
+          selector: `[data-dependency]`,
           multiple: false,
-          Class: TestWrapletChild,
+          Class: TestWrapletDependency,
           required: false,
         },
-      } as const satisfies WrapletChildrenMap;
+      } as const satisfies WrapletDependencyMap;
 
       const core = new DefaultCore<HTMLDivElement, typeof map>(element, map);
       const wraplet = new TestWraplet(core);
 
       await wraplet.initialize();
 
-      const child = wraplet.getChild();
-      if (!child) {
-        throw new Error("Child not found.");
+      const dependency = wraplet.getDependency();
+      if (!dependency) {
+        throw new Error("Dependency not found.");
       }
 
       expect(initializerParent).toHaveBeenCalledTimes(1);
       expect(wraplet.wraplet.status.isInitialized).toBe(true);
-      expect(child.wraplet.status.isInitialized).toBe(true);
-      expect(initializerChild).toHaveBeenCalledTimes(1);
+      expect(dependency.wraplet.status.isInitialized).toBe(true);
+      expect(initializerDependency).toHaveBeenCalledTimes(1);
 
       await wraplet.destroy();
       expect(destroyParent).toHaveBeenCalledTimes(1);
       expect(wraplet.wraplet.status.isDestroyed).toBe(true);
-      expect(child.wraplet.status.isDestroyed).toBe(true);
+      expect(dependency.wraplet.status.isDestroyed).toBe(true);
     });
   });
 });

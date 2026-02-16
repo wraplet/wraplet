@@ -1,4 +1,4 @@
-import { WrapletChildrenMap } from "./WrapletChildrenMap";
+import { WrapletDependencyMap } from "./WrapletDependencyMap";
 import { Core } from "../../Core/types/Core";
 import { DestroyListener } from "../../Core/types/DestroyListener";
 import { WrapletApiFactoryBasicCallback } from "./WrapletApiFactoryBasicCallback";
@@ -6,7 +6,7 @@ import { Wraplet } from "./Wraplet";
 
 export type WrapletApiFactoryArgs<
   N extends Node = Node,
-  M extends WrapletChildrenMap = WrapletChildrenMap,
+  M extends WrapletDependencyMap = WrapletDependencyMap,
 > = {
   core: Core<N, M>;
   wraplet: Wraplet<N>;

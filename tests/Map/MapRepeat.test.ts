@@ -1,6 +1,6 @@
 import "../setup";
 import { BaseElementTestWraplet } from "../resources/BaseElementTestWraplet";
-import { MapRepeat, WrapletChildrenMap } from "../../src";
+import { MapRepeat, WrapletDependencyMap } from "../../src";
 import { MapWrapper } from "../../src/Map/MapWrapper";
 import { fillMapWithDefaults } from "../../src/Map/utils";
 
@@ -28,7 +28,7 @@ it("MapRepeat repeats", () => {
         },
       },
     },
-  } as const satisfies WrapletChildrenMap;
+  } as const satisfies WrapletDependencyMap;
 
   let mapWrapper = new MapWrapper(map);
   mapWrapper.up("child");

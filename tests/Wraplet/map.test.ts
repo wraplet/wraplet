@@ -1,5 +1,5 @@
 import "../setup";
-import { AbstractWraplet, DefaultCore, WrapletChildrenMap } from "../../src";
+import { AbstractWraplet, DefaultCore, WrapletDependencyMap } from "../../src";
 import { BaseElementTestWraplet } from "../resources/BaseElementTestWraplet";
 import { MapError } from "../../src/errors";
 
@@ -14,7 +14,7 @@ describe("Test wraplet map", () => {
       multiple: false,
       required: true,
     },
-  } as const satisfies WrapletChildrenMap;
+  } as const satisfies WrapletDependencyMap;
 
   class TestWraplet extends BaseElementTestWraplet<typeof childrenMap> {}
 

@@ -16,17 +16,17 @@ describe("createWrapletApi", () => {
       status: {} as Status,
       map: {},
       node: node,
-      initializeChildren: jest.fn().mockResolvedValue(undefined),
-      instantiateChildren: jest.fn(),
-      syncChildren: jest.fn(),
-      addDestroyChildListener: jest.fn(),
-      addInstantiateChildListener: jest.fn(),
+      initializeDependencies: jest.fn().mockResolvedValue(undefined),
+      instantiateDependencies: jest.fn(),
+      syncDependencies: jest.fn(),
+      addDependencyDestroyedListener: jest.fn(),
+      addDependencyInstantiatedListener: jest.fn(),
       destroy: jest.fn().mockResolvedValue(undefined),
       addEventListener: jest.fn(),
-      getNodeTreeChildren: jest.fn().mockReturnValue([]),
+      getChildrenDependencies: jest.fn().mockReturnValue([]),
       setWrapletCreator: jest.fn(),
-      children: {},
-    } as any;
+      dependencies: {},
+    } satisfies Core;
 
     mockWraplet = {
       [WrapletSymbol]: true,
@@ -50,7 +50,7 @@ describe("createWrapletApi", () => {
 
     expect(api.status.isInitialized).toBe(true);
     expect(api.status.isGettingInitialized).toBe(false);
-    expect(mockCore.initializeChildren).toHaveBeenCalledTimes(1);
+    expect(mockCore.initializeDependencies).toHaveBeenCalledTimes(1);
   });
 
   it("should not initialize twice", async () => {
@@ -62,7 +62,7 @@ describe("createWrapletApi", () => {
     await api.initialize();
     await api.initialize();
 
-    expect(mockCore.initializeChildren).toHaveBeenCalledTimes(1);
+    expect(mockCore.initializeDependencies).toHaveBeenCalledTimes(1);
   });
 
   it("should destroy correctly", async () => {
@@ -189,13 +189,13 @@ describe("createWrapletApi", () => {
 
   it("should return node tree children from core", () => {
     const childWraplet = {} as Wraplet;
-    mockCore.getNodeTreeChildren.mockReturnValue([childWraplet]);
+    mockCore.getChildrenDependencies.mockReturnValue([childWraplet]);
 
     const api = createRichWrapletApi({
       core: mockCore,
       wraplet: mockWraplet,
     });
 
-    expect(api.getNodeTreeChildren()).toEqual([childWraplet]);
+    expect(api.getChildrenDependencies()).toEqual([childWraplet]);
   });
 });
