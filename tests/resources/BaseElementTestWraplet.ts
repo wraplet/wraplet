@@ -11,11 +11,11 @@ export abstract class BaseElementTestWraplet<
   }
 
   public getDependency<C extends keyof M>(name: C): WrapletDependencies<M>[C] {
-    return this.deps[name];
+    return this.d[name];
   }
 
   public hasDependency(name: keyof M): boolean {
-    return !!this.deps[name];
+    return !!this.d[name];
   }
 
   public static create<

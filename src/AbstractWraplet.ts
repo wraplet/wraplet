@@ -57,7 +57,7 @@ export abstract class AbstractWraplet<
     });
   }
 
-  protected get deps(): WrapletDependencies<M> {
+  protected get d(): WrapletDependencies<M> {
     return this.core.dependencies;
   }
 

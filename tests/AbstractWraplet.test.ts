@@ -215,7 +215,7 @@ describe("AbstractWraplet", () => {
 
       class TestWraplet extends BaseElementTestWraplet<typeof map> {
         public getDependenciesInstantiated() {
-          return this.deps;
+          return this.d;
         }
       }
 
@@ -267,7 +267,7 @@ describe("AbstractWraplet", () => {
 
       class TestWraplet extends BaseElementTestWraplet<typeof map> {
         public getDependencyArg1Value(): string {
-          return this.deps.dependency.arg1;
+          return this.d.dependency.arg1;
         }
       }
 
@@ -333,7 +333,7 @@ describe("AbstractWraplet", () => {
           await this.core.syncDependencies();
         }
         public getDependenciesArray() {
-          return this.deps;
+          return this.d;
         }
       }
 
@@ -637,7 +637,7 @@ describe("AbstractWraplet", () => {
         }
 
         getDependency() {
-          return this.deps["dependency"];
+          return this.d["dependency"];
         }
       }
 
