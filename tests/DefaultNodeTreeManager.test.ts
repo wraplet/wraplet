@@ -9,9 +9,6 @@ import {
 import DefaultNodeTreeManager from "../src/NodeTreeManager/DefaultNodeTreeManager";
 import {
   AbstractWraplet,
-  Core,
-  createDefaultDestroyCallback,
-  customizeDefaultWrapletApi,
   Status,
   WrapletApi,
   WrapletDependencyMap,
@@ -30,23 +27,8 @@ it("Test default node tree manager destroy tree", async () => {
       isGettingDestroyed: false,
     };
 
-    constructor(core: Core<Element>) {
-      super(core);
-
-      this.wraplet = customizeDefaultWrapletApi(
-        {
-          status: this.status,
-          destroy: createDefaultDestroyCallback(
-            {
-              core: core,
-              wraplet: this,
-              destroyListeners: this.destroyListeners,
-            },
-            async () => func(),
-          ),
-        },
-        this.wraplet,
-      );
+    protected async onDestroyed(): Promise<void> {
+      func();
     }
   }
 

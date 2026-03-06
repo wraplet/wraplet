@@ -17,6 +17,7 @@ import {
   addWrapletToNode,
   removeWrapletFromNode,
 } from "../src/NodeTreeManager/utils";
+import { DestroyListener } from "../src/Core/types/DestroyListener";
 
 it("Test removing and adding wraplets to nodes", () => {
   const node = document.createElement("div");
@@ -72,6 +73,7 @@ it("destroyWrapletsRecursively", async () => {
     constructor(core: Core<Element>) {
       super(core);
 
+      const destroyListeners: DestroyListener[] = [];
       this.wraplet = customizeDefaultWrapletApi(
         {
           status: this.status,
@@ -81,13 +83,16 @@ it("destroyWrapletsRecursively", async () => {
                 this.status,
                 this.core,
                 this,
-                this.destroyListeners,
+                destroyListeners,
               ))
             ) {
               return;
             }
             counter();
             await destructionCompleted(this.status, this.core, this);
+          },
+          addDestroyListener(callback: DestroyListener) {
+            destroyListeners.push(callback);
           },
         },
         this.wraplet,

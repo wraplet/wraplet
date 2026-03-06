@@ -17,6 +17,7 @@ import {
   GroupExtractor,
 } from "../src/types/Groupable";
 import { Core } from "../src";
+import { DestroyListener } from "../src/Core/types/DestroyListener";
 
 const testWrapletSelectorAttribute = "data-test-selector";
 const testWrapletDependencySelectorAttribute = `${testWrapletSelectorAttribute}-dependency`;
@@ -234,11 +235,11 @@ describe("AbstractWraplet", () => {
       const dependency1Attribute = `${attribute}-dependency1`;
       const dependency2Attribute = `${attribute}-dependency2`;
 
-      const instatiatedFunc = jest.fn();
+      const instantiatedFunc = jest.fn();
 
       class TestWrapletDependency1 extends AbstractWraplet {
         public testMethod1(): boolean {
-          instatiatedFunc();
+          instantiatedFunc();
           return true;
         }
       }
@@ -294,7 +295,7 @@ describe("AbstractWraplet", () => {
       }
       await wraplet.wraplet.initialize();
 
-      expect(instatiatedFunc).toHaveBeenCalledTimes(1);
+      expect(instantiatedFunc).toHaveBeenCalledTimes(1);
     });
 
     it("should not throw errors when accessing dependencies whether they are instantiated or not", async () => {
@@ -697,6 +698,8 @@ describe("AbstractWraplet", () => {
       const destroyParent = jest.fn();
 
       class TestWraplet extends AbstractWraplet<HTMLDivElement, typeof map> {
+        private destroyListeners: DestroyListener[] = [];
+
         private readonly status: Status = {
           isGettingInitialized: false,
           isDestroyed: false,
@@ -747,6 +750,8 @@ describe("AbstractWraplet", () => {
       const initializerDependency = jest.fn();
 
       class TestWrapletDependency extends AbstractWraplet {
+        private destroyListeners: DestroyListener[] = [];
+
         private readonly status: Status = {
           isGettingInitialized: false,
           isDestroyed: false,

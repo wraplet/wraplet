@@ -13,6 +13,7 @@ import { BaseElementTestWraplet } from "./resources/BaseElementTestWraplet";
 import { RequiredDependencyDestroyedError } from "../src/errors";
 import { DependencyInstance } from "../src/Wraplet/types/DependencyInstance";
 import { Core } from "../src";
+import { DestroyListener } from "../src/Core/types/DestroyListener";
 
 const funcCounter = jest.fn();
 beforeEach(() => {
@@ -39,6 +40,7 @@ class TestWrapletDependency extends AbstractWraplet {
   constructor(core: Core<Element>) {
     super(core);
 
+    const destroyListeners: DestroyListener[] = [];
     this.wraplet = customizeDefaultWrapletApi(
       {
         status: this.status,
@@ -47,7 +49,7 @@ class TestWrapletDependency extends AbstractWraplet {
             this.status,
             this.core,
             this,
-            this.destroyListeners,
+            destroyListeners,
           );
 
           funcCounter();

@@ -17,9 +17,7 @@ import {
   WrapletDependencyMapWithDefaults,
 } from "../Wraplet/types/WrapletDependencyMap";
 import { isParentNode } from "../NodeTreeManager/utils";
-import { DependencyInstantiatedListener } from "./types/DependencyInstantiatedListener";
 import { DependencyInstance } from "../Wraplet/types/DependencyInstance";
-import { DependencyDestroyedListener } from "./types/DestroyDependencyListener";
 import { CoreInitOptions } from "./types/CoreInitOptions";
 import { Core, CoreSymbol } from "./types/Core";
 import { DestroyListener } from "./types/DestroyListener";
@@ -35,6 +33,7 @@ import { WrapletCreator, WrapletCreatorArgs } from "./types/WrapletCreator";
 import { isArgCreator } from "./types/ArgCreator";
 import { defaultWrapletCreator } from "./defaultWrapletCreator";
 import { Status, StatusWritable } from "../Wraplet/types/Status";
+import { DependencyLifecycleListener } from "./types/DependencyLifecycleListener";
 
 type ListenerData = {
   node: Node;
@@ -64,11 +63,15 @@ export class DefaultCore<
   public mapWrapper: MapWrapper<M>;
   private instantiatedDependencies: Partial<WrapletDependencies<M>> = {};
 
-  private destroyedDependencyListeners: DependencyDestroyedListener<
+  private destroyedDependencyListeners: DependencyLifecycleListener<
     M,
     keyof M
   >[] = [];
-  private instantiatedDependencyListeners: DependencyInstantiatedListener<
+  private instantiatedDependencyListeners: DependencyLifecycleListener<
+    M,
+    keyof M
+  >[] = [];
+  private initializedDependencyListeners: DependencyLifecycleListener<
     M,
     keyof M
   >[] = [];
@@ -107,15 +110,29 @@ export class DefaultCore<
   public async initializeDependencies() {
     this.statusWritable.isGettingInitialized = true;
 
-    const dependencyInstances: Wraplet[] = Object.values(
+    const dependencyInstances = Object.entries(
       this.instantiatedDependencies,
-    ).flatMap((dependency) => {
+    ).flatMap(([id, dependency]) => {
       if (!dependency) return [];
-      return isWrapletSet(dependency) ? Array.from(dependency) : [dependency];
+
+      const wraplets = isWrapletSet(dependency)
+        ? Array.from(dependency)
+        : [dependency];
+
+      return wraplets.map((wraplet) => ({
+        id: id as keyof M,
+        wraplet,
+      }));
     });
 
     await Promise.all(
-      dependencyInstances.map((dependency) => dependency.wraplet.initialize()),
+      dependencyInstances.map(async ({ id, wraplet }) => {
+        await wraplet.wraplet.initialize();
+
+        for (const listener of this.initializedDependencyListeners) {
+          listener(wraplet as DependencyInstance<M, keyof M>, id);
+        }
+      }),
     );
 
     this.statusWritable.isInitialized = true;
@@ -378,15 +395,21 @@ export class DefaultCore<
   }
 
   public addDependencyDestroyedListener(
-    callback: DependencyDestroyedListener<M, keyof M>,
+    callback: DependencyLifecycleListener<M, keyof M>,
   ): void {
     this.destroyedDependencyListeners.push(callback);
   }
 
   public addDependencyInstantiatedListener(
-    callback: DependencyInstantiatedListener<M, keyof M>,
+    callback: DependencyLifecycleListener<M, keyof M>,
   ): void {
     this.instantiatedDependencyListeners.push(callback);
+  }
+
+  public addDependencyInitializedListener(
+    callback: DependencyLifecycleListener<M, keyof M>,
+  ): void {
+    this.initializedDependencyListeners.push(callback);
   }
 
   public setWrapletCreator(
@@ -593,6 +616,12 @@ export class DefaultCore<
     if (initOptions.dependencyInstantiatedListeners) {
       for (const listener of initOptions.dependencyInstantiatedListeners) {
         this.instantiatedDependencyListeners.push(listener);
+      }
+    }
+
+    if (initOptions.dependencyInitializedListeners) {
+      for (const listener of initOptions.dependencyInitializedListeners) {
+        this.initializedDependencyListeners.push(listener);
       }
     }
 

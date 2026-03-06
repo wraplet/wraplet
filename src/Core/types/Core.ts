@@ -3,12 +3,11 @@ import {
   WrapletDependencyMap,
   WrapletDependencyMapWithDefaults,
 } from "../../Wraplet/types/WrapletDependencyMap";
-import { DependencyDestroyedListener } from "./DestroyDependencyListener";
-import { DependencyInstantiatedListener } from "./DependencyInstantiatedListener";
 import { Wraplet } from "../../Wraplet/types/Wraplet";
 import { WrapletCreator } from "./WrapletCreator";
 import { is } from "../../utils/is";
 import { Status } from "../../Wraplet/types/Status";
+import { DependencyLifecycleListener } from "./DependencyLifecycleListener";
 
 const CoreSymbol = Symbol("Core");
 export { CoreSymbol };
@@ -54,17 +53,24 @@ export interface Core<
   syncDependencies(): Promise<void>;
 
   /**
+   * Add a listener that will be called when a dependency is initialized.
+   */
+  addDependencyInitializedListener(
+    callback: DependencyLifecycleListener<M, keyof M>,
+  ): void;
+
+  /**
    * Add a listener that will be called when a dependency is destroyed.
    */
   addDependencyDestroyedListener(
-    callback: DependencyDestroyedListener<M, keyof M>,
+    callback: DependencyLifecycleListener<M, keyof M>,
   ): void;
 
   /**
    * Add a listener that will be called when a dependency is instantiated.
    */
   addDependencyInstantiatedListener(
-    callback: DependencyInstantiatedListener<M, keyof M>,
+    callback: DependencyLifecycleListener<M, keyof M>,
   ): void;
 
   /**

@@ -274,13 +274,20 @@ describe("Test DefaultCore", () => {
     const func = jest.fn();
 
     const core: Core<Node, typeof map> = new DefaultCore(node, map);
+    const funcInitialized = jest.fn();
+
     core.addDependencyInstantiatedListener(() => {
       func();
+    });
+
+    core.addDependencyInitializedListener(() => {
+      funcInitialized();
     });
 
     core.instantiateDependencies();
     await core.initializeDependencies();
     expect(func).toHaveBeenCalledTimes(2);
+    expect(funcInitialized).toHaveBeenCalledTimes(2);
     const newChildrenItem = document.createElement("div");
     newChildrenItem.setAttribute("data-children", "");
     node.appendChild(newChildrenItem);
@@ -604,10 +611,17 @@ describe("Test DefaultCore", () => {
 
     const funcInstantiate = jest.fn();
     const funcDestroy = jest.fn();
+    const funcInitialized = jest.fn();
     const core: Core<Node, typeof map> = new DefaultCore(node, map, {
       dependencyInstantiatedListeners: [
         (child) => {
           funcInstantiate();
+          expect(child).toBeInstanceOf(TestWrapletClass);
+        },
+      ],
+      dependencyInitializedListeners: [
+        (child) => {
+          funcInitialized();
           expect(child).toBeInstanceOf(TestWrapletClass);
         },
       ],
@@ -624,6 +638,7 @@ describe("Test DefaultCore", () => {
     await core.destroy();
 
     expect(funcInstantiate).toHaveBeenCalledTimes(1);
+    expect(funcInitialized).toHaveBeenCalledTimes(1);
     expect(funcDestroy).toHaveBeenCalledTimes(1);
   });
 

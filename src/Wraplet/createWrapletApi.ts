@@ -16,26 +16,32 @@ export const createWrapletApi = <
 
   const api: Partial<WrapletApi<N> & WrapletApiDebug<N>> = {};
 
-  const destroyListeners = args.destroyListeners || [];
+  const destroyListeners: DestroyListener<Wraplet<N>>[] = [];
 
   const destroyCallback =
-    args.destroyCallback ||
-    createDefaultDestroyCallback({
-      core: args.core,
-      wraplet: args.wraplet,
-      destroyListeners: destroyListeners,
-    }).bind(api);
+    args.destroyOuterCallback ||
+    createDefaultDestroyCallback(
+      {
+        core: args.core,
+        wraplet: args.wraplet,
+        destroyListeners: destroyListeners,
+      },
+      args.destroyCallback,
+    ).bind(api);
 
   api.destroy = destroyCallback;
 
   const initializeCallback =
-    args.initializeCallback ||
-    createDefaultInitializeCallback({
-      core: args.core,
-      destroyCallback: api.destroy,
-      wraplet: args.wraplet,
-      status: api.status,
-    }).bind(api);
+    args.initializeOuterCallback ||
+    createDefaultInitializeCallback(
+      {
+        core: args.core,
+        destroyCallback: api.destroy,
+        wraplet: args.wraplet,
+        status: api.status,
+      },
+      args.initializeCallback,
+    ).bind(api);
 
   return Object.assign(api, {
     __nodeAccessors: nodeAccessors,

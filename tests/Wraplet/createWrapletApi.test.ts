@@ -21,6 +21,7 @@ describe("createWrapletApi", () => {
       syncDependencies: jest.fn(),
       addDependencyDestroyedListener: jest.fn(),
       addDependencyInstantiatedListener: jest.fn(),
+      addDependencyInitializedListener: jest.fn(),
       destroy: jest.fn().mockResolvedValue(undefined),
       addEventListener: jest.fn(),
       getChildrenDependencies: jest.fn().mockReturnValue([]),
@@ -140,8 +141,8 @@ describe("createWrapletApi", () => {
     const api = createRichWrapletApi({
       core: mockCore,
       wraplet: mockWraplet,
-      initializeCallback: customInit,
-      destroyCallback: customDestroy,
+      initializeOuterCallback: customInit,
+      destroyOuterCallback: customDestroy,
     });
 
     await api.initialize();

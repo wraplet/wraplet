@@ -1,7 +1,6 @@
 import { WrapletDependencyMap } from "./Wraplet/types/WrapletDependencyMap";
 import { WrapletDependencies } from "./Wraplet/types/WrapletDependencies";
 import { Wraplet, WrapletSymbol } from "./Wraplet/types/Wraplet";
-import { DestroyListener } from "./Core/types/DestroyListener";
 import { DependencyInstance } from "./Wraplet/types/DependencyInstance";
 import { Groupable, GroupableSymbol } from "./types/Groupable";
 import {
@@ -24,8 +23,6 @@ export abstract class AbstractWraplet<
   public [WrapletSymbol]: true = true;
   public [GroupableSymbol]: true = true;
   public [NodeTreeParentSymbol]: true = true;
-
-  protected destroyListeners: DestroyListener<Wraplet<N>>[] = [];
 
   public wraplet: RichWrapletApi<N>;
 
@@ -53,13 +50,27 @@ export abstract class AbstractWraplet<
     this.wraplet = createRichWrapletApi<N, M>({
       core: this.core,
       wraplet: this,
-      destroyListeners: this.destroyListeners,
+      initializeCallback: this.onInitialized.bind(this),
+      destroyCallback: this.onDestroyed.bind(this),
     });
   }
 
+  /**
+   * Dependencies.
+   */
   protected get d(): WrapletDependencies<M> {
     return this.core.dependencies;
   }
+
+  /**
+   *  his method will be invoked if one of the wraplet's dependencies has been instantiated.
+   */
+  protected onDependencyInstantiated(
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    dependency: DependencyInstance<M, keyof M>,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    id: keyof M,
+  ) {}
 
   /**
    * This method will be ivoked if one of the wraplet's dependencies has been destroyed.
@@ -71,19 +82,22 @@ export abstract class AbstractWraplet<
     id: keyof M,
   ) {}
 
+  /**
+   * Wrapped node.
+   */
   protected get node(): N {
     return this.core.node;
   }
 
   /**
-   * This method will be invoked if one of the wraplet's dependencies has been instantiated.
+   * This method gets invoked when the wraplet is initialized.
    */
-  protected onDependencyInstantiated(
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    dependency: DependencyInstance<M, keyof M>,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    id: keyof M,
-  ) {}
+  protected async onInitialized(): Promise<void> {}
+
+  /**
+   * This method gets invoked when the wraplet is destroyed.
+   */
+  protected async onDestroyed(): Promise<void> {}
 
   /**
    * Subclasses must return an array of constructors covering all types in union N.
