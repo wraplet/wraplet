@@ -41,9 +41,10 @@ describe("Test passing arguments", () => {
       return this.someString;
     }
 
-    public static createWithArguments<
-      C extends BaseElementTestWraplet<typeof childrenMap>,
-    >(selectorAttribute: string, someString: string): C | null {
+    public static createWithArguments(
+      selectorAttribute: string,
+      someString: string,
+    ) {
       const wraplets = this.createWraplets(
         document,
         childrenMap,
@@ -62,7 +63,7 @@ describe("Test passing arguments", () => {
   it("Test basic arguments pass", () => {
     const str = "some string";
     document.body.innerHTML = `<div ${testWrapletSelectorAttribute}></div>`;
-    const wraplet = TestWraplet.createWithArguments<TestWraplet>(
+    const wraplet = TestWraplet.createWithArguments(
       testWrapletSelectorAttribute,
       str,
     );

@@ -23,7 +23,7 @@ export abstract class BaseElementTestWraplet<
     C extends BaseElementTestWraplet<M> = BaseElementTestWraplet<M>,
   >(
     selectorAttribute: string,
-    map: WrapletDependencyMap,
+    map: M,
     element: ParentNode = document,
     args: unknown[] = [],
   ): C | null {
@@ -32,7 +32,7 @@ export abstract class BaseElementTestWraplet<
       return null;
     }
 
-    return wraplets[0];
+    return wraplets[0] as C;
   }
 
   public static createAll<C extends BaseElementTestWraplet>(
@@ -40,11 +40,11 @@ export abstract class BaseElementTestWraplet<
     map: WrapletDependencyMap = {},
     node: ParentNode = document,
   ): C[] {
-    return this.createWraplets<Element>(
+    return this.createWraplets(
       node,
       map,
       selectorAttribute,
       [],
-    ) as C[];
+    ) as unknown as C[];
   }
 }

@@ -75,11 +75,7 @@ describe("AbstractWraplet", () => {
 
       class TestWraplet extends AbstractWraplet {
         public static create(node: ParentNode): TestWraplet {
-          const wraplets = this.createWraplets<Node, TestWraplet>(
-            node,
-            {},
-            attribute,
-          );
+          const wraplets = this.createWraplets(node, {}, attribute);
           expect(wraplets.length).toEqual(1);
 
           return wraplets[0];
@@ -90,6 +86,113 @@ describe("AbstractWraplet", () => {
       element.setAttribute(attribute, "");
       const wraplet = TestWraplet.create(element);
       expect(wraplet).toBeInstanceOf(TestWraplet);
+    });
+
+    describe("createAndInitializeWraplets", () => {
+      it("should create and initialize wraplets", async () => {
+        const attribute = "data-test-create-and-initialize";
+
+        class TestWraplet extends AbstractWraplet {
+          public static createAndInit(
+            node: ParentNode,
+          ): Promise<TestWraplet[]> {
+            return this.createAndInitializeWraplets(node, {}, attribute);
+          }
+        }
+
+        document.body.innerHTML = `<div ${attribute}></div><div ${attribute}></div>`;
+
+        const wraplets = await TestWraplet.createAndInit(document.body);
+
+        expect(wraplets.length).toEqual(2);
+        for (const wraplet of wraplets) {
+          expect(wraplet).toBeInstanceOf(TestWraplet);
+          expect(wraplet.wraplet.status.isInitialized).toBe(true);
+        }
+      });
+
+      it("should create and initialize wraplets with dependencies", async () => {
+        const attribute = "data-test-caiw";
+        const depAttribute = "data-test-caiw-dep";
+
+        class TestDependency extends AbstractWraplet {}
+
+        const map = {
+          dep: {
+            selector: `[${depAttribute}]`,
+            Class: TestDependency,
+            multiple: false,
+            required: true,
+          },
+        } satisfies WrapletDependencyMap;
+
+        class TestWraplet extends AbstractWraplet<Element, typeof map> {
+          public static async createAndInit(
+            node: ParentNode,
+          ): Promise<TestWraplet[]> {
+            return this.createAndInitializeWraplets(node, map, attribute);
+          }
+
+          public getDep() {
+            return this.d.dep;
+          }
+        }
+
+        document.body.innerHTML = `<div ${attribute}><div ${depAttribute}></div></div>`;
+
+        const wraplets = await TestWraplet.createAndInit(document.body);
+
+        expect(wraplets.length).toEqual(1);
+        const wraplet = wraplets[0];
+        expect(wraplet.wraplet.status.isInitialized).toBe(true);
+        expect(wraplet.getDep()).toBeTruthy();
+        expect(wraplet.getDep().wraplet.status.isInitialized).toBe(true);
+      });
+
+      it("should return an empty array when no matching elements exist", async () => {
+        const attribute = "data-test-no-match";
+
+        class TestWraplet extends AbstractWraplet {
+          public static async createAndInit(
+            node: ParentNode,
+          ): Promise<TestWraplet[]> {
+            return this.createAndInitializeWraplets(node, {}, attribute);
+          }
+        }
+
+        document.body.innerHTML = `<div></div>`;
+
+        const wraplets = await TestWraplet.createAndInit(document.body);
+        expect(wraplets).toEqual([]);
+      });
+
+      it("should pass additional arguments via createAndInitializeWraplets", async () => {
+        const attribute = "data-test-caiw-args";
+
+        class TestWraplet extends AbstractWraplet {
+          public extraArg: string;
+          constructor(core: Core, extraArg: string) {
+            super(core);
+            this.extraArg = extraArg;
+          }
+
+          public static async createAndInit(
+            node: ParentNode,
+          ): Promise<TestWraplet[]> {
+            return this.createAndInitializeWraplets(node, {}, attribute, [
+              "hello",
+            ]);
+          }
+        }
+
+        document.body.innerHTML = `<div ${attribute}></div>`;
+
+        const wraplets = await TestWraplet.createAndInit(document.body);
+
+        expect(wraplets.length).toEqual(1);
+        expect(wraplets[0].extraArg).toEqual("hello");
+        expect(wraplets[0].wraplet.status.isInitialized).toBe(true);
+      });
     });
   });
 

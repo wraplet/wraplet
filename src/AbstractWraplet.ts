@@ -133,35 +133,69 @@ export abstract class AbstractWraplet<
     return new DefaultCore(node, map);
   }
 
-  // We can afford "any" here because this method is only for the external usage, and external
-  // callers don't need to know what map is the current wraplet using, as it's its internal
-  // matter.
+  /**
+   * Instantiates wraplets on a given ParentNode.
+   */
   protected static createWraplets<
-    N extends Node,
-    T extends AbstractWraplet<N, any> = never,
+    T extends abstract new (
+      core: any,
+      ...args: any[]
+    ) => AbstractWraplet<any, any>,
   >(
+    this: T,
     node: ParentNode,
     map: WrapletDependencyMap,
     attribute: string,
     additional_args: unknown[] = [],
-  ): T[] {
+  ): InstanceType<T>[] {
+    // @ts-expect-error TypeScript doesn't like this, but we still do this check.
     if (this === AbstractWraplet) {
       throw new Error("You cannot instantiate an abstract class.");
     }
 
-    const result: T[] = [];
+    const self = this as T & typeof AbstractWraplet;
+
+    const result: InstanceType<T>[] = [];
 
     if (node instanceof Element && node.hasAttribute(attribute)) {
-      const core = this.createCore(node, map);
+      const core = self.createCore(node, map);
       result.push(new (this as any)(core, ...additional_args));
     }
 
     const foundElements = node.querySelectorAll(`[${attribute}]`);
     for (const element of foundElements) {
-      const core = this.createCore(element, map);
+      const core = self.createCore(element, map);
       result.push(new (this as any)(core, ...additional_args));
     }
 
     return result;
+  }
+
+  /**
+   * Instantiates and initializes wraplets on a given ParentNode.
+   */
+  protected static async createAndInitializeWraplets<
+    T extends {
+      new (core: any, ...args: any[]): AbstractWraplet<any, any>;
+    },
+  >(
+    this: T,
+    node: ParentNode,
+    map: WrapletDependencyMap,
+    attribute: string,
+    additional_args: unknown[] = [],
+  ): Promise<InstanceType<T>[]> {
+    const self = this as T & typeof AbstractWraplet;
+
+    const wraplets: InstanceType<T>[] = self.createWraplets(
+      node,
+      map,
+      attribute,
+      additional_args,
+    );
+    for (const wraplet of wraplets) {
+      await wraplet.wraplet.initialize();
+    }
+    return wraplets;
   }
 }
