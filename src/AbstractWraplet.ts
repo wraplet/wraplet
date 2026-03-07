@@ -40,18 +40,45 @@ export abstract class AbstractWraplet<
       }
     }
 
-    core.addDependencyDestroyedListener(this.onDependencyDestroyed.bind(this));
-    core.addDependencyInstantiatedListener(
-      this.onDependencyInstantiated.bind(this),
-    );
+    const isOverridden = (methodName: string): boolean =>
+      Object.prototype.hasOwnProperty.call(
+        Object.getPrototypeOf(this),
+        methodName,
+      );
+
+    if (isOverridden("onDependencyInitialized")) {
+      core.addDependencyInitializedListener(
+        this.onDependencyInitialized.bind(this),
+      );
+    }
+
+    if (isOverridden("onDependencyInstantiated")) {
+      core.addDependencyInstantiatedListener(
+        this.onDependencyInstantiated.bind(this),
+      );
+    }
+
+    if (isOverridden("onDependencyDestroyed")) {
+      core.addDependencyDestroyedListener(
+        this.onDependencyDestroyed.bind(this),
+      );
+    }
+
+    const initializeCallback = isOverridden("onInitialized")
+      ? this.onInitialized.bind(this)
+      : undefined;
+
+    const destroyCallback = isOverridden("onDestroyed")
+      ? this.onDestroyed.bind(this)
+      : undefined;
 
     core.instantiateDependencies();
 
     this.wraplet = createRichWrapletApi<N, M>({
       core: this.core,
       wraplet: this,
-      initializeCallback: this.onInitialized.bind(this),
-      destroyCallback: this.onDestroyed.bind(this),
+      initializeCallback: initializeCallback,
+      destroyCallback: destroyCallback,
     });
   }
 
@@ -65,22 +92,41 @@ export abstract class AbstractWraplet<
   /**
    *  his method will be invoked if one of the wraplet's dependencies has been instantiated.
    */
+  /* istanbul ignore next -- Base method; only called when overridden by subclass. */
   protected onDependencyInstantiated(
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     dependency: DependencyInstance<M, keyof M>,
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     id: keyof M,
-  ) {}
+  ) {
+    throw new Error("Method has to be implemented by subclass.");
+  }
+
+  /**
+   *  his method will be invoked if one of the wraplet's dependencies has been initialized.
+   */
+  /* istanbul ignore next -- Base method; only called when overridden by subclass. */
+  protected onDependencyInitialized(
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    dependency: DependencyInstance<M, keyof M>,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    id: keyof M,
+  ) {
+    throw new Error("Method has to be implemented by subclass.");
+  }
 
   /**
    * This method will be ivoked if one of the wraplet's dependencies has been destroyed.
    */
+  /* istanbul ignore next -- Base method; only called when overridden by subclass. */
   protected onDependencyDestroyed(
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     dependency: DependencyInstance<M, keyof M>,
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     id: keyof M,
-  ) {}
+  ) {
+    throw new Error("Method has to be implemented by subclass.");
+  }
 
   /**
    * Wrapped node.
@@ -92,12 +138,18 @@ export abstract class AbstractWraplet<
   /**
    * This method gets invoked when the wraplet is initialized.
    */
-  protected async onInitialized(): Promise<void> {}
+  /* istanbul ignore next -- Base method; only called when overridden by subclass. */
+  protected async onInitialized(): Promise<void> {
+    throw new Error("Method has to be implemented by subclass.");
+  }
 
   /**
    * This method gets invoked when the wraplet is destroyed.
    */
-  protected async onDestroyed(): Promise<void> {}
+  /* istanbul ignore next -- Base method; only called when overridden by subclass. */
+  protected async onDestroyed(): Promise<void> {
+    throw new Error("Method has to be implemented by subclass.");
+  }
 
   /**
    * Subclasses must return an array of constructors covering all types in union N.

@@ -828,5 +828,158 @@ describe("AbstractWraplet", () => {
       expect(wraplet.wraplet.status.isDestroyed).toBe(true);
       expect(dependency.wraplet.status.isDestroyed).toBe(true);
     });
+
+    it("should auto-detect overridden onInitialized callback", async () => {
+      const onInitializedFn = jest.fn();
+
+      class TestWraplet extends AbstractWraplet {
+        protected async onInitialized(): Promise<void> {
+          onInitializedFn();
+        }
+      }
+
+      const element = document.createElement("div");
+      const core = new DefaultCore(element, {});
+      const wraplet = new TestWraplet(core);
+
+      await wraplet.wraplet.initialize();
+
+      expect(onInitializedFn).toHaveBeenCalledTimes(1);
+    });
+
+    it("should not call onInitialized when not overridden", async () => {
+      class TestWraplet extends AbstractWraplet {}
+
+      const element = document.createElement("div");
+      const core = new DefaultCore(element, {});
+      const wraplet = new TestWraplet(core);
+
+      await expect(wraplet.wraplet.initialize()).resolves.not.toThrow();
+    });
+
+    it("should auto-detect overridden onDestroyed callback", async () => {
+      const onDestroyedFn = jest.fn();
+
+      class TestWraplet extends AbstractWraplet {
+        protected async onDestroyed(): Promise<void> {
+          onDestroyedFn();
+        }
+      }
+
+      const element = document.createElement("div");
+      const core = new DefaultCore(element, {});
+      const wraplet = new TestWraplet(core);
+
+      await wraplet.wraplet.initialize();
+      await wraplet.wraplet.destroy();
+
+      expect(onDestroyedFn).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe("Auto-detection of overridden dependency lifecycle methods", () => {
+    it("should auto-detect overridden onDependency* callbacks", async () => {
+      const attribute = "data-test-wraplet";
+      const dependencyAttribute = `${attribute}-dep`;
+
+      const onDependencyInstantiatedFn = jest.fn();
+      const onDependencyInitializedFn = jest.fn();
+      const onDependencyDestroyedFn = jest.fn();
+
+      class TestWrapletDependency extends AbstractWraplet {}
+
+      const map = {
+        dep: {
+          selector: `[${dependencyAttribute}]`,
+          Class: TestWrapletDependency,
+          multiple: false,
+          required: false,
+        },
+      } satisfies WrapletDependencyMap;
+
+      class TestWraplet extends BaseElementTestWraplet<typeof map> {
+        protected onDependencyInitialized(
+          dependency: DependencyInstance<typeof map, keyof typeof map>,
+          id: keyof typeof map,
+        ) {
+          onDependencyInitializedFn(id);
+        }
+
+        protected onDependencyInstantiated(
+          dependency: DependencyInstance<typeof map, keyof typeof map>,
+          id: keyof typeof map,
+        ) {
+          onDependencyInstantiatedFn(id);
+        }
+
+        protected onDependencyDestroyed(
+          dependency: DependencyInstance<typeof map, keyof typeof map>,
+          id: keyof typeof map,
+        ) {
+          onDependencyDestroyedFn(id);
+        }
+      }
+
+      document.body.innerHTML = `
+<div ${attribute}>
+    <div ${dependencyAttribute}></div>
+</div>
+`;
+
+      const wraplet = TestWraplet.create<typeof map, TestWraplet>(
+        attribute,
+        map,
+      );
+      if (!wraplet) {
+        throw Error("Wraplet not created.");
+      }
+      await wraplet.wraplet.initialize();
+      await wraplet.wraplet.destroy();
+
+      expect(onDependencyInstantiatedFn).toHaveBeenCalledTimes(1);
+      expect(onDependencyInstantiatedFn).toHaveBeenCalledWith("dep");
+
+      expect(onDependencyInitializedFn).toHaveBeenCalledTimes(1);
+      expect(onDependencyInitializedFn).toHaveBeenCalledWith("dep");
+
+      expect(onDependencyDestroyedFn).toHaveBeenCalledTimes(1);
+      expect(onDependencyDestroyedFn).toHaveBeenCalledWith("dep");
+    });
+
+    it("should not register dependency listeners when methods are not overridden", async () => {
+      const attribute = "data-test-wraplet";
+      const dependencyAttribute = `${attribute}-dep`;
+      class TestWrapletDependency extends AbstractWraplet {}
+
+      const map = {
+        dep: {
+          selector: `[${dependencyAttribute}]`,
+          Class: TestWrapletDependency,
+          multiple: false,
+          required: false,
+        },
+      } satisfies WrapletDependencyMap;
+
+      class TestWraplet extends BaseElementTestWraplet<typeof map> {}
+
+      document.body.innerHTML = `
+<div ${attribute}>
+    <div ${dependencyAttribute}></div>
+</div>
+`;
+      // If the default "onDependencyInstantiate" method has been registered this would throw an error.
+      const wraplet = TestWraplet.create<typeof map, TestWraplet>(
+        attribute,
+        map,
+        document,
+      );
+
+      if (!wraplet) {
+        throw new Error("Wraplet not created.");
+      }
+
+      await expect(wraplet.wraplet.initialize()).resolves.not.toThrow();
+      await expect(wraplet.wraplet.destroy()).resolves.not.toThrow();
+    });
   });
 });
