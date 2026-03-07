@@ -64,12 +64,12 @@ export abstract class AbstractWraplet<
       );
     }
 
-    const initializeCallback = isOverridden("onInitialized")
-      ? this.onInitialized.bind(this)
+    const initializeCallback = isOverridden("onInitialize")
+      ? this.onInitialize.bind(this)
       : undefined;
 
-    const destroyCallback = isOverridden("onDestroyed")
-      ? this.onDestroyed.bind(this)
+    const destroyCallback = isOverridden("onDestroy")
+      ? this.onDestroy.bind(this)
       : undefined;
 
     core.instantiateDependencies();
@@ -139,7 +139,7 @@ export abstract class AbstractWraplet<
    * This method gets invoked when the wraplet is initialized.
    */
   /* istanbul ignore next -- Base method; only called when overridden by subclass. */
-  protected async onInitialized(): Promise<void> {
+  protected async onInitialize(): Promise<void> {
     throw new Error("Method has to be implemented by subclass.");
   }
 
@@ -147,7 +147,7 @@ export abstract class AbstractWraplet<
    * This method gets invoked when the wraplet is destroyed.
    */
   /* istanbul ignore next -- Base method; only called when overridden by subclass. */
-  protected async onDestroyed(): Promise<void> {
+  protected async onDestroy(): Promise<void> {
     throw new Error("Method has to be implemented by subclass.");
   }
 

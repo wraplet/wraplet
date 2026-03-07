@@ -27,7 +27,7 @@ it("Test default node tree manager destroy tree", async () => {
       isGettingDestroyed: false,
     };
 
-    protected async onDestroyed(): Promise<void> {
+    protected async onDestroy(): Promise<void> {
       func();
     }
   }

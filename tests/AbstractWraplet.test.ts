@@ -833,7 +833,7 @@ describe("AbstractWraplet", () => {
       const onInitializedFn = jest.fn();
 
       class TestWraplet extends AbstractWraplet {
-        protected async onInitialized(): Promise<void> {
+        protected async onInitialize(): Promise<void> {
           onInitializedFn();
         }
       }
@@ -861,7 +861,7 @@ describe("AbstractWraplet", () => {
       const onDestroyedFn = jest.fn();
 
       class TestWraplet extends AbstractWraplet {
-        protected async onDestroyed(): Promise<void> {
+        protected async onDestroy(): Promise<void> {
           onDestroyedFn();
         }
       }
