@@ -13,6 +13,20 @@ export type WrapletDependencyMapWithDefaults<
   [key in keyof M]: WrapletDependencyDefinitionWithDefaults<M[key], M>;
 };
 
+export type SingleDependencyKeys<M extends WrapletDependencyMap> = Extract<
+  keyof {
+    [K in keyof M as M[K]["multiple"] extends false ? K : never]: true;
+  },
+  string
+>;
+
+export type MultipleDependencyKeys<M extends WrapletDependencyMap> = Extract<
+  keyof {
+    [K in keyof M as M[K]["multiple"] extends true ? K : never]: true;
+  },
+  string
+>;
+
 function isSimpleObject(input: unknown): input is Record<string, unknown> {
   return (
     typeof input === "object" &&

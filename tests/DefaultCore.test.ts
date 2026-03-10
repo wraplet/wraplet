@@ -236,7 +236,7 @@ describe("Test DefaultCore", () => {
     const core: Core<Node, typeof map> = new DefaultCore(node, map);
 
     const func = jest.fn();
-    core.addDependencyDestroyedListener(() => {
+    core.addDependencyDestroyedListener(async () => {
       func();
     });
 
@@ -276,11 +276,11 @@ describe("Test DefaultCore", () => {
     const core: Core<Node, typeof map> = new DefaultCore(node, map);
     const funcInitialized = jest.fn();
 
-    core.addDependencyInstantiatedListener(() => {
+    core.addDependencyInstantiatedListener(async () => {
       func();
     });
 
-    core.addDependencyInitializedListener(() => {
+    core.addDependencyInitializedListener(async () => {
       funcInitialized();
     });
 
@@ -614,19 +614,19 @@ describe("Test DefaultCore", () => {
     const funcInitialized = jest.fn();
     const core: Core<Node, typeof map> = new DefaultCore(node, map, {
       dependencyInstantiatedListeners: [
-        (child) => {
+        async (child) => {
           funcInstantiate();
           expect(child).toBeInstanceOf(TestWrapletClass);
         },
       ],
       dependencyInitializedListeners: [
-        (child) => {
+        async (child) => {
           funcInitialized();
           expect(child).toBeInstanceOf(TestWrapletClass);
         },
       ],
       dependencyDestroyedListeners: [
-        (child) => {
+        async (child) => {
           funcDestroy();
           expect(child).toBeInstanceOf(TestWrapletClass);
         },
@@ -726,5 +726,214 @@ describe("Test DefaultCore", () => {
     await core.initializeDependencies();
     await core.destroy();
     expect(core.status.isDestroyed).toBe(true);
+  });
+
+  describe("Test setExistingInstance and addExistingInstance validations", () => {
+    it("should throw when setExistingInstance is called on a multiple dependency", () => {
+      const element = document.createElement("div");
+      const map = {
+        children: {
+          Class: TestWrapletClass,
+          multiple: true,
+          required: false,
+        },
+      } satisfies WrapletDependencyMap;
+
+      const core = new DefaultCore(element, map);
+
+      const childCore = new DefaultCore(document.createElement("div"), {});
+      const instance = new TestWrapletClass(childCore);
+
+      expect(() =>
+        // @ts-expect-error We test a runtime error when a wrong input has been provided
+        // even if TS protested.
+        core.setExistingInstance("children", instance),
+      ).toThrow(MapError);
+    });
+
+    it("should throw when setExistingInstance is called twice for the same dependency", () => {
+      const element = document.createElement("div");
+      const map = {
+        child: {
+          Class: TestWrapletClass,
+          multiple: false,
+          required: false,
+        },
+      } satisfies WrapletDependencyMap;
+
+      const core = new DefaultCore(element, map);
+
+      const childCore = new DefaultCore(document.createElement("div"), {});
+      const instance1 = new TestWrapletClass(childCore);
+      const instance2 = new TestWrapletClass(childCore);
+
+      core.setExistingInstance("child", instance1);
+
+      expect(() => core.setExistingInstance("child", instance2)).toThrow(
+        MapError,
+      );
+    });
+
+    it("should throw when setExistingInstance is called with a non-wraplet", () => {
+      const element = document.createElement("div");
+      const map = {
+        child: {
+          Class: TestWrapletClass,
+          multiple: false,
+          required: false,
+        },
+      } satisfies WrapletDependencyMap;
+
+      const core = new DefaultCore(element, map);
+
+      expect(() => core.setExistingInstance("child", {} as any)).toThrow(
+        MapError,
+      );
+    });
+
+    it("should allow adding multiple instances with addExistingInstance", () => {
+      const element = document.createElement("div");
+      const map = {
+        children: {
+          Class: TestWrapletClass,
+          multiple: true,
+          required: false,
+        },
+      } satisfies WrapletDependencyMap;
+
+      const core = new DefaultCore(element, map);
+
+      const childCore = new DefaultCore(document.createElement("div"), {});
+      const instance1 = new TestWrapletClass(childCore);
+      const instance2 = new TestWrapletClass(childCore);
+
+      core.addExistingInstance("children", instance1);
+      core.addExistingInstance("children", instance2);
+
+      core.instantiateDependencies();
+
+      expect(core.dependencies.children.size).toBe(2);
+    });
+
+    it("should throw when addExistingInstance is called on a single dependency", () => {
+      const element = document.createElement("div");
+      const map = {
+        child: {
+          Class: TestWrapletClass,
+          multiple: false,
+          required: false,
+        },
+      } satisfies WrapletDependencyMap;
+
+      const core = new DefaultCore(element, map);
+
+      const childCore = new DefaultCore(document.createElement("div"), {});
+      const instance = new TestWrapletClass(childCore);
+
+      // @ts-expect-error We test runtime error when a wrong input has been provided, even if TS protested.
+      expect(() => core.addExistingInstance("child", instance)).toThrow(
+        MapError,
+      );
+    });
+
+    it("should throw MapError when single dependency with selector has manually provided instance", () => {
+      const element = document.createElement("div");
+      element.innerHTML = `<div data-child></div>`;
+
+      const map = {
+        child: {
+          selector: "[data-child]",
+          Class: TestWrapletClass,
+          multiple: false,
+          required: false,
+        },
+      } satisfies WrapletDependencyMap;
+
+      const core = new DefaultCore(element, map);
+
+      const childCore = new DefaultCore(document.createElement("div"), {});
+      const instance = new TestWrapletClass(childCore);
+
+      core.setExistingInstance("child", instance);
+
+      expect(() => core.instantiateDependencies()).toThrow(MapError);
+    });
+  });
+
+  describe("Test DefaultCore required dependencies without selector", () => {
+    const map = {
+      child: {
+        Class: TestWrapletClass,
+        multiple: false,
+        required: true,
+      },
+      children: {
+        Class: TestWrapletClass,
+        required: true,
+        multiple: true,
+      },
+    } satisfies WrapletDependencyMap;
+
+    it("has manually provided required dependencies", async () => {
+      const element = document.createElement("div");
+      const core = new DefaultCore(element, map);
+
+      const childElement = document.createElement("div");
+      const childCore = new DefaultCore(childElement, {});
+
+      const childInstance = new TestWrapletClass(childCore);
+      const childrenInstance = new TestWrapletClass(childCore);
+
+      core.setExistingInstance("child", childInstance);
+      core.addExistingInstance("children", childrenInstance);
+
+      core.instantiateDependencies();
+
+      expect(core.dependencies.child).toBe(childInstance);
+      expect(core.dependencies.children.size).toBe(1);
+      expect(core.dependencies.children.values()).toContain(childrenInstance);
+    });
+
+    it("doesn't have manually provided required dependencies when single", async () => {
+      const map = {
+        child: {
+          Class: TestWrapletClass,
+          multiple: false,
+          required: true,
+        },
+      } satisfies WrapletDependencyMap;
+
+      const element = document.createElement("div");
+      const core = new DefaultCore(element, map);
+
+      const func = () => {
+        core.instantiateDependencies();
+      };
+
+      expect(func).toThrow(
+        'Dependency "child" cannot at the same be required, have no selector, and be not provided otherwise.',
+      );
+    });
+
+    it("doesn't have manually provided required dependencies when multiple", async () => {
+      const map = {
+        children: {
+          Class: TestWrapletClass,
+          multiple: true,
+          required: true,
+        },
+      } satisfies WrapletDependencyMap;
+
+      const element = document.createElement("div");
+      const core = new DefaultCore(element, map);
+
+      const func = () => {
+        core.instantiateDependencies();
+      };
+
+      expect(func).toThrow(
+        'Dependency "children" cannot at the same be required, have no selector, and be not provided otherwise.',
+      );
+    });
   });
 });

@@ -1,5 +1,7 @@
 import { WrapletDependencies } from "../../Wraplet/types/WrapletDependencies";
 import {
+  MultipleDependencyKeys,
+  SingleDependencyKeys,
   WrapletDependencyMap,
   WrapletDependencyMapWithDefaults,
 } from "../../Wraplet/types/WrapletDependencyMap";
@@ -7,7 +9,9 @@ import { Wraplet } from "../../Wraplet/types/Wraplet";
 import { WrapletCreator } from "./WrapletCreator";
 import { is } from "../../utils/is";
 import { Status } from "../../Wraplet/types/Status";
+import { DependencyLifecycleAsyncListener } from "./DependencyLifecycleAsyncListener";
 import { DependencyLifecycleListener } from "./DependencyLifecycleListener";
+import { DependencyInstance } from "../../Wraplet/types/DependencyInstance";
 
 const CoreSymbol = Symbol("Core");
 export { CoreSymbol };
@@ -56,14 +60,14 @@ export interface Core<
    * Add a listener that will be called when a dependency is initialized.
    */
   addDependencyInitializedListener(
-    callback: DependencyLifecycleListener<M, keyof M>,
+    callback: DependencyLifecycleAsyncListener<M, keyof M>,
   ): void;
 
   /**
    * Add a listener that will be called when a dependency is destroyed.
    */
   addDependencyDestroyedListener(
-    callback: DependencyLifecycleListener<M, keyof M>,
+    callback: DependencyLifecycleAsyncListener<M, keyof M>,
   ): void;
 
   /**
@@ -71,6 +75,31 @@ export interface Core<
    */
   addDependencyInstantiatedListener(
     callback: DependencyLifecycleListener<M, keyof M>,
+  ): void;
+
+  /**
+   * This method allows you to set an existing dependency instance.
+   *
+   * It can be used only before the instantiation phase.
+   */
+  setExistingInstance<
+    K extends SingleDependencyKeys<M> & Extract<keyof M, string>,
+  >(
+    id: K,
+    wraplet: DependencyInstance<M, K>,
+  ): void;
+
+  /**
+   * This method allows you to add an existing dependency instance
+   * to a wraplet set.
+   *
+   * It can be used only before the instantiation phase.
+   */
+  addExistingInstance<
+    K extends MultipleDependencyKeys<M> & Extract<keyof M, string>,
+  >(
+    id: K,
+    wraplet: DependencyInstance<M, K>,
   ): void;
 
   /**

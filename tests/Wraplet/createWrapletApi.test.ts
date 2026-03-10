@@ -26,6 +26,8 @@ describe("createWrapletApi", () => {
       addEventListener: jest.fn(),
       getChildrenDependencies: jest.fn().mockReturnValue([]),
       setWrapletCreator: jest.fn(),
+      setExistingInstance: jest.fn(),
+      addExistingInstance: jest.fn(),
       dependencies: {},
     } satisfies Core;
 

@@ -898,7 +898,7 @@ describe("AbstractWraplet", () => {
       } satisfies WrapletDependencyMap;
 
       class TestWraplet extends BaseElementTestWraplet<typeof map> {
-        protected onDependencyInitialized(
+        protected async onDependencyInitialized(
           dependency: DependencyInstance<typeof map, keyof typeof map>,
           id: keyof typeof map,
         ) {
@@ -912,7 +912,7 @@ describe("AbstractWraplet", () => {
           onDependencyInstantiatedFn(id);
         }
 
-        protected onDependencyDestroyed(
+        protected async onDependencyDestroyed(
           dependency: DependencyInstance<typeof map, keyof typeof map>,
           id: keyof typeof map,
         ) {

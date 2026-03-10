@@ -106,7 +106,7 @@ export abstract class AbstractWraplet<
    *  his method will be invoked if one of the wraplet's dependencies has been initialized.
    */
   /* istanbul ignore next -- Base method; only called when overridden by subclass. */
-  protected onDependencyInitialized(
+  protected async onDependencyInitialized(
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     dependency: DependencyInstance<M, keyof M>,
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -119,7 +119,7 @@ export abstract class AbstractWraplet<
    * This method will be ivoked if one of the wraplet's dependencies has been destroyed.
    */
   /* istanbul ignore next -- Base method; only called when overridden by subclass. */
-  protected onDependencyDestroyed(
+  protected async onDependencyDestroyed(
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     dependency: DependencyInstance<M, keyof M>,
     // eslint-disable-next-line @typescript-eslint/no-unused-vars

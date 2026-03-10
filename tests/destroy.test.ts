@@ -269,10 +269,9 @@ it("Destroy dependency listener", async () => {
   } as const satisfies WrapletDependencyMap;
 
   class TestWraplet extends BaseElementTestWraplet<typeof dependenciesMap> {
-    protected onDependencyDestroyed<K extends keyof typeof dependenciesMap>(
-      dependency: DependencyInstance<typeof dependenciesMap, K>,
-      id: K,
-    ) {
+    protected async onDependencyDestroyed<
+      K extends keyof typeof dependenciesMap,
+    >(dependency: DependencyInstance<typeof dependenciesMap, K>, id: K) {
       expect(id).toEqual("dependency");
       expect(dependency).toBeInstanceOf(TestWrapletDependency);
       func();
@@ -319,7 +318,7 @@ it("Test isDestroyed values", async () => {
   } as const satisfies WrapletDependencyMap;
 
   class TestWraplet extends BaseElementTestWraplet<typeof dependenciesMap> {
-    protected onDependencyDestroyed() {
+    protected async onDependencyDestroyed() {
       expect(this.wraplet.status.isGettingDestroyed).toBe(true);
       expect(this.wraplet.status.isDestroyed).toBe(false);
     }

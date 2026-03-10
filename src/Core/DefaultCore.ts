@@ -10,9 +10,11 @@ import {
   RequiredDependencyDestroyedError,
   UnsupportedNodeTypeError,
 } from "../errors";
-import { Wraplet } from "../Wraplet/types/Wraplet";
+import { isWraplet, Wraplet } from "../Wraplet/types/Wraplet";
 import {
   isWrapletDependencyMap,
+  MultipleDependencyKeys,
+  SingleDependencyKeys,
   WrapletDependencyMap,
   WrapletDependencyMapWithDefaults,
 } from "../Wraplet/types/WrapletDependencyMap";
@@ -33,6 +35,7 @@ import { WrapletCreator, WrapletCreatorArgs } from "./types/WrapletCreator";
 import { isArgCreator } from "./types/ArgCreator";
 import { defaultWrapletCreator } from "./defaultWrapletCreator";
 import { Status, StatusWritable } from "../Wraplet/types/Status";
+import { DependencyLifecycleAsyncListener } from "./types/DependencyLifecycleAsyncListener";
 import { DependencyLifecycleListener } from "./types/DependencyLifecycleListener";
 
 type ListenerData = {
@@ -63,7 +66,7 @@ export class DefaultCore<
   public mapWrapper: MapWrapper<M>;
   private instantiatedDependencies: Partial<WrapletDependencies<M>> = {};
 
-  private destroyedDependencyListeners: DependencyLifecycleListener<
+  private destroyedDependencyListeners: DependencyLifecycleAsyncListener<
     M,
     keyof M
   >[] = [];
@@ -71,7 +74,7 @@ export class DefaultCore<
     M,
     keyof M
   >[] = [];
-  private initializedDependencyListeners: DependencyLifecycleListener<
+  private initializedDependencyListeners: DependencyLifecycleAsyncListener<
     M,
     keyof M
   >[] = [];
@@ -130,7 +133,7 @@ export class DefaultCore<
         await wraplet.wraplet.initialize();
 
         for (const listener of this.initializedDependencyListeners) {
-          listener(wraplet as DependencyInstance<M, keyof M>, id);
+          await listener(wraplet as DependencyInstance<M, keyof M>, id);
         }
       }),
     );
@@ -276,8 +279,18 @@ export class DefaultCore<
     id: Extract<T, string>,
   ): WrapletDependencies<M>[T] | null {
     if (!dependencyDefinition.selector) {
-      return null;
+      return this.instantiatedDependencies[id] || null;
     }
+
+    if (
+      !this.dependenciesAreInstantiated &&
+      this.instantiatedDependencies[id]
+    ) {
+      throw new MapError(
+        `It's not possible to provide a single-type dependency manually and use selector at the same time.`,
+      );
+    }
+
     const selector = dependencyDefinition.selector;
 
     // Find children elements based on the map.
@@ -364,7 +377,11 @@ export class DefaultCore<
   ): WrapletDependencies<M>[keyof WrapletDependencies<M>] {
     const selector = dependencyDefinition.selector;
     if (!selector) {
-      return new DefaultWrapletSet() as WrapletDependencies<M>[keyof WrapletDependencies<M>];
+      return (
+        this.instantiatedDependencies && this.instantiatedDependencies[id]
+          ? (this.instantiatedDependencies[id] as WrapletSet<Wraplet<N>>)
+          : new DefaultWrapletSet<Wraplet<N>>()
+      ) as WrapletDependencies<M>[keyof WrapletDependencies<M>];
     }
 
     // Find children elements based on the map.
@@ -395,7 +412,7 @@ export class DefaultCore<
   }
 
   public addDependencyDestroyedListener(
-    callback: DependencyLifecycleListener<M, keyof M>,
+    callback: DependencyLifecycleAsyncListener<M, keyof M>,
   ): void {
     this.destroyedDependencyListeners.push(callback);
   }
@@ -407,7 +424,7 @@ export class DefaultCore<
   }
 
   public addDependencyInitializedListener(
-    callback: DependencyLifecycleListener<M, keyof M>,
+    callback: DependencyLifecycleAsyncListener<M, keyof M>,
   ): void {
     this.initializedDependencyListeners.push(callback);
   }
@@ -418,21 +435,73 @@ export class DefaultCore<
     this.wrapletCreator = wrapletCreator;
   }
 
+  public setExistingInstance<
+    K extends SingleDependencyKeys<M> & Extract<keyof M, string>,
+  >(id: K, wraplet: DependencyInstance<M, K>): void {
+    const map = this.map;
+
+    if (map[id].multiple) {
+      throw new MapError(
+        `This method can only be used to set a single-value dependency.`,
+      );
+    }
+
+    if (this.instantiatedDependencies[id]) {
+      throw new MapError(`Dependency is already set.`);
+    }
+
+    if (!isWraplet(wraplet)) {
+      throw new MapError(`Provided instance is not a valid wraplet.`);
+    }
+
+    this.prepareIndividualWraplet(id, wraplet);
+
+    this.instantiatedDependencies[id] = wraplet as any;
+  }
+
+  public addExistingInstance<
+    K extends MultipleDependencyKeys<M> & Extract<keyof M, string>,
+  >(id: K, wraplet: DependencyInstance<M, K>): void {
+    const map = this.map;
+
+    if (!map[id].multiple) {
+      throw new MapError(
+        `This method can only be used to set a multi-value dependency.`,
+      );
+    }
+
+    this.prepareIndividualWraplet(id, wraplet);
+
+    const items: WrapletSet =
+      this.instantiatedDependencies && this.instantiatedDependencies[id]
+        ? (this.instantiatedDependencies[id] as WrapletSet<Wraplet<N>>)
+        : new DefaultWrapletSet<Wraplet<N>>();
+
+    items.add(wraplet);
+
+    this.instantiatedDependencies[id] = items as any;
+  }
+
   private prepareIndividualWraplet<K extends Extract<keyof M, string>>(
     id: K,
     wraplet: Wraplet,
   ) {
-    const destroyListener: DestroyListener = (<K extends keyof M>(
-      wraplet: DependencyInstance<M, K>,
-    ) => {
-      this.removeDependency(wraplet, id);
+    // Listen for the dependency's destruction.
+    wraplet.wraplet.addDestroyListener(
+      this.createDependencyDestroyListener(id),
+    );
+  }
+
+  private createDependencyDestroyListener<K extends Extract<keyof M, string>>(
+    id: K,
+  ): DestroyListener {
+    return (async (w: DependencyInstance<M, K>) => {
+      this.removeDependency(w, id);
 
       for (const listener of this.destroyedDependencyListeners) {
-        listener(wraplet, id);
+        await listener(w, id);
       }
     }) as DestroyListener;
-    // Listen for the dependency's destruction.
-    wraplet.wraplet.addDestroyListener(destroyListener);
   }
 
   /**
@@ -550,12 +619,16 @@ export class DefaultCore<
   ): void {
     const selector = item.selector;
     const isRequired = item.required;
-    if (!selector) {
-      if (isRequired) {
-        throw new MapError(
-          `${this.constructor.name}: Dependency "${id}" cannot at the same be required and have no selector.`,
-        );
-      }
+    if (
+      !selector &&
+      isRequired &&
+      (!this.instantiatedDependencies[id] ||
+        (isWrapletSet(this.instantiatedDependencies[id]) &&
+          this.instantiatedDependencies[id].size === 0))
+    ) {
+      throw new MapError(
+        `${this.constructor.name}: Dependency "${id}" cannot at the same be required, have no selector, and be not provided otherwise.`,
+      );
     }
   }
 
@@ -589,7 +662,7 @@ export class DefaultCore<
     dependencies: WrapletDependencies<M>,
   ): WrapletDependencies<M> {
     return new Proxy(dependencies, {
-      get: function get(target, name: string) {
+      get: (target, name: string) => {
         if (!(name in target)) {
           throw new Error(`Dependency '${name}' has not been found.`);
         }

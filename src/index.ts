@@ -2,6 +2,7 @@
 export type { Core } from "./Core/types/Core";
 export type { WrapletCreator } from "./Core/types/WrapletCreator";
 export type { ArgCreator } from "./Core/types/ArgCreator";
+export type { DependencyLifecycleAsyncListener } from "./Core/types/DependencyLifecycleAsyncListener";
 export type { DependencyLifecycleListener } from "./Core/types/DependencyLifecycleListener";
 export { DefaultCore } from "./Core/DefaultCore";
 export { DefaultArgCreator } from "./Core/DefaultArgCreator";
