@@ -51,6 +51,17 @@ describe("isWrapletChildrenMap", () => {
       isWrapletDependencyMap({
         child1: {
           Class: class {},
+          selector: 123,
+          required: true,
+          multiple: false,
+        } as any,
+      }),
+    ).toBe(false);
+
+    expect(
+      isWrapletDependencyMap({
+        child1: {
+          Class: class {},
           selector: ".test",
           required: "not a boolean",
           multiple: false,

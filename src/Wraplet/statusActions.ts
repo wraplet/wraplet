@@ -70,7 +70,7 @@ export async function destructionStarted<
   }
 
   await core.destroy();
-  for (const listener of destroyListeners.reverse()) {
+  for (const listener of [...destroyListeners].reverse()) {
     await listener(wraplet);
   }
 

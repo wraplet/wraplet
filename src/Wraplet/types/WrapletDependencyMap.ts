@@ -53,6 +53,10 @@ function isDependencyMapItem(item: Record<string, unknown>): boolean {
     }
   }
 
+  if (!["string", "function", "undefined"].includes(typeof item["selector"])) {
+    return false;
+  }
+
   if (typeof item["Class"] !== "function") {
     return false;
   }

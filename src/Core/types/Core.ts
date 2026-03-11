@@ -79,8 +79,6 @@ export interface Core<
 
   /**
    * This method allows you to set an existing dependency instance.
-   *
-   * It can be used only before the instantiation phase.
    */
   setExistingInstance<
     K extends SingleDependencyKeys<M> & Extract<keyof M, string>,
@@ -92,8 +90,6 @@ export interface Core<
   /**
    * This method allows you to add an existing dependency instance
    * to a wraplet set.
-   *
-   * It can be used only before the instantiation phase.
    */
   addExistingInstance<
     K extends MultipleDependencyKeys<M> & Extract<keyof M, string>,

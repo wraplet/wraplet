@@ -1,5 +1,6 @@
 import "./setup";
 import {
+  createRichWrapletApi,
   DefaultArgCreator,
   DefaultCore,
   DefaultWrapletSet,
@@ -17,45 +18,19 @@ import { Core } from "../src";
 import { DestroyListener } from "../src/Core/types/DestroyListener";
 import { Wraplet, WrapletSymbol } from "../src/Wraplet/types/Wraplet";
 import { WrapletCreator } from "../src";
-import { StatusWritable } from "../src/Wraplet/types/Status";
 
 describe("Test DefaultCore", () => {
   class TestWrapletClass implements Wraplet {
     [WrapletSymbol]: true = true;
-    private status: StatusWritable = {
-      isGettingInitialized: false,
-      isGettingDestroyed: false,
-      isInitialized: false,
-      isDestroyed: false,
-    };
 
-    private destroyListeners: DestroyListener[] = [];
+    constructor(private core: Core) {
+      this.wraplet = createRichWrapletApi({
+        core: this.core,
+        wraplet: this,
+      });
+    }
 
-    constructor(private core: Core) {}
-
-    public wraplet: WrapletApi = {
-      status: this.status,
-
-      addDestroyListener: (callback: DestroyListener) => {
-        this.destroyListeners.push(callback);
-      },
-
-      initialize: async () => {
-        await this.core.initializeDependencies();
-        this.status.isInitialized = true;
-      },
-
-      destroy: async () => {
-        for (const listener of this.destroyListeners) {
-          await listener(this);
-        }
-        this.status.isDestroyed = true;
-      },
-
-      accessNode: (callback: (node: Node) => void) => {
-        callback(this.core.node);
-      },
-    };
+    public wraplet: WrapletApi;
   }
 
   it("Test DefaultCore not allowing required children if provided node is not a ParentNode", () => {
@@ -145,6 +120,68 @@ describe("Test DefaultCore", () => {
     await expect(func).rejects.toThrow(
       "Internal logic error. Expected a WrapletSet.",
     );
+  });
+
+  it("Test DefaultCore internal error single dependency expected a Wraplet", async () => {
+    const node = document.createElement("div");
+    node.innerHTML = "<div data-something></div>";
+
+    const map = {
+      child: {
+        selector: "[data-something]",
+        Class: TestWrapletClass,
+        multiple: false,
+        required: false,
+      },
+    } satisfies WrapletDependencyMap;
+
+    const core: Core<Node, typeof map> = new DefaultCore(node, map);
+
+    const func = async () => {
+      core.instantiateDependencies();
+      await core.initializeDependencies();
+      // Corrupt the single dependency to not be a Wraplet.
+      (core as any).directDependencies["child"] = {
+        isDestroyed: () => false,
+      };
+      await core.syncDependencies();
+    };
+
+    await expect(func).rejects.toThrow(
+      "Internal logic error. Expected a Wraplet.",
+    );
+  });
+
+  it("Test DefaultCore single dependency returns null when node changes", async () => {
+    const node = document.createElement("div");
+    node.innerHTML = "<div data-something></div>";
+
+    const map = {
+      child: {
+        selector: "[data-something]",
+        Class: TestWrapletClass,
+        multiple: false,
+        required: false,
+      },
+    } satisfies WrapletDependencyMap;
+
+    const core: Core<Node, typeof map> = new DefaultCore(node, map);
+
+    core.instantiateDependencies();
+    await core.initializeDependencies();
+
+    const firstChild = core.dependencies["child"];
+    expect(firstChild).not.toBeNull();
+
+    // Replace the child element with a new one so the existing wraplet wraps a different node.
+    node.innerHTML = "<div data-something></div>";
+
+    await core.syncDependencies();
+
+    // The new dependency should be a different instance since the node changed.
+    const secondChild = core.dependencies["child"];
+    expect(secondChild).not.toBeNull();
+    expect(secondChild).not.toBe(firstChild);
   });
 
   it("Test DefaultCore child without selector", async () => {
@@ -247,7 +284,7 @@ describe("Test DefaultCore", () => {
       await child.wraplet.destroy();
     }
 
-    core.dependencies.child?.wraplet.destroy();
+    await core.dependencies.child?.wraplet.destroy();
 
     expect(func).toHaveBeenCalledTimes(3);
   });
@@ -935,5 +972,134 @@ describe("Test DefaultCore", () => {
         'Dependency "children" cannot at the same be required, have no selector, and be not provided otherwise.',
       );
     });
+  });
+
+  it("handles exceptions in the lifecycle callbacks", async () => {
+    const depListInst = jest.fn();
+    const depListInit = jest.fn();
+    const depListDestroy = jest.fn();
+
+    const depApiInit = jest.fn();
+    const depApiDestroy = jest.fn();
+
+    class TestWrapletChild1 implements Wraplet {
+      [WrapletSymbol]: true = true;
+
+      constructor(core: Core) {
+        this.wraplet = createRichWrapletApi({
+          core: core,
+          wraplet: this,
+          initializeCallback: this.onInit.bind(this),
+          destroyCallback: this.onDestroy.bind(this),
+        });
+      }
+
+      private async onInit() {
+        depApiInit();
+      }
+
+      private async onDestroy() {
+        depApiDestroy();
+      }
+
+      public wraplet: WrapletApi;
+    }
+
+    class TestWrapletChild2 implements Wraplet {
+      [WrapletSymbol]: true = true;
+
+      constructor(core: Core) {
+        this.wraplet = createRichWrapletApi({
+          core: core,
+          wraplet: this,
+        });
+      }
+
+      public wraplet: WrapletApi;
+    }
+
+    const map = {
+      child1: {
+        selector: "[data-child1]",
+        Class: TestWrapletChild1,
+        multiple: false,
+        required: true,
+      },
+      child2: {
+        selector: "[data-child2]",
+        Class: TestWrapletChild2,
+        multiple: false,
+        required: true,
+      },
+    } satisfies WrapletDependencyMap;
+
+    document.body.innerHTML = `
+<div data-wraplet>
+  <div data-child1></div>
+  <div data-child2></div>  
+</div>
+    `;
+
+    const element = document.querySelector("[data-wraplet]");
+    if (!element) throw new Error("Element not found");
+
+    const runInstantiateWithErrorInListener = () => {
+      const core = new DefaultCore(element, map);
+      core.addDependencyInstantiatedListener(() => {
+        throw new Error("Test error in a listener");
+      });
+      core.addDependencyInstantiatedListener(() => {
+        depListInst();
+      });
+
+      core.instantiateDependencies();
+    };
+
+    // If there is an error during the instantiation phase,
+    // it should be thrown.
+    expect(runInstantiateWithErrorInListener).toThrow(
+      "Test error in a listener",
+    );
+
+    // Instantiation is synchronous, so a single error should prevent
+    // other listeners from running.
+    expect(depListInst).toHaveBeenCalledTimes(0);
+
+    const runIntializeAndDestroyWithErrorInListener = async () => {
+      const core = new DefaultCore(element, map);
+      core.addDependencyInitializedListener(async () => {
+        throw new Error("Test error in a listener");
+      });
+      core.addDependencyInitializedListener(async () => {
+        depListInit();
+      });
+
+      core.addDependencyDestroyedListener(async () => {
+        throw new Error("Test error in a listener");
+      });
+      core.addDependencyInitializedListener(async () => {
+        depListDestroy();
+      });
+      core.instantiateDependencies();
+      await core.initializeDependencies();
+      await core.destroy();
+    };
+
+    await expect(
+      runIntializeAndDestroyWithErrorInListener,
+    ).resolves.not.toThrow();
+
+    // depInit should run twice, regardless of the error in the first listener.
+    // It's once per child.
+    expect(depListInit).toHaveBeenCalledTimes(2);
+
+    // depDestroy should run twice, regardless of the error in the first listener.
+    // It's once per child.
+    expect(depListDestroy).toHaveBeenCalledTimes(2);
+
+    // Callbacks registered on API should run once because they are registered
+    // only on a single child.
+    expect(depApiInit).toHaveBeenCalledTimes(1);
+    expect(depApiDestroy).toHaveBeenCalledTimes(1);
   });
 });

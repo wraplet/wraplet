@@ -64,6 +64,7 @@ export class DefaultCore<
   }
 
   public mapWrapper: MapWrapper<M>;
+  private directDependencies: Partial<WrapletDependencies<M>> = {};
   private instantiatedDependencies: Partial<WrapletDependencies<M>> = {};
 
   private destroyedDependencyListeners: DependencyLifecycleAsyncListener<
@@ -113,30 +114,48 @@ export class DefaultCore<
   public async initializeDependencies() {
     this.statusWritable.isGettingInitialized = true;
 
-    const dependencyInstances = Object.entries(
-      this.instantiatedDependencies,
-    ).flatMap(([id, dependency]) => {
-      if (!dependency) return [];
+    const results = await Promise.allSettled(
+      Object.entries(this.instantiatedDependencies).map(
+        async ([id, dependency]) => {
+          if (!dependency) return;
 
-      const wraplets = isWrapletSet(dependency)
-        ? Array.from(dependency)
-        : [dependency];
+          const wraplets: Wraplet[] = isWrapletSet(dependency)
+            ? Array.from(dependency)
+            : [dependency];
 
-      return wraplets.map((wraplet) => ({
-        id: id as keyof M,
-        wraplet,
-      }));
-    });
+          const results = await Promise.allSettled(
+            wraplets.map(async (wraplet) => {
+              if (
+                wraplet.wraplet.status.isInitialized ||
+                wraplet.wraplet.status.isGettingInitialized
+              ) {
+                return;
+              }
 
-    await Promise.all(
-      dependencyInstances.map(async ({ id, wraplet }) => {
-        await wraplet.wraplet.initialize();
+              await wraplet.wraplet.initialize();
 
-        for (const listener of this.initializedDependencyListeners) {
-          await listener(wraplet as DependencyInstance<M, keyof M>, id);
-        }
-      }),
+              const listenerResults = await Promise.allSettled(
+                this.initializedDependencyListeners.map(async (listener) => {
+                  await listener(wraplet as DependencyInstance<M, keyof M>, id);
+                }),
+              );
+
+              this.logAsyncErrors(
+                `dependency "${id}" initialize listener.`,
+                listenerResults,
+              );
+            }),
+          );
+
+          this.logAsyncErrors(
+            `dependency "${id}" initialize callback.`,
+            results,
+          );
+        },
+      ),
     );
+
+    this.logAsyncErrors(`core: initialize error.`, results);
 
     this.statusWritable.isInitialized = true;
     this.statusWritable.isGettingInitialized = false;
@@ -189,8 +208,9 @@ export class DefaultCore<
       );
     }
     if (!this.dependenciesAreInstantiated) {
+      this.directDependencies = dependencies as WrapletDependencies<M>;
       this.instantiatedDependencies = this.wrapDependencies(
-        dependencies as WrapletDependencies<M>,
+        this.directDependencies as WrapletDependencies<M>,
       );
       this.dependenciesAreInstantiated = true;
     }
@@ -266,6 +286,22 @@ export class DefaultCore<
       }
 
       return existingWraplets[0];
+    } else {
+      if (!isWraplet(existingDependency)) {
+        throw new InternalLogicError(
+          "Internal logic error. Expected a Wraplet.",
+        );
+      }
+      let isSame = false;
+      existingDependency.wraplet.accessNode((node) => {
+        if (node === childElement) {
+          isSame = true;
+        }
+      });
+
+      if (!isSame) {
+        return null;
+      }
     }
 
     // Handle single.
@@ -497,10 +533,13 @@ export class DefaultCore<
   ): DestroyListener {
     return (async (w: DependencyInstance<M, K>) => {
       this.removeDependency(w, id);
-
-      for (const listener of this.destroyedDependencyListeners) {
-        await listener(w, id);
-      }
+      const results = await Promise.allSettled(
+        this.destroyedDependencyListeners.map((listener) => listener(w, id)),
+      );
+      this.logAsyncErrors(
+        `dependency "${id}" destroy listener error.`,
+        results,
+      );
     }) as DestroyListener;
   }
 
@@ -706,16 +745,36 @@ export class DefaultCore<
   }
 
   private async destroyDependencies(): Promise<void> {
-    for (const [key, dependency] of Object.entries(this.dependencies)) {
+    for (const [key, dependency] of Object.entries(this.directDependencies)) {
       if (!dependency || !this.map[key]["destructible"]) {
         continue;
       }
+
+      const wraplets: Wraplet[] = [];
+
       if (isWrapletSet(dependency)) {
         for (const item of dependency) {
-          await item.wraplet.destroy();
+          wraplets.push(item);
         }
       } else {
-        await dependency.wraplet.destroy();
+        wraplets.push(dependency);
+      }
+
+      // Run all destroy callbacks in paralell.
+      const results = await Promise.allSettled(
+        wraplets.map(async (wraplet) => {
+          await wraplet.wraplet.destroy();
+        }),
+      );
+
+      this.logAsyncErrors(`dependency "${key}" destroy callback.`, results);
+    }
+  }
+
+  private logAsyncErrors(where: string, results: PromiseSettledResult<void>[]) {
+    for (const result of results) {
+      if (result.status === "rejected") {
+        console.error(`Async error at ${where}`, result.reason);
       }
     }
   }

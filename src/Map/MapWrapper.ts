@@ -3,7 +3,7 @@ import {
   WrapletDependencyMap,
   WrapletDependencyMapWithDefaults,
 } from "../Wraplet/types/WrapletDependencyMap";
-import { fillMapWithDefaults } from "./utils";
+import { fillMapWithDefaults, pathsEqual } from "./utils";
 import { isDynamicMap } from "./types/DynamicMap";
 
 type RecursiveMapKeys<T extends WrapletDependencyMap> = {
@@ -45,7 +45,7 @@ export class MapWrapper<M extends WrapletDependencyMap> {
   }
 
   public getCurrentMap(): WrapletDependencyMapWithDefaults<M> {
-    if (!this.currentMap || this.currentPath != this.path) {
+    if (!this.currentMap || !pathsEqual(this.currentPath, this.path)) {
       this.currentMap = this.resolve(this.path);
       this.currentPath = this.path;
     }
@@ -63,7 +63,7 @@ export class MapWrapper<M extends WrapletDependencyMap> {
     for (const pathPart of path) {
       if (!resultMap[pathPart]) {
         throw new Error(
-          `Invalid path: ${this.path.join(".")} . No such definition.`,
+          `Invalid path: ${path.join(".")} . No such definition.`,
         );
       }
 

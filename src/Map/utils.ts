@@ -38,3 +38,7 @@ export function fillMapWithDefaults<M extends WrapletDependencyMap>(
   }
   return newMap as WrapletDependencyMapWithDefaults<M>;
 }
+
+export function pathsEqual(a: string[], b: string[]) {
+  return a.length === b.length && a.every((v, i) => v === b[i]);
+}
