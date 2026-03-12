@@ -52,11 +52,6 @@ export interface Core<
   initializeDependencies(): Promise<void>;
 
   /**
-   * Synchronize the dependencies instances with the DOM.
-   */
-  syncDependencies(): Promise<void>;
-
-  /**
    * Add a listener that will be called when a dependency is initialized.
    */
   addDependencyInitializedListener(

@@ -18,7 +18,6 @@ describe("createWrapletApi", () => {
       node: node,
       initializeDependencies: jest.fn().mockResolvedValue(undefined),
       instantiateDependencies: jest.fn(),
-      syncDependencies: jest.fn(),
       addDependencyDestroyedListener: jest.fn(),
       addDependencyInstantiatedListener: jest.fn(),
       addDependencyInitializedListener: jest.fn(),
