@@ -7,9 +7,6 @@ import {
   addWrapletToNode,
   removeWrapletFromNode,
 } from "../NodeTreeManager/utils";
-import {
-  handleAsyncLifecycleResults
-} from "../utils/handleAsyncLifecycleResults";
 
 export async function initializationStarted<
   N extends Node,
