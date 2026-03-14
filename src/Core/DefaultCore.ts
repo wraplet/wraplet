@@ -1,7 +1,6 @@
 import { WrapletDependencies } from "../Wraplet/types/WrapletDependencies";
 import { Nullable } from "../utils/types/Utils";
 import {
-  DependenciesAreAlreadyDestroyedError,
   DependenciesAreNotAvailableError,
   TooManyChildrenFoundError,
   InternalLogicError,
@@ -9,6 +8,7 @@ import {
   MissingRequiredDependencyError,
   RequiredDependencyDestroyedError,
   UnsupportedNodeTypeError,
+  LifecycleError,
 } from "../errors";
 import { isWraplet, Wraplet } from "../Wraplet/types/Wraplet";
 import {
@@ -37,6 +37,8 @@ import { defaultWrapletCreator } from "./defaultWrapletCreator";
 import { Status, StatusWritable } from "../Wraplet/types/Status";
 import { DependencyLifecycleAsyncListener } from "./types/DependencyLifecycleAsyncListener";
 import { DependencyLifecycleListener } from "./types/DependencyLifecycleListener";
+import { handleAsyncLifecycleResults } from "../utils/handleAsyncLifecycleResults";
+import { AsyncResultsLifecycleData } from "../utils/types/AsyncResultsLifecycleData";
 
 type ListenerData = {
   node: Node;
@@ -112,6 +114,10 @@ export class DefaultCore<
    * so the Core has to exist already.
    */
   public async initializeDependencies() {
+    if (this.status.isInitialized) {
+      throw new LifecycleError("Dependencies are already initialized.");
+    }
+
     this.statusWritable.isGettingInitialized = true;
 
     const results = await Promise.allSettled(
@@ -139,18 +145,22 @@ export class DefaultCore<
               }),
             );
 
-            this.logAsyncErrors(
-              `dependency "${id}" initialize listener.`,
-              listenerResults,
+            handleAsyncLifecycleResults(
+              `core's dependency "${id}" initialize listener.`,
+              [{ child: id, results: listenerResults }],
             );
           }),
         );
-
-        this.logAsyncErrors(`dependency "${id}" initialize callback.`, results);
+        handleAsyncLifecycleResults(
+          `core's dependency "${id}" initialize callback.`,
+          [{ child: id, results: results }],
+        );
       }),
     );
 
-    this.logAsyncErrors(`core: initialize error.`, results);
+    handleAsyncLifecycleResults(`core: initialize error.`, [
+      { results: results },
+    ]);
 
     this.statusWritable.isInitialized = true;
     this.statusWritable.isGettingInitialized = false;
@@ -167,6 +177,10 @@ export class DefaultCore<
   }
 
   public instantiateDependencies(): void {
+    if (this.dependenciesAreInstantiated) {
+      throw new LifecycleError("Dependencies are already instantiated.");
+    }
+
     const dependencies: Partial<Nullable<WrapletDependencies<M>>> =
       this.directDependencies;
     // We check if are dealing with the ParentNode object.
@@ -524,9 +538,9 @@ export class DefaultCore<
       const results = await Promise.allSettled(
         this.destroyedDependencyListeners.map((listener) => listener(w, id)),
       );
-      this.logAsyncErrors(
-        `dependency "${id}" destroy listener error.`,
-        results,
+      handleAsyncLifecycleResults(
+        `core's dependency "${id}" destroy listener error.`,
+        [{ child: id, results: results }],
       );
     }) as DestroyListener;
   }
@@ -536,9 +550,7 @@ export class DefaultCore<
    */
   public async destroy(): Promise<void> {
     if (this.statusWritable.isDestroyed) {
-      throw new DependenciesAreAlreadyDestroyedError(
-        "Dependencies are already destroyed.",
-      );
+      throw new LifecycleError("Dependencies are already destroyed.");
     }
     this.statusWritable.isGettingDestroyed = true;
 
@@ -689,6 +701,11 @@ export class DefaultCore<
         }
         return target[name];
       },
+      set: () => {
+        throw new Error(
+          `Dependencies cannot be set directly. Use the 'setExistingInstance' or 'addExistingInstance' methods instead.`,
+        );
+      },
     });
   }
 
@@ -727,6 +744,8 @@ export class DefaultCore<
   }
 
   private async destroyDependencies(): Promise<void> {
+    const allResults: AsyncResultsLifecycleData[] = [];
+
     for (const [key, dependency] of Object.entries(this.directDependencies)) {
       if (!dependency || !this.map[key]["destructible"]) {
         continue;
@@ -749,15 +768,12 @@ export class DefaultCore<
         }),
       );
 
-      this.logAsyncErrors(`dependency "${key}" destroy callback.`, results);
+      allResults.push({ child: key, results });
     }
-  }
 
-  private logAsyncErrors(where: string, results: PromiseSettledResult<void>[]) {
-    for (const result of results) {
-      if (result.status === "rejected") {
-        console.error(`Async error at ${where}`, result.reason);
-      }
-    }
+    handleAsyncLifecycleResults(
+      `core's one of the destroy listeners.`,
+      allResults,
+    );
   }
 }

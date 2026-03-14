@@ -78,18 +78,16 @@ it("destroyWrapletsRecursively", async () => {
         {
           status: this.status,
           destroy: async () => {
-            if (
-              !(await destructionStarted(
-                this.status,
-                this.core,
-                this,
-                destroyListeners,
-              ))
-            ) {
+            if (!(await destructionStarted(this.status, this.core))) {
               return;
             }
             counter();
-            await destructionCompleted(this.status, this.core, this);
+            await destructionCompleted(
+              this.status,
+              this.core,
+              this,
+              destroyListeners,
+            );
           },
           addDestroyListener(callback: DestroyListener) {
             destroyListeners.push(callback);

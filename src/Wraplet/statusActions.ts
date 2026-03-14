@@ -7,6 +7,9 @@ import {
   addWrapletToNode,
   removeWrapletFromNode,
 } from "../NodeTreeManager/utils";
+import {
+  handleAsyncLifecycleResults
+} from "../utils/handleAsyncLifecycleResults";
 
 export async function initializationStarted<
   N extends Node,
@@ -42,14 +45,8 @@ export async function initializationCompleted(
 
 export async function destructionStarted<
   N extends Node,
-  W extends Wraplet<N>,
   M extends WrapletDependencyMap,
->(
-  status: StatusWritable,
-  core: Core<N, M>,
-  wraplet: W,
-  destroyListeners: DestroyListener<W>[],
-): Promise<boolean> {
+>(status: StatusWritable, core: Core<N, M>): Promise<boolean> {
   if (status.isDestroyed) {
     return false;
   }
@@ -70,9 +67,6 @@ export async function destructionStarted<
   }
 
   await core.destroy();
-  for (const listener of [...destroyListeners].reverse()) {
-    await listener(wraplet);
-  }
 
   return true;
 }
@@ -81,9 +75,18 @@ export async function destructionCompleted<
   N extends Node,
   W extends Wraplet<N>,
   M extends WrapletDependencyMap,
->(status: StatusWritable, core: Core<N, M>, wraplet: W): Promise<void> {
+>(
+  status: StatusWritable,
+  core: Core<N, M>,
+  wraplet: W,
+  destroyListeners: DestroyListener<W>[],
+): Promise<void> {
   removeWrapletFromNode(wraplet, core.node);
   status.isGettingDestroyed = false;
   status.isInitialized = false;
   status.isDestroyed = true;
+
+  for (const listener of [...destroyListeners].reverse()) {
+    await listener(wraplet);
+  }
 }

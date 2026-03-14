@@ -10,8 +10,8 @@ export class StorageValidationError extends Error {}
 
 export class TooManyChildrenFoundError extends Error {}
 
-export class DependenciesAreAlreadyDestroyedError extends Error {}
-
 export class InternalLogicError extends Error {}
 
 export class UnsupportedNodeTypeError extends Error {}
+
+export class LifecycleError extends Error {}

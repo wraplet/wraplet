@@ -620,18 +620,16 @@ describe("AbstractWraplet", () => {
         }
 
         async destroy(): Promise<void> {
-          if (
-            !(await destructionStarted(
-              this.status,
-              this.core,
-              this,
-              this.destroyListeners,
-            ))
-          ) {
+          if (!(await destructionStarted(this.status, this.core))) {
             return;
           }
           destroyParent();
-          await destructionCompleted(this.status, this.core, this);
+          await destructionCompleted(
+            this.status,
+            this.core,
+            this,
+            this.destroyListeners,
+          );
         }
 
         getDependency() {
@@ -665,18 +663,16 @@ describe("AbstractWraplet", () => {
         }
 
         public async destroy(): Promise<void> {
-          if (
-            !(await destructionStarted(
-              this.status,
-              this.core,
-              this,
-              this.destroyListeners,
-            ))
-          ) {
+          if (!(await destructionStarted(this.status, this.core))) {
             return;
           }
           // Do nothing.
-          await destructionCompleted(this.status, this.core, this);
+          await destructionCompleted(
+            this.status,
+            this.core,
+            this,
+            this.destroyListeners,
+          );
         }
 
         public async initialize(): Promise<void> {

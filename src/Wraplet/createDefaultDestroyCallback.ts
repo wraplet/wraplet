@@ -34,14 +34,7 @@ export function createDefaultDestroyCallback<
 
     // @ts-expect-error Default callbacks depend on the status from the outer object for the easier usage.
     const outerStatus: Status = args.status || this.status;
-    if (
-      !(await destructionStarted(
-        outerStatus,
-        args.core,
-        args.wraplet,
-        args.destroyListeners,
-      ))
-    ) {
+    if (!(await destructionStarted(outerStatus, args.core))) {
       return;
     }
 
@@ -49,6 +42,11 @@ export function createDefaultDestroyCallback<
       await customDestroyLogic();
     }
 
-    await destructionCompleted(outerStatus, args.core, args.wraplet);
+    await destructionCompleted(
+      outerStatus,
+      args.core,
+      args.wraplet,
+      args.destroyListeners,
+    );
   };
 }

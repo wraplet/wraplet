@@ -45,16 +45,16 @@ class TestWrapletDependency extends AbstractWraplet {
       {
         status: this.status,
         destroy: async () => {
-          await destructionStarted(
+          await destructionStarted(this.status, this.core);
+
+          funcCounter();
+
+          await destructionCompleted(
             this.status,
             this.core,
             this,
             destroyListeners,
           );
-
-          funcCounter();
-
-          await destructionCompleted(this.status, this.core, this);
         },
       },
       this.wraplet,

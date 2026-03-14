@@ -9,7 +9,6 @@ import {
   WrapletDependencyMap,
 } from "../src";
 import {
-  DependenciesAreAlreadyDestroyedError,
   DependenciesAreNotAvailableError,
   TooManyChildrenFoundError,
   MapError,
@@ -87,113 +86,6 @@ describe("Test DefaultCore", () => {
     expect(() => core.dependencies).toThrow(
       "Wraplet is not yet fully initialized.",
     );
-  });
-
-  it("Test DefaultCore internal error children expected a wraplet set", async () => {
-    const node = document.createElement("div");
-    node.innerHTML = `
-  <div data-something></div>
-  <div data-something></div>
-`;
-
-    const map = {
-      children: {
-        selector: "[data-something]",
-        Class: TestWrapletClass,
-        multiple: true,
-        required: false,
-      },
-    } as const satisfies WrapletDependencyMap;
-
-    const core: Core<Node, typeof map> = new DefaultCore(node, map);
-
-    const func = async () => {
-      core.instantiateDependencies();
-      await core.initializeDependencies();
-      // For an unexplained reason "children" child turned out to be not an array.
-      (core.dependencies as any)["children"] = {
-        isDestroyed: () => false,
-      };
-      core.instantiateDependencies();
-      await core.initializeDependencies();
-    };
-
-    await expect(func).rejects.toThrow(
-      "Internal logic error. Expected a WrapletSet.",
-    );
-  });
-
-  it("Test DefaultCore internal error single dependency expected a Wraplet", async () => {
-    const node = document.createElement("div");
-    node.innerHTML = "<div data-something></div>";
-
-    const map = {
-      child: {
-        selector: "[data-something]",
-        Class: TestWrapletClass,
-        multiple: false,
-        required: false,
-      },
-    } satisfies WrapletDependencyMap;
-
-    const core: Core<Node, typeof map> = new DefaultCore(node, map);
-
-    const func = async () => {
-      core.instantiateDependencies();
-      await core.initializeDependencies();
-      // Corrupt the single dependency to not be a Wraplet.
-      (core as any).directDependencies["child"] = {
-        isDestroyed: () => false,
-      };
-      core.instantiateDependencies();
-      await core.initializeDependencies();
-    };
-
-    await expect(func).rejects.toThrow(
-      "Internal logic error. Expected a Wraplet.",
-    );
-  });
-
-  it("Test DefaultCore single dependency returns null when node changes", async () => {
-    const node = document.createElement("div");
-    node.innerHTML = "<div data-something></div>";
-
-    const map = {
-      child: {
-        selector: "[data-something]",
-        Class: TestWrapletClass,
-        multiple: false,
-        required: false,
-      },
-    } satisfies WrapletDependencyMap;
-
-    const core: Core<Node, typeof map> = new DefaultCore(node, map);
-
-    core.instantiateDependencies();
-    await core.initializeDependencies();
-
-    const firstChild = core.dependencies["child"];
-    if (!firstChild) {
-      throw new Error("Expected firstChild to be exist");
-    }
-
-    // Replace the child element with a new one so the existing wraplet wraps a different node.
-    node.innerHTML = "<div data-something></div>";
-
-    core.instantiateDependencies();
-    await core.initializeDependencies();
-
-    // The new dependency should be a different instance since the node changed.
-    const secondChild = core.dependencies["child"];
-    if (!secondChild) {
-      throw new Error("Expected secondChild to be exist");
-    }
-    expect(secondChild).not.toBe(firstChild);
-
-    // Destroying the old (replaced) wraplet should not nullify the new dependency,
-    // because directDependencies[id] !== firstChild anymore.
-    await firstChild.wraplet.destroy();
-    expect(core.dependencies["child"]).toBe(secondChild);
   });
 
   it("Test DefaultCore child without selector", async () => {
@@ -337,23 +229,6 @@ describe("Test DefaultCore", () => {
     await core.initializeDependencies();
     expect(func).toHaveBeenCalledTimes(2);
     expect(funcInitialized).toHaveBeenCalledTimes(2);
-    const newChildrenItem = document.createElement("div");
-    newChildrenItem.setAttribute("data-children", "");
-    node.appendChild(newChildrenItem);
-
-    core.instantiateDependencies();
-    await core.initializeDependencies();
-
-    expect(func).toHaveBeenCalledTimes(3);
-
-    const newChildItem = document.createElement("div");
-    newChildrenItem.setAttribute("data-child", "");
-    node.appendChild(newChildItem);
-
-    core.instantiateDependencies();
-    await core.initializeDependencies();
-
-    expect(func).toHaveBeenCalledTimes(4);
   });
 
   it("uses ArgCreator to compute child constructor arguments", async () => {
@@ -467,7 +342,7 @@ describe("Test DefaultCore", () => {
       await core.destroy();
     };
 
-    await expect(func).rejects.toThrow(DependenciesAreAlreadyDestroyedError);
+    await expect(func).rejects.toThrow("Dependencies are already destroyed.");
   });
 
   it("Test DefaultCore user accessing non-existing children", async () => {
@@ -486,6 +361,25 @@ describe("Test DefaultCore", () => {
     };
 
     expect(func).toThrow("Dependency 'child' has not been found.");
+  });
+
+  it("Test DefaultCore user setting dependencies directly", async () => {
+    const node = document.createElement("div");
+
+    const map = {} satisfies WrapletDependencyMap;
+
+    const core: Core<Node, typeof map> = new DefaultCore(node, map);
+
+    core.instantiateDependencies();
+    await core.initializeDependencies();
+
+    const func = () => {
+      (core.dependencies as any)["child"] = "test";
+    };
+
+    expect(func).toThrow(
+      "Dependencies cannot be set directly. Use the 'setExistingInstance' or 'addExistingInstance' methods instead.",
+    );
   });
 
   it("Test DefaultCore with selector callback", async () => {
@@ -510,43 +404,6 @@ describe("Test DefaultCore", () => {
     await core.initializeDependencies();
 
     expect(core.dependencies["children"].size).toBe(2);
-  });
-
-  it("Test DefaultCore multiple instances wrapping the same element error", async () => {
-    const attribute = "data-test-selector";
-    const node = document.createElement("div");
-    node.innerHTML = `<div ${attribute}></div>`;
-
-    const map = {
-      children: {
-        selector: (node: ParentNode) => {
-          return Array.from(node.querySelectorAll(`[${attribute}]`));
-        },
-        Class: TestWrapletClass,
-        multiple: true,
-        required: false,
-      },
-    } as const satisfies WrapletDependencyMap;
-
-    const core: Core<Node, typeof map> = new DefaultCore(node, map);
-    core.instantiateDependencies();
-    await core.initializeDependencies();
-
-    const childElement = node.querySelector(`[${attribute}]`) as Element;
-
-    const secondWraplet = new TestWrapletClass(
-      new DefaultCore(childElement, {}),
-    );
-    core.dependencies["children"].add(secondWraplet);
-
-    const func = async () => {
-      core.instantiateDependencies();
-      await core.initializeDependencies();
-    };
-
-    await expect(func).rejects.toThrow(
-      "Internal logic error. Multiple instances wrapping the same element found in the core.",
-    );
   });
 
   it("Test DefaultCore status getter", () => {
@@ -1030,7 +887,7 @@ describe("Test DefaultCore", () => {
     // other listeners from running.
     expect(depListInst).toHaveBeenCalledTimes(0);
 
-    const runIntializeAndDestroyWithErrorInListener = async () => {
+    const runIntializeWithErrorInListener = async () => {
       const core = new DefaultCore(element, map);
       core.addDependencyInitializedListener(async () => {
         throw new Error("Test error in a listener");
@@ -1039,10 +896,18 @@ describe("Test DefaultCore", () => {
         depListInit();
       });
 
+      core.instantiateDependencies();
+      await core.initializeDependencies();
+    };
+
+    await expect(runIntializeWithErrorInListener).rejects.toThrow();
+
+    const runDestroyWithErrorInListener = async () => {
+      const core = new DefaultCore(element, map);
       core.addDependencyDestroyedListener(async () => {
         throw new Error("Test error in a listener");
       });
-      core.addDependencyInitializedListener(async () => {
+      core.addDependencyDestroyedListener(async () => {
         depListDestroy();
       });
       core.instantiateDependencies();
@@ -1050,332 +915,451 @@ describe("Test DefaultCore", () => {
       await core.destroy();
     };
 
-    await expect(
-      runIntializeAndDestroyWithErrorInListener,
-    ).resolves.not.toThrow();
+    await expect(runDestroyWithErrorInListener).rejects.toThrow();
 
-    // depInit should run twice, regardless of the error in the first listener.
-    // It's once per child.
-    expect(depListInit).toHaveBeenCalledTimes(2);
-
-    // depDestroy should run twice, regardless of the error in the first listener.
-    // It's once per child.
     expect(depListDestroy).toHaveBeenCalledTimes(2);
 
-    // Callbacks registered on API should run once because they are registered
-    // only on a single child.
-    expect(depApiInit).toHaveBeenCalledTimes(1);
+    // Initialize callback depApiInitshould run twice because it's registered
+    // on a single child, but we initialize it in two async functions.
+    expect(depApiInit).toHaveBeenCalledTimes(2);
+
     expect(depApiDestroy).toHaveBeenCalledTimes(1);
   });
 
-  it("has idempotent instantiation and initialization", async () => {
-    const mainAttribute = "data-main-wraplet";
-    const dependenciesAttribute = "data-dependencies-wraplet";
-    const dependencyAttribute = "data-dependency-wraplet";
+  it("Test DefaultCore throws when initializeDependencies is called twice", async () => {
+    const node = document.createElement("div");
+    const core = new DefaultCore(node, {});
+    core.instantiateDependencies();
+    await core.initializeDependencies();
 
-    const funcInstantiateDependencies = jest.fn();
-    const funcInstantiateSingleDependency = jest.fn();
+    await expect(core.initializeDependencies()).rejects.toThrow(
+      "Dependencies are already initialized.",
+    );
+  });
 
-    class TestWrapletDependency implements Wraplet {
-      [WrapletSymbol]: true = true;
-      public wraplet: WrapletApi;
+  it("Test DefaultCore throws when instantiateDependencies is called twice", () => {
+    const node = document.createElement("div");
+    const core = new DefaultCore(node, {});
+    core.instantiateDependencies();
 
-      constructor(private core: Core) {
-        this.wraplet = createRichWrapletApi({
-          core: this.core,
-          wraplet: this,
-        });
-        funcInstantiateDependencies();
-      }
-    }
+    expect(() => core.instantiateDependencies()).toThrow(
+      "Dependencies are already instantiated.",
+    );
+  });
 
-    class TestWrapletSingleDependency implements Wraplet {
-      [WrapletSymbol]: true = true;
-      public wraplet: WrapletApi;
+  it("Test DefaultCore skips already initialized wraplet during initializeDependencies", async () => {
+    const node = document.createElement("div");
+    node.innerHTML = "<div data-child></div>";
 
-      constructor(private core: Core) {
-        this.wraplet = createRichWrapletApi({
-          core: this.core,
-          wraplet: this,
-        });
-        funcInstantiateSingleDependency();
-      }
-    }
-
-    const dependenciesMap = {
-      dependencies: {
-        selector: `[${dependenciesAttribute}]`,
-        Class: TestWrapletDependency,
-        multiple: true,
-        required: true,
-      },
-      singleDependency: {
-        selector: `[${dependencyAttribute}]`,
-        Class: TestWrapletSingleDependency,
+    const map = {
+      child: {
+        selector: "[data-child]",
+        Class: TestWrapletClass,
         multiple: false,
         required: false,
       },
     } as const satisfies WrapletDependencyMap;
 
-    document.body.innerHTML = `
-<div ${mainAttribute}>
-  <div ${dependenciesAttribute}></div>
-</div>
-`;
+    const core = new DefaultCore(node, map);
+    core.instantiateDependencies();
 
-    const mainElement: HTMLElement | null = document.querySelector(
-      `[${mainAttribute}]`,
-    );
-    if (!mainElement) {
-      throw Error("The main element has not been found.");
+    // Fully initialize the child before core init
+    const child = core.dependencies["child"];
+    expect(child).not.toBeNull();
+    if (child) {
+      await child.wraplet.initialize();
+      expect(child.wraplet.status.isInitialized).toBe(true);
+
+      // Now core.initializeDependencies should skip this already-initialized child (line 137)
+      await core.initializeDependencies();
+      expect(core.status.isInitialized).toBe(true);
     }
-
-    const core = new DefaultCore<HTMLElement, typeof dependenciesMap>(
-      mainElement,
-      dependenciesMap,
-    );
-
-    core.instantiateDependencies();
-    await core.initializeDependencies();
-
-    // Test that re-running instantiation+initialization is idempotent.
-    core.instantiateDependencies();
-    await core.initializeDependencies();
-    expect(core.dependencies["dependencies"].size).toBe(1);
-
-    core.instantiateDependencies();
-    await core.initializeDependencies();
-
-    expect(core.dependencies["dependencies"].size).toBe(1);
-
-    const newDependencyElement = document.createElement("div");
-    newDependencyElement.setAttribute(dependenciesAttribute, "");
-    mainElement.appendChild(newDependencyElement);
-
-    const newSingleDependencyElement = document.createElement("div");
-    newSingleDependencyElement.setAttribute(dependencyAttribute, "");
-    mainElement.appendChild(newSingleDependencyElement);
-
-    function expectations(core: Core<HTMLElement, typeof dependenciesMap>) {
-      // Make sure that "dependencies" has only two elements.
-      expect(core.dependencies["dependencies"].size).toBe(2);
-      // Make sure that only two dependencies wraplets have been initialized.
-      expect(funcInstantiateDependencies).toHaveBeenCalledTimes(2);
-      expect(funcInstantiateSingleDependency).toHaveBeenCalledTimes(1);
-    }
-
-    const topDependenciesBefore = core.dependencies;
-    const dependenciesBefore = core.dependencies["dependencies"];
-
-    // Test that re-running instantiation+initialization is idempotent.
-    core.instantiateDependencies();
-    await core.initializeDependencies();
-    expectations(core);
-    core.instantiateDependencies();
-    await core.initializeDependencies();
-    expectations(core);
-
-    const topDependenciesAfter = core.dependencies;
-    const dependenciesAfter = core.dependencies["dependencies"];
-
-    // We make sure that the arrays didn't change.
-    expect(topDependenciesBefore).toBe(topDependenciesAfter);
-    expect(dependenciesBefore).toBe(dependenciesAfter);
   });
 
-  //  describe("Test DefaultCore syncDependencies", () => {
-  //    it("destroys replaced wraplet in a type-single dependency", async () => {
-  //      const node = document.createElement("div");
-  //      node.innerHTML = "<div data-something></div>";
-  //
-  //      const map = {
-  //        child: {
-  //          selector: "[data-something]",
-  //          Class: TestWrapletClass,
-  //          multiple: false,
-  //          required: false,
-  //        },
-  //      } satisfies WrapletDependencyMap;
-  //
-  //      const core: Core<Node, typeof map> = new DefaultCore(node, map);
-  //
-  //      core.instantiateDependencies();
-  //      await core.initializeDependencies();
-  //
-  //      const firstChild = core.dependencies["child"];
-  //      if (!firstChild) {
-  //        throw new Error("Expected firstChild to be exist");
-  //      }
-  //
-  //      // Replace the child element with a new one so the existing wraplet wraps a different node.
-  //      node.innerHTML = "<div data-something></div>";
-  //
-  //      await core.syncDependencies();
-  //
-  //      // The new dependency should be a different instance since the node changed.
-  //      const secondChild = core.dependencies["child"];
-  //      if (!secondChild) {
-  //        throw new Error("Expected secondChild to be exist");
-  //      }
-  //      expect(secondChild).not.toBe(firstChild);
-  //
-  //      // Technically, there is a racing condition here because the destruction is
-  //      // issued asynchronously.
-  //      // firstChild gets destroyed after being replaced.
-  //      expect(firstChild.wraplet.status.isDestroyed).toBe(true);
-  //      expect(secondChild.wraplet.status.isDestroyed).toBe(false);
-  //    });
-  //
-  //    it("destroys replaced wraplet in a type-multiple dependency", async () => {
-  //      const node = document.createElement("div");
-  //      node.innerHTML = "<div data-something></div><div data-something></div>";
-  //
-  //      const map = {
-  //        children: {
-  //          selector: "[data-something]",
-  //          Class: TestWrapletClass,
-  //          multiple: true,
-  //          required: false,
-  //        },
-  //      } satisfies WrapletDependencyMap;
-  //
-  //      const core: Core<Node, typeof map> = new DefaultCore(node, map);
-  //
-  //      core.instantiateDependencies();
-  //      await core.initializeDependencies();
-  //
-  //      const firstChildren = core.dependencies["children"];
-  //      expect(firstChildren.size).toBe(2);
-  //
-  //      // Replace the child elements with a new one so the existing wraplets wrap different nodes.
-  //      node.innerHTML = "<div data-something></div><div data-something></div>";
-  //
-  //      await core.syncDependencies();
-  //
-  //      // The new dependency should be a different instance since the node changed.
-  //      const secondChildren = core.dependencies["children"];
-  //      if (!secondChildren) {
-  //        throw new Error("Expected secondChildren to exist");
-  //      }
-  //
-  //      expect(secondChildren.size).toBe(2);
-  //      expect(setsDiff(firstChildren, secondChildren).size).toBe(2);
-  //
-  //      for (const child of firstChildren) {
-  //        expect(child.wraplet.status.isDestroyed).toBe(true);
-  //      }
-  //
-  //      for (const child of secondChildren) {
-  //        expect(child.wraplet.status.isDestroyed).toBe(false);
-  //      }
-  //    });
-  //    it("should sync dependencies idempotentently", async () => {
-  //      const mainAttribute = "data-main-wraplet";
-  //      const dependenciesAttribute = "data-dependencies-wraplet";
-  //      const dependencyAttribute = "data-dependency-wraplet";
-  //
-  //      const funcInstantiateDependencies = jest.fn();
-  //      const funcInstantiateSingleDependency = jest.fn();
-  //
-  //      class TestWrapletDependency implements Wraplet {
-  //        [WrapletSymbol]: true = true;
-  //        public wraplet: WrapletApi;
-  //
-  //        constructor(private core: Core) {
-  //          this.wraplet = createRichWrapletApi({
-  //            core: this.core,
-  //            wraplet: this,
-  //          });
-  //          funcInstantiateDependencies();
-  //        }
-  //      }
-  //
-  //      class TestWrapletSingleDependency implements Wraplet {
-  //        [WrapletSymbol]: true = true;
-  //        public wraplet: WrapletApi;
-  //
-  //        constructor(private core: Core) {
-  //          this.wraplet = createRichWrapletApi({
-  //            core: this.core,
-  //            wraplet: this,
-  //          });
-  //          funcInstantiateSingleDependency();
-  //        }
-  //      }
-  //
-  //      const dependenciesMap = {
-  //        dependencies: {
-  //          selector: `[${dependenciesAttribute}]`,
-  //          Class: TestWrapletDependency,
-  //          multiple: true,
-  //          required: true,
-  //        },
-  //        singleDependency: {
-  //          selector: `[${dependencyAttribute}]`,
-  //          Class: TestWrapletSingleDependency,
-  //          multiple: false,
-  //          required: false,
-  //        },
-  //      } as const satisfies WrapletDependencyMap;
-  //
-  //      document.body.innerHTML = `
-  //<div ${mainAttribute}>
-  //    <div ${dependenciesAttribute}></div>
-  //</div>
-  //`;
-  //
-  //      const mainElement: HTMLElement | null = document.querySelector(
-  //        `[${mainAttribute}]`,
-  //      );
-  //      if (!mainElement) {
-  //        throw Error("The main element has not been found.");
-  //      }
-  //
-  //      const core = new DefaultCore<HTMLElement, typeof dependenciesMap>(
-  //        mainElement,
-  //        dependenciesMap,
-  //      );
-  //
-  //      core.instantiateDependencies();
-  //      await core.initializeDependencies();
-  //
-  //      // Test that syncing is idempotent.
-  //      await core.syncDependencies();
-  //      expect(core.dependencies["dependencies"].size).toBe(1);
-  //      await core.syncDependencies();
-  //      expect(core.dependencies["dependencies"].size).toBe(1);
-  //
-  //      const newDependencyElement = document.createElement("div");
-  //      newDependencyElement.setAttribute(dependenciesAttribute, "");
-  //      mainElement.appendChild(newDependencyElement);
-  //
-  //      const newSingleDependencyElement = document.createElement("div");
-  //      newSingleDependencyElement.setAttribute(dependencyAttribute, "");
-  //      mainElement.appendChild(newSingleDependencyElement);
-  //
-  //      function expectations(core: Core<HTMLElement, typeof dependenciesMap>) {
-  //        // Make sure that "dependencies" has only two elements.
-  //        expect(core.dependencies["dependencies"].size).toBe(2);
-  //        // Make sure that only two dependencies wraplets have been initialized.
-  //        expect(funcInstantiateDependencies).toHaveBeenCalledTimes(2);
-  //        expect(funcInstantiateSingleDependency).toHaveBeenCalledTimes(1);
-  //      }
-  //
-  //      const topDependenciesBefore = core.dependencies;
-  //      const dependenciesBefore = core.dependencies["dependencies"];
-  //
-  //      // Test that syncing is idempotent.
-  //      await core.syncDependencies();
-  //      expectations(core);
-  //      await core.syncDependencies();
-  //      expectations(core);
-  //
-  //      const topDependenciesAfter = core.dependencies;
-  //      const dependenciesAfter = core.dependencies["dependencies"];
-  //
-  //      // We make sure that the arrays didn't change.
-  //      expect(topDependenciesBefore).toBe(topDependenciesAfter);
-  //      expect(dependenciesBefore).toBe(dependenciesAfter);
-  //    });
-  //  });
+  it("Test DefaultCore findExistingWraplet reuses existing multiple wraplet", async () => {
+    const node = document.createElement("div");
+    node.innerHTML = "<div data-child></div>";
+
+    const constructorFn = jest.fn();
+
+    class ChildWraplet implements Wraplet {
+      [WrapletSymbol]: true = true;
+      public wraplet: WrapletApi;
+
+      constructor(core: Core) {
+        this.wraplet = createRichWrapletApi({ core, wraplet: this });
+        constructorFn();
+      }
+
+      async onInit() {}
+      async onDestroy() {}
+    }
+
+    const map = {
+      child: {
+        selector: "[data-child]",
+        Class: ChildWraplet,
+        multiple: true,
+        required: false,
+      },
+    } as const satisfies WrapletDependencyMap;
+
+    const core = new DefaultCore(node, map);
+
+    // First, add an existing instance for the same element
+    const childElement = node.querySelector("[data-child]")!;
+    const existingCore = new DefaultCore(childElement, {});
+    const existingWraplet = new ChildWraplet(existingCore);
+    core.addExistingInstance("child", existingWraplet as any);
+
+    // Now instantiate — findExistingWraplet should find the existing one and reuse it
+    core.instantiateDependencies();
+
+    expect(core.dependencies["child"].size).toBe(1);
+    // Constructor called once for the manual instance, not again during instantiation
+    expect(constructorFn).toHaveBeenCalledTimes(1);
+  });
+
+  describe("findExistingWraplet", () => {
+    it("findExistingWraplet returns null for non-matching multiple wraplet element", () => {
+      const node = document.createElement("div");
+      node.innerHTML = "<div data-child></div><div data-child></div>";
+
+      const constructorFn = jest.fn();
+
+      class ChildWraplet implements Wraplet {
+        [WrapletSymbol]: true = true;
+        public wraplet: WrapletApi;
+
+        constructor(core: Core) {
+          this.wraplet = createRichWrapletApi({ core, wraplet: this });
+          constructorFn();
+        }
+      }
+
+      const map = {
+        child: {
+          selector: "[data-child]",
+          Class: ChildWraplet,
+          multiple: true,
+          required: false,
+        },
+      } satisfies WrapletDependencyMap;
+
+      const core = new DefaultCore(node, map);
+
+      // Add an existing instance for a different element (not matched by selector)
+      const externalElement = document.createElement("div");
+      const existingCore = new DefaultCore(externalElement, {});
+      const existingWraplet = new ChildWraplet(existingCore);
+      core.addExistingInstance("child", existingWraplet);
+
+      // Instantiate — findExistingWraplet won't match the external element to any selector result,
+      // so new wraplets will be created for the two [data-child] elements
+      core.instantiateDependencies();
+
+      expect(core.dependencies["child"].size).toBe(3);
+      // 1 from addExistingInstance + 2 new from instantiation
+      expect(constructorFn).toHaveBeenCalledTimes(3);
+    });
+
+    it("findExistingWraplet for single dependency reuses matching wraplet", () => {
+      const node = document.createElement("div");
+      node.innerHTML = "<div data-child></div>";
+
+      const constructorFn = jest.fn();
+
+      class ChildWraplet implements Wraplet {
+        [WrapletSymbol]: true = true;
+        public wraplet: WrapletApi;
+
+        constructor(core: Core) {
+          this.wraplet = createRichWrapletApi({ core, wraplet: this });
+          constructorFn();
+        }
+      }
+
+      const map = {
+        child: {
+          selector: "[data-child]",
+          Class: ChildWraplet,
+          multiple: false,
+          required: false,
+        },
+      } satisfies WrapletDependencyMap;
+
+      const childElement = node.querySelector("[data-child]")!;
+      const core = new DefaultCore(node, map);
+
+      // Manually set up an existing wraplet for the same element via private access
+      const existingCore = new DefaultCore(childElement, {});
+      const existingWraplet = new ChildWraplet(existingCore);
+      const coreAny = core as any;
+      coreAny.directDependencies["child"] = existingWraplet;
+      coreAny.dependenciesAreInstantiated = true;
+
+      // Call findExistingWraplet via instantiateWrapletItem (private)
+      const result = coreAny.findExistingWraplet("child", childElement);
+      expect(result).toBe(existingWraplet);
+    });
+
+    it("findExistingWraplet for single dependency returns null for non-matching node", () => {
+      const node = document.createElement("div");
+      node.innerHTML = "<div data-child></div>";
+
+      class ChildWraplet implements Wraplet {
+        [WrapletSymbol]: true = true;
+        public wraplet: WrapletApi;
+
+        constructor(core: Core) {
+          this.wraplet = createRichWrapletApi({ core, wraplet: this });
+        }
+      }
+
+      const map = {
+        child: {
+          selector: "[data-child]",
+          Class: ChildWraplet,
+          multiple: false,
+          required: false,
+        },
+      } satisfies WrapletDependencyMap;
+
+      const core = new DefaultCore(node, map);
+
+      // Set up an existing wraplet for a DIFFERENT element
+      const differentElement = document.createElement("span");
+      const existingCore = new DefaultCore(differentElement, {});
+      const existingWraplet = new ChildWraplet(existingCore);
+      const coreAny = core as any;
+      coreAny.directDependencies["child"] = existingWraplet;
+
+      const result = coreAny.findExistingWraplet(
+        "child",
+        document.createElement("div"),
+      );
+      expect(result).toBeNull();
+    });
+
+    it("findExistingWraplet throws for multiple instances wrapping same element", () => {
+      const node = document.createElement("div");
+      node.innerHTML = "<div data-child></div>";
+
+      class ChildWraplet implements Wraplet {
+        [WrapletSymbol]: true = true;
+        public wraplet: WrapletApi;
+
+        constructor(core: Core) {
+          this.wraplet = createRichWrapletApi({ core, wraplet: this });
+        }
+      }
+
+      const map = {
+        child: {
+          selector: "[data-child]",
+          Class: ChildWraplet,
+          multiple: true,
+          required: false,
+        },
+      } satisfies WrapletDependencyMap;
+
+      const childElement = node.querySelector("[data-child]")!;
+      const core = new DefaultCore(node, map);
+
+      // Create two wraplets wrapping the same element
+      const core1 = new DefaultCore(childElement, {});
+      const wraplet1 = new ChildWraplet(core1);
+      const core2 = new DefaultCore(childElement, {});
+      const wraplet2 = new ChildWraplet(core2);
+
+      const set = new DefaultWrapletSet();
+      set.add(wraplet1);
+      set.add(wraplet2);
+
+      const coreAny = core as any;
+      coreAny.directDependencies["child"] = set;
+
+      expect(() => coreAny.findExistingWraplet("child", childElement)).toThrow(
+        "Internal logic error. Multiple instances wrapping the same element found in the core.",
+      );
+    });
+
+    it("findExistingWraplet throws InternalLogicError for non-Wraplet single dependency", () => {
+      const node = document.createElement("div");
+
+      const map = {
+        child: {
+          selector: "[data-child]",
+          Class: TestWrapletClass,
+          multiple: false,
+          required: false,
+        },
+      } as const satisfies WrapletDependencyMap;
+
+      const core = new DefaultCore(node, map);
+
+      // Set directDependencies to a non-Wraplet value for a single dep
+      const coreAny = core as any;
+      coreAny.directDependencies["child"] = { notAWraplet: true };
+
+      expect(() =>
+        coreAny.findExistingWraplet("child", document.createElement("div")),
+      ).toThrow("Internal logic error. Expected a Wraplet.");
+    });
+
+    it("findExistingWraplet throws InternalLogicError for non-WrapletSet multiple dependency", () => {
+      const node = document.createElement("div");
+
+      class ChildWraplet implements Wraplet {
+        [WrapletSymbol]: true = true;
+        public wraplet: WrapletApi;
+
+        constructor(core: Core) {
+          this.wraplet = createRichWrapletApi({ core, wraplet: this });
+        }
+      }
+
+      const map = {
+        children: {
+          selector: "[data-child]",
+          Class: ChildWraplet,
+          multiple: true,
+          required: false,
+        },
+      } satisfies WrapletDependencyMap;
+
+      const core = new DefaultCore(node, map);
+
+      // Set directDependencies to a non-WrapletSet value for a multiple dep
+      const coreAny = core as any;
+      const fakeCore = new DefaultCore(document.createElement("div"), {});
+      coreAny.directDependencies["children"] = new ChildWraplet(fakeCore);
+
+      expect(() =>
+        coreAny.findExistingWraplet("children", document.createElement("div")),
+      ).toThrow("Internal logic error. Expected a WrapletSet.");
+    });
+  });
+
+  it("Test DefaultCore removeDependency skips nullification when wraplet is different", async () => {
+    const node = document.createElement("div");
+    node.innerHTML = "<div data-child></div>";
+
+    const map = {
+      child: {
+        selector: "[data-child]",
+        Class: TestWrapletClass,
+        multiple: false,
+        required: false,
+      },
+    } satisfies WrapletDependencyMap;
+
+    const core = new DefaultCore(node, map);
+    core.instantiateDependencies();
+    await core.initializeDependencies();
+
+    const originalChild = core.dependencies["child"];
+    expect(originalChild).not.toBeNull();
+
+    // Replace the dependency with a different wraplet instance
+    const differentElement = document.createElement("div");
+    const differentCore = new DefaultCore(differentElement, {});
+    const differentWraplet = new TestWrapletClass(differentCore);
+    const coreAny = core as any;
+    coreAny.directDependencies["child"] = differentWraplet;
+
+    // Destroy the original child — removeDependency should NOT nullify
+    // because directDependencies["child"] !== originalChild anymore
+    await originalChild!.wraplet.destroy();
+
+    // The dependency should still be the different wraplet (not nullified)
+    expect(coreAny.directDependencies["child"]).toBe(differentWraplet);
+  });
+
+  it("Test DefaultCore instantiateDependencies skips assignment when already instantiated", () => {
+    const node = document.createElement("div");
+    node.innerHTML = "<div data-child></div>";
+
+    const map = {
+      child: {
+        selector: "[data-child]",
+        Class: TestWrapletClass,
+        multiple: false,
+        required: false,
+      },
+    } as const satisfies WrapletDependencyMap;
+
+    const core = new DefaultCore(node, map);
+    const coreAny = core as any;
+
+    // First instantiate normally
+    core.instantiateDependencies();
+    const originalDeps = coreAny.directDependencies;
+
+    // Now bypass the guard and call again with dependenciesAreInstantiated=true
+    // to cover the else branch at line 230
+    coreAny.dependenciesAreInstantiated = false;
+    // Set it back to true right before the if check via a getter override
+    const origInstantiateSingle =
+      coreAny.instantiateSingleWrapletDependency.bind(coreAny);
+    coreAny.instantiateSingleWrapletDependency = (
+      ...args: Parameters<typeof origInstantiateSingle>
+    ) => {
+      coreAny.dependenciesAreInstantiated = true;
+      return origInstantiateSingle(...args);
+    };
+
+    core.instantiateDependencies();
+
+    // directDependencies should NOT have been reassigned (else branch)
+    expect(coreAny.directDependencies).toBe(originalDeps);
+  });
+
+  it("Test DefaultCore instantiateWrapletItem reuses existing wraplet", () => {
+    const node = document.createElement("div");
+    node.innerHTML = "<div data-child></div>";
+
+    const constructorFn = jest.fn();
+
+    class ChildWraplet implements Wraplet {
+      [WrapletSymbol]: true = true;
+      public wraplet: WrapletApi;
+
+      constructor(core: Core) {
+        this.wraplet = createRichWrapletApi({ core, wraplet: this });
+        constructorFn();
+      }
+    }
+
+    const map = {
+      child: {
+        selector: "[data-child]",
+        Class: ChildWraplet,
+        multiple: false,
+        required: false,
+      },
+    } satisfies WrapletDependencyMap;
+
+    const childElement = node.querySelector("[data-child]")!;
+    const core = new DefaultCore(node, map);
+
+    // Set up existing wraplet
+    const existingCore = new DefaultCore(childElement, {});
+    const existingWraplet = new ChildWraplet(existingCore);
+    const coreAny = core as any;
+    coreAny.directDependencies["child"] = existingWraplet;
+
+    const mapWrapper = coreAny.mapWrapper;
+
+    // Call instantiateWrapletItem — it should find and reuse the existing wraplet
+    const result = coreAny.instantiateWrapletItem(
+      "child",
+      mapWrapper.getStartingMap()["child"],
+      mapWrapper,
+      childElement,
+    );
+    expect(result).toBe(existingWraplet);
+    // Constructor only called once (for the manual creation)
+    expect(constructorFn).toHaveBeenCalledTimes(1);
+  });
 });

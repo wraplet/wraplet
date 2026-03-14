@@ -14,6 +14,13 @@ export const createWrapletApi = <
 ): WrapletApi<N> & WrapletApiDebug<N> => {
   const nodeAccessors: ((node: N) => void)[] = [];
 
+  const defaultStatus = {
+    isGettingInitialized: false,
+    isDestroyed: false,
+    isInitialized: false,
+    isGettingDestroyed: false,
+  };
+
   const api: Partial<WrapletApi<N> & WrapletApiDebug<N>> = {};
 
   const destroyListeners: DestroyListener<Wraplet<N>>[] = [];
@@ -29,28 +36,20 @@ export const createWrapletApi = <
       args.destroyCallback,
     ).bind(api);
 
-  api.destroy = destroyCallback;
-
   const initializeCallback =
     args.initializeOuterCallback ||
     createDefaultInitializeCallback(
       {
         core: args.core,
-        destroyCallback: api.destroy,
+        destroyCallback: destroyCallback,
         wraplet: args.wraplet,
-        status: api.status,
       },
       args.initializeCallback,
     ).bind(api);
 
   return Object.assign(api, {
     __nodeAccessors: nodeAccessors,
-    status: {
-      isGettingInitialized: false,
-      isDestroyed: false,
-      isInitialized: false,
-      isGettingDestroyed: false,
-    },
+    status: defaultStatus,
     addDestroyListener: (callback: DestroyListener<Wraplet<N>>) => {
       destroyListeners.push(callback);
     },
