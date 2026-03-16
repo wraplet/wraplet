@@ -18,6 +18,7 @@ import {
   removeWrapletFromNode,
 } from "../src/NodeTreeManager/utils";
 import { DestroyListener } from "../src/Core/types/DestroyListener";
+import { handleAsyncLifecycleResults } from "../src/utils/handleAsyncLifecycleResults";
 
 it("Test removing and adding wraplets to nodes", () => {
   const node = document.createElement("div");
@@ -122,4 +123,20 @@ it("destroyWrapletsRecursively", async () => {
   // Now destruction should not be invoked, so the counter shouldn't change.
   await destroyWrapletsRecursively(element);
   expect(counter).toHaveBeenCalledTimes(1);
+});
+
+it("handleAsyncLifecycleResults throws when rejected reason is not an Error instance", () => {
+  expect(() =>
+    handleAsyncLifecycleResults("test", [
+      {
+        child: undefined,
+        results: [
+          {
+            status: "rejected",
+            reason: "not an error",
+          } as PromiseSettledResult<void>,
+        ],
+      },
+    ]),
+  ).toThrow("Error instance expected.");
 });
