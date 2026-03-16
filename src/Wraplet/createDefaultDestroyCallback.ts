@@ -32,10 +32,16 @@ export function createDefaultDestroyCallback<
       throw new Error("Cannot destroy without status available.");
     }
 
-    // @ts-expect-error Default callbacks depend on the status from the outer object for the easier usage.
+    // @ts-expect-error Default callbacks depend on the status from the outer object for easier usage.
     const outerStatus: Status = args.status || this.status;
     if (!(await destructionStarted(outerStatus, args.core))) {
       return;
+    }
+
+    // @ts-expect-error This is optional.
+    if (this && this.__nodeAccessors && Array.isArray(this.__nodeAccessors)) {
+      // @ts-expect-error Clean up the __nodeAccessors array if it's available.
+      this.__nodeAccessors.length = 0;
     }
 
     if (customDestroyLogic) {

@@ -27,7 +27,7 @@ export function fillMapWithDefaults<M extends WrapletDependencyMap>(
   map: M,
 ): WrapletDependencyMapWithDefaults<M> {
   const newMap: Partial<WrapletDependencyMapWithDefaults> = {};
-  for (const id in map) {
+  for (const id of Object.keys(map)) {
     const def = map[id];
     newMap[id] = addDefaultsToDependencyDefinition(def);
 

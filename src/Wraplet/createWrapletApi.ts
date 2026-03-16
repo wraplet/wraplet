@@ -49,6 +49,7 @@ export const createWrapletApi = <
 
   return Object.assign(api, {
     __nodeAccessors: nodeAccessors,
+    __destroyListeners: destroyListeners,
     status: defaultStatus,
     addDestroyListener: (callback: DestroyListener<Wraplet<N>>) => {
       destroyListeners.push(callback);

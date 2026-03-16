@@ -6,11 +6,11 @@ import {
   DefaultCore,
   destructionCompleted,
   destructionStarted,
+  LifecycleError,
   Status,
   WrapletDependencyMap,
 } from "../src";
 import { BaseElementTestWraplet } from "./resources/BaseElementTestWraplet";
-import { RequiredDependencyDestroyedError } from "../src/errors";
 import { DependencyInstance } from "../src/Wraplet/types/DependencyInstance";
 import { Core } from "../src";
 import { DestroyListener } from "../src/Core/types/DestroyListener";
@@ -248,7 +248,7 @@ it("Test that if the required dependency has been destroyed then throw exception
 
   await expect(async () => {
     await dependency.wraplet.destroy();
-  }).rejects.toThrow(RequiredDependencyDestroyedError);
+  }).rejects.toThrow(LifecycleError);
 });
 
 it("Destroy dependency listener", async () => {

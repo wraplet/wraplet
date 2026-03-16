@@ -17,6 +17,7 @@ import { Core } from "../src";
 import { DestroyListener } from "../src/Core/types/DestroyListener";
 import { Wraplet, WrapletSymbol } from "../src/Wraplet/types/Wraplet";
 import { WrapletCreator } from "../src";
+import { StatusWritable } from "../src/Wraplet/types/Status";
 
 describe("Test DefaultCore", () => {
   class TestWrapletClass implements Wraplet {
@@ -362,7 +363,18 @@ describe("Test DefaultCore", () => {
 
     expect(func).toThrow("Dependency 'child' has not been found.");
   });
-
+  it("Test DefaultCore user accessing dependencies with symbol key", async () => {
+    const node = document.createElement("div");
+    const map = {} as const satisfies WrapletDependencyMap;
+    const core: Core<Node, typeof map> = new DefaultCore(node, map);
+    core.instantiateDependencies();
+    await core.initializeDependencies();
+    const func = () => {
+      // eslint-disable-next-line @typescript-eslint/no-unused-expressions
+      (core.dependencies as any)[Symbol("test")];
+    };
+    expect(func).toThrow("Symbol access is not supported for dependencies.");
+  });
   it("Test DefaultCore user setting dependencies directly", async () => {
     const node = document.createElement("div");
 
@@ -1361,5 +1373,79 @@ describe("Test DefaultCore", () => {
     expect(result).toBe(existingWraplet);
     // Constructor only called once (for the manual creation)
     expect(constructorFn).toHaveBeenCalledTimes(1);
+  });
+
+  it("skips dependencies that are already destroyed or getting destroyed", async () => {
+    const fn = jest.fn();
+
+    class WrapletClass implements Wraplet {
+      [WrapletSymbol]: true = true;
+      public wraplet: WrapletApi;
+
+      constructor(core: Core) {
+        this.wraplet = createRichWrapletApi({
+          core: core,
+          wraplet: this,
+          destroyCallback: async () => {
+            fn();
+          },
+        });
+      }
+    }
+
+    const map = {
+      dep1: {
+        selector: "[data-dep1]",
+        Class: WrapletClass,
+        required: false,
+        multiple: false,
+      },
+      dep2: {
+        selector: "[data-dep2]",
+        Class: WrapletClass,
+        required: false,
+        multiple: false,
+      },
+    } satisfies WrapletDependencyMap;
+
+    const element = document.createElement("div");
+    element.innerHTML = `<div data-dep1></div><div data-dep2></div>`;
+    const core = new DefaultCore(element, map);
+
+    core.instantiateDependencies();
+
+    await core.initializeDependencies();
+
+    if (!core.dependencies.dep1) {
+      throw new Error("dep1 not found");
+    }
+
+    if (!core.dependencies.dep2) {
+      throw new Error("dep2 not found");
+    }
+
+    const dep1 = core.dependencies.dep1;
+
+    // We remove the wraplet's default destroy listener that removes it from
+    // the core's dependencies to achieve an incorrect state, but the one
+    // we want to test.
+    (dep1.wraplet as any).__destroyListeners.length = 0;
+
+    // Now we can destroy it.
+    await dep1.wraplet.destroy();
+
+    const dep2 = core.dependencies.dep2;
+
+    // We fake the situation when the wraplet is still during the
+    // destruction process. In reality, it has been NOT destroyed,
+    // so the `fn` shouldn't run for it. But because it's marked
+    // as `isGettingDestroyed` it will be skipped and not
+    // destroyed by the core.
+    (dep2.wraplet.status as StatusWritable).isGettingDestroyed = true;
+
+    await core.destroy();
+
+    // `fn` should run only once: for dep1.
+    expect(fn).toHaveBeenCalledTimes(1);
   });
 });

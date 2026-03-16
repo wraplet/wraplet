@@ -7,6 +7,7 @@ import {
   addWrapletToNode,
   removeWrapletFromNode,
 } from "../NodeTreeManager/utils";
+import { LifecycleError } from "../errors";
 
 export async function initializationStarted<
   N extends Node,
@@ -16,7 +17,12 @@ export async function initializationStarted<
   core: Core<N, M>,
   wraplet: Wraplet<N>,
 ): Promise<boolean> {
-  if (status.isInitialized) {
+  if (
+    status.isInitialized ||
+    status.isGettingInitialized ||
+    status.isDestroyed ||
+    status.isGettingDestroyed
+  ) {
     return false;
   }
   status.isGettingInitialized = true;
@@ -58,9 +64,9 @@ export async function destructionStarted<
 
   if (!status.isInitialized) {
     // If we are not initialized, then we have nothing to do here.
-    status.isDestroyed = true;
-    status.isGettingDestroyed = false;
-    return false;
+    throw new LifecycleError(
+      "Wraplet cannot be destroyed before it is initialized.",
+    );
   }
 
   await core.destroy();
@@ -86,4 +92,6 @@ export async function destructionCompleted<
   for (const listener of [...destroyListeners].reverse()) {
     await listener(wraplet);
   }
+
+  destroyListeners.length = 0;
 }

@@ -2,7 +2,7 @@ import { createRichWrapletApi } from "../../src/Wraplet/createRichWrapletApi";
 import { Core, CoreSymbol } from "../../src/Core/types/Core";
 import { Wraplet, WrapletSymbol } from "../../src/Wraplet/types/Wraplet";
 import { defaultGroupableAttribute } from "../../src/types/Groupable";
-import { Status } from "../../src";
+import { LifecycleError, Status } from "../../src";
 
 describe("createWrapletApi", () => {
   let mockCore: jest.Mocked<Core<any, any>>;
@@ -83,16 +83,17 @@ describe("createWrapletApi", () => {
     expect(mockCore.destroy).toHaveBeenCalledTimes(1);
   });
 
-  it("should handle destruction before initialization", async () => {
+  it("should throw exception if destruction was invoked before initialization", async () => {
     const api = createRichWrapletApi({
       core: mockCore,
       wraplet: mockWraplet,
     });
 
-    // Not initialized yet
-    await api.destroy();
+    const func = async () => {
+      await api.destroy();
+    };
 
-    expect(api.status.isDestroyed).toBe(true);
+    await expect(func).rejects.toThrow(LifecycleError);
 
     // Don't run destroy methods when destroying before initializing.
     expect(mockCore.destroy).not.toHaveBeenCalled();

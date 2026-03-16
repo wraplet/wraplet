@@ -227,13 +227,10 @@ export class DefaultCore<
         id,
       );
     }
-    if (!this.dependenciesAreInstantiated) {
-      this.directDependencies = dependencies as WrapletDependencies<M>;
-      this.wrappedDependencies = this.wrapDependencies(
-        this.directDependencies as WrapletDependencies<M>,
-      );
-      this.dependenciesAreInstantiated = true;
-    }
+    this.wrappedDependencies = this.wrapDependencies(
+      this.directDependencies as WrapletDependencies<M>,
+    );
+    this.dependenciesAreInstantiated = true;
   }
 
   public getChildrenDependencies(): Wraplet[] {
@@ -535,14 +532,39 @@ export class DefaultCore<
   ): DestroyListener {
     return (async (w: DependencyInstance<M, K>) => {
       this.removeDependency(w, id);
+
       const results = await Promise.allSettled(
         this.destroyedDependencyListeners.map((listener) => listener(w, id)),
       );
+
+      // Collect the required-dependency error alongside listener results
+      // so that everything surfaces through the same LifecycleError mechanism.
+      const requiredError = this.validateRequiredDependencyAfterRemoval(id);
+      if (requiredError) {
+        results.push({ status: "rejected", reason: requiredError });
+      }
+
       handleAsyncLifecycleResults(
         `core's dependency "${id}" destroy listener error.`,
         [{ child: id, results: results }],
       );
     }) as DestroyListener;
+  }
+
+  /**
+   * Checks whether a required dependency has been removed while the core
+   * is NOT being destroyed itself. Returns the error instance instead of
+   * throwing, so the caller can route it through the lifecycle error pipeline.
+   */
+  private validateRequiredDependencyAfterRemoval<
+    K extends Extract<keyof M, string>,
+  >(id: K): RequiredDependencyDestroyedError | null {
+    if (this.map[id].required && !this.status.isGettingDestroyed) {
+      return new RequiredDependencyDestroyedError(
+        `Required dependency "${id}" has been destroyed.`,
+      );
+    }
+    return null;
   }
 
   /**
@@ -638,12 +660,6 @@ export class DefaultCore<
       // @ts-expect-error The type is unknown because we are dealing with a generic here.
       this.directDependencies[id] = null;
     }
-
-    if (this.map[id].required && !this.status.isGettingDestroyed) {
-      throw new RequiredDependencyDestroyedError(
-        "Required dependency has been destroyed.",
-      );
-    }
   }
 
   private validateMapItem(
@@ -695,7 +711,10 @@ export class DefaultCore<
     dependencies: WrapletDependencies<M>,
   ): WrapletDependencies<M> {
     return new Proxy(dependencies, {
-      get: (target, name: string) => {
+      get: (target, name: string | symbol) => {
+        if (typeof name === "symbol") {
+          throw new Error(`Symbol access is not supported for dependencies.`);
+        }
         if (!(name in target)) {
           throw new Error(`Dependency '${name}' has not been found.`);
         }
@@ -761,10 +780,16 @@ export class DefaultCore<
         wraplets.push(dependency);
       }
 
-      // Run all destroy callbacks in paralell.
+      // Run all destroy callbacks in parallel.
       const results = await Promise.allSettled(
         wraplets.map(async (wraplet) => {
-          await wraplet.wraplet.destroy();
+          if (
+            wraplet.wraplet.status.isDestroyed ||
+            wraplet.wraplet.status.isGettingDestroyed
+          ) {
+            return;
+          }
+          return await wraplet.wraplet.destroy();
         }),
       );
 

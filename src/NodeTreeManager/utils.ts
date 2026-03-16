@@ -12,13 +12,13 @@ export function isParentNode(node: Node): node is ParentNode {
 export function getWrapletsFromNode<
   N extends Node = Node,
   W extends Wraplet<N> = Wraplet<N>,
->(node: N): WrapletSet<W> {
+>(node: N): WrapletSet<W> | null {
   const wraplets = node.wraplets;
-  if (!isWrapletSet<W>(wraplets) || wraplets.size === 0) {
-    return new DefaultWrapletSet();
+  if (isWrapletSet<W>(wraplets)) {
+    return wraplets;
   }
 
-  return wraplets;
+  return null;
 }
 
 export function removeWrapletFromNode<N extends Node>(
@@ -55,7 +55,10 @@ export async function actOnNodesRecursively(
 export async function destroyWrapletsRecursively(node: Node): Promise<void> {
   await actOnNodesRecursively(node, async (node) => {
     const wraplets = getWrapletsFromNode(node);
-    for (const wraplet of wraplets) {
+    if (!wraplets) {
+      return;
+    }
+    for (const wraplet of [...wraplets]) {
       if (
         wraplet.wraplet.status.isGettingDestroyed ||
         wraplet.wraplet.status.isDestroyed

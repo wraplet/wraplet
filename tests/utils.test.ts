@@ -24,12 +24,16 @@ it("Test removing and adding wraplets to nodes", () => {
   const mock = jest.fn() as unknown as Wraplet<HTMLDivElement>;
 
   const removed = removeWrapletFromNode(mock, node);
-  // Wasn't added so it cannot be removed.
+  // Wasn't added, so it cannot be removed.
   expect(removed).toBe(false);
 
   addWrapletToNode(mock, node);
   expect(node.wraplets).toBeDefined();
   const wraplets = getWrapletsFromNode(node);
+  if (!wraplets) {
+    throw new Error("Wraplets not found.");
+  }
+
   expect(wraplets).toBeInstanceOf(DefaultWrapletSet);
   expect(wraplets.size).toBe(1);
 
@@ -40,6 +44,11 @@ it("Test removing and adding wraplets to nodes", () => {
   expect(wraplets.size).toBe(0);
 });
 
+it("getWrapletsFromNode returns null for node without wraplets", () => {
+  const node = document.createElement("div");
+  const wraplets = getWrapletsFromNode(node);
+  expect(wraplets).toBeNull();
+});
 it("addWrapletToNode", () => {
   const element = document.createElement("div");
   class TestWraplet extends AbstractWraplet {}
