@@ -123,6 +123,8 @@ export interface Core<
   readonly dependencies: WrapletDependencies<M>;
 }
 
-export function isCore(object: unknown): object is Core {
+export function isCore<N extends Node, M extends WrapletDependencyMap>(
+  object: unknown,
+): object is Core<N, M> {
   return is(object, CoreSymbol);
 }

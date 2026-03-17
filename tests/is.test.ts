@@ -9,7 +9,6 @@ import { ArgCreatorSymbol, isArgCreator } from "../src/Core/types/ArgCreator";
 import { DynamicMapSymbol, isDynamicMap } from "../src/Map/types/DynamicMap";
 import { WrapletSetSymbol, isWrapletSet } from "../src/Set/types/WrapletSet";
 import { KeyValueStorageSymbol, isKeyValueStorage } from "../src/storage";
-import { GroupableSymbol, isGroupable } from "../src/types/Groupable";
 
 describe("utils/is and related type guards (positive cases)", () => {
   it("is() returns true for an object tagged with the given symbol", () => {
@@ -47,10 +46,5 @@ describe("utils/is and related type guards (positive cases)", () => {
   it("isKeyValueStorage returns true when object has KeyValueStorageSymbol", () => {
     const obj: unknown = { [KeyValueStorageSymbol]: true };
     expect(isKeyValueStorage(obj)).toBe(true);
-  });
-
-  it("isGroupable returns true when object has GroupableSymbol", () => {
-    const obj: unknown = { [GroupableSymbol]: true };
-    expect(isGroupable(obj)).toBe(true);
   });
 });

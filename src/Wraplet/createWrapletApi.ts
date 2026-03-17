@@ -1,16 +1,16 @@
-import { WrapletDependencyMap } from "./types/WrapletDependencyMap";
 import { DestroyListener } from "../Core/types/DestroyListener";
 import { WrapletApiFactoryArgs } from "./types/WrapletApiFactoryArgs";
 import { WrapletApi, WrapletApiDebug } from "./types/WrapletApi";
-import { createDefaultInitializeCallback } from "../Wraplet/createDefaultInitializeCallback";
-import { createDefaultDestroyCallback } from "../Wraplet/createDefaultDestroyCallback";
+import { createOuterInitializeCallback } from "./createOuterInitializeCallback";
+import { createOuterDestroyCallback } from "./createOuterDestroyCallback";
 import { Wraplet } from "../Wraplet/types/Wraplet";
+import {
+  addWrapletToNode,
+  removeWrapletFromNode,
+} from "../NodeTreeManager/utils";
 
-export const createWrapletApi = <
-  N extends Node,
-  M extends WrapletDependencyMap,
->(
-  args: WrapletApiFactoryArgs<N, M>,
+export const createWrapletApi = <N extends Node>(
+  args: WrapletApiFactoryArgs<N>,
 ): WrapletApi<N> & WrapletApiDebug<N> => {
   const nodeAccessors: ((node: N) => void)[] = [];
 
@@ -25,27 +25,33 @@ export const createWrapletApi = <
 
   const destroyListeners: DestroyListener<Wraplet<N>>[] = [];
 
-  const destroyCallback =
-    args.destroyOuterCallback ||
-    createDefaultDestroyCallback(
-      {
-        core: args.core,
-        wraplet: args.wraplet,
-        destroyListeners: destroyListeners,
-      },
-      args.destroyCallback,
-    ).bind(api);
+  const destroyCallback = createOuterDestroyCallback(
+    {
+      status: defaultStatus,
+      wraplet: args.wraplet,
+      destroyListeners: destroyListeners,
+    },
+    async () => {
+      if (args.destroyCallback) {
+        await args.destroyCallback();
+        removeWrapletFromNode(args.wraplet, args.node);
+      }
+    },
+  ).bind(api);
 
-  const initializeCallback =
-    args.initializeOuterCallback ||
-    createDefaultInitializeCallback(
-      {
-        core: args.core,
-        destroyCallback: destroyCallback,
-        wraplet: args.wraplet,
-      },
-      args.initializeCallback,
-    ).bind(api);
+  const initializeCallback = createOuterInitializeCallback(
+    {
+      status: defaultStatus,
+      destroyCallback: destroyCallback,
+      wraplet: args.wraplet,
+    },
+    async () => {
+      if (args.initializeCallback) {
+        addWrapletToNode(args.wraplet, args.node);
+        await args.initializeCallback();
+      }
+    },
+  ).bind(api);
 
   return Object.assign(api, {
     __nodeAccessors: nodeAccessors,
@@ -61,7 +67,7 @@ export const createWrapletApi = <
 
     accessNode: (callback: (node: N) => void) => {
       nodeAccessors.push(callback);
-      callback(args.core.node);
+      callback(args.node);
     },
   });
 };

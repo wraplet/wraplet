@@ -1,6 +1,6 @@
 import "./setup";
 import {
-  createRichWrapletApi,
+  createCoreDependentWrapletApi,
   DefaultArgCreator,
   DefaultCore,
   DefaultWrapletSet,
@@ -24,7 +24,7 @@ describe("Test DefaultCore", () => {
     [WrapletSymbol]: true = true;
 
     constructor(private core: Core) {
-      this.wraplet = createRichWrapletApi({
+      this.wraplet = createCoreDependentWrapletApi({
         core: core,
         wraplet: this,
       });
@@ -820,7 +820,7 @@ describe("Test DefaultCore", () => {
       [WrapletSymbol]: true = true;
 
       constructor(core: Core) {
-        this.wraplet = createRichWrapletApi({
+        this.wraplet = createCoreDependentWrapletApi({
           core: core,
           wraplet: this,
           initializeCallback: this.onInit.bind(this),
@@ -843,7 +843,7 @@ describe("Test DefaultCore", () => {
       [WrapletSymbol]: true = true;
 
       constructor(core: Core) {
-        this.wraplet = createRichWrapletApi({
+        this.wraplet = createCoreDependentWrapletApi({
           core: core,
           wraplet: this,
         });
@@ -999,7 +999,7 @@ describe("Test DefaultCore", () => {
       public wraplet: WrapletApi;
 
       constructor(core: Core) {
-        this.wraplet = createRichWrapletApi({ core, wraplet: this });
+        this.wraplet = createCoreDependentWrapletApi({ core, wraplet: this });
         constructorFn();
       }
 
@@ -1044,7 +1044,7 @@ describe("Test DefaultCore", () => {
         public wraplet: WrapletApi;
 
         constructor(core: Core) {
-          this.wraplet = createRichWrapletApi({ core, wraplet: this });
+          this.wraplet = createCoreDependentWrapletApi({ core, wraplet: this });
           constructorFn();
         }
       }
@@ -1086,7 +1086,7 @@ describe("Test DefaultCore", () => {
         public wraplet: WrapletApi;
 
         constructor(core: Core) {
-          this.wraplet = createRichWrapletApi({ core, wraplet: this });
+          this.wraplet = createCoreDependentWrapletApi({ core, wraplet: this });
           constructorFn();
         }
       }
@@ -1124,7 +1124,7 @@ describe("Test DefaultCore", () => {
         public wraplet: WrapletApi;
 
         constructor(core: Core) {
-          this.wraplet = createRichWrapletApi({ core, wraplet: this });
+          this.wraplet = createCoreDependentWrapletApi({ core, wraplet: this });
         }
       }
 
@@ -1162,7 +1162,7 @@ describe("Test DefaultCore", () => {
         public wraplet: WrapletApi;
 
         constructor(core: Core) {
-          this.wraplet = createRichWrapletApi({ core, wraplet: this });
+          this.wraplet = createCoreDependentWrapletApi({ core, wraplet: this });
         }
       }
 
@@ -1227,7 +1227,7 @@ describe("Test DefaultCore", () => {
         public wraplet: WrapletApi;
 
         constructor(core: Core) {
-          this.wraplet = createRichWrapletApi({ core, wraplet: this });
+          this.wraplet = createCoreDependentWrapletApi({ core, wraplet: this });
         }
       }
 
@@ -1338,7 +1338,7 @@ describe("Test DefaultCore", () => {
       public wraplet: WrapletApi;
 
       constructor(core: Core) {
-        this.wraplet = createRichWrapletApi({ core, wraplet: this });
+        this.wraplet = createCoreDependentWrapletApi({ core, wraplet: this });
         constructorFn();
       }
     }
@@ -1383,7 +1383,7 @@ describe("Test DefaultCore", () => {
       public wraplet: WrapletApi;
 
       constructor(core: Core) {
-        this.wraplet = createRichWrapletApi({
+        this.wraplet = createCoreDependentWrapletApi({
           core: core,
           wraplet: this,
           destroyCallback: async () => {

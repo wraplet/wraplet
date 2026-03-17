@@ -15,7 +15,7 @@ function formatErrors(
 
     errorString +=
       `${separator} ` +
-      (child ? `Dependency ${child} errors` : `Errors`) +
+      (child ? `Dependency "${child}" errors` : `Errors`) +
       ` ${separator}\n`;
 
     const errors = results.results;

@@ -28,25 +28,21 @@ export { DefaultWrapletSet } from "./Set/DefaultWrapletSet";
 // Wraplet
 export type { Wraplet } from "./Wraplet/types/Wraplet";
 export type { WrapletApi, WrapletApiDebug } from "./Wraplet/types/WrapletApi";
-export type { RichWrapletApi } from "./Wraplet/types/RichWrapletApi";
+export type { DependentWrapletApi } from "./Wraplet/types/DependentWrapletApi";
 export type { WrapletApiFactoryArgs } from "./Wraplet/types/WrapletApiFactoryArgs";
 export type { RichWrapletApiFactoryArgs } from "./Wraplet/types/RichWrapletApiFactoryArgs";
 export type { Status } from "./Wraplet/types/Status";
 
 export { isWraplet, WrapletSymbol } from "./Wraplet/types/Wraplet";
 
-export * from "./Wraplet/createRichWrapletApi";
+export * from "./Wraplet/createCoreDependentWrapletApi";
 export * from "./Wraplet/createWrapletApi";
 export * from "./Wraplet/statusActions";
-export * from "./Wraplet/customizeDefaultWrapletApi";
-export { createDefaultDestroyCallback } from "./Wraplet/createDefaultDestroyCallback";
-export { createDefaultInitializeCallback } from "./Wraplet/createDefaultInitializeCallback";
+export { createOuterDestroyCallback } from "./Wraplet/createOuterDestroyCallback";
+export { createOuterInitializeCallback } from "./Wraplet/createOuterInitializeCallback";
 
 // NodeTree
 export type { NodeTreeParent } from "./NodeTreeManager/types/NodeTreeParent";
-
-// Groupable
-export type { Groupable } from "./types/Groupable";
 
 // WrapletDependencyMap
 export type { WrapletDependencyMap } from "./Wraplet/types/WrapletDependencyMap";

@@ -17,4 +17,5 @@ export interface WrapletApi<N extends Node = Node> {
 
 export interface WrapletApiDebug<N extends Node> {
   __nodeAccessors: ((node: N) => void)[];
+  __destroyListeners: DestroyListener<Wraplet<N>>[];
 }

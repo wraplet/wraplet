@@ -2,29 +2,27 @@ import { WrapletDependencyMap } from "./Wraplet/types/WrapletDependencyMap";
 import { WrapletDependencies } from "./Wraplet/types/WrapletDependencies";
 import { Wraplet, WrapletSymbol } from "./Wraplet/types/Wraplet";
 import { DependencyInstance } from "./Wraplet/types/DependencyInstance";
-import { Groupable, GroupableSymbol } from "./types/Groupable";
 import {
   NodeTreeParent,
   NodeTreeParentSymbol,
 } from "./NodeTreeManager/types/NodeTreeParent";
 import { Core, isCore } from "./Core/types/Core";
 import { DefaultCore } from "./Core/DefaultCore";
-import { createRichWrapletApi } from "./Wraplet/createRichWrapletApi";
+import { createCoreDependentWrapletApi } from "./Wraplet/createCoreDependentWrapletApi";
 import { Constructable } from "./utils/types/Utils";
 import { UnsupportedNodeTypeError } from "./errors";
-import { RichWrapletApi } from "./Wraplet/types/RichWrapletApi";
+import { DependentWrapletApi } from "./Wraplet/types/DependentWrapletApi";
 
 export abstract class AbstractWraplet<
   N extends Node = Node,
   M extends WrapletDependencyMap = {},
 >
-  implements Wraplet<N>, Groupable, NodeTreeParent
+  implements Wraplet<N>, NodeTreeParent
 {
   public [WrapletSymbol]: true = true;
-  public [GroupableSymbol]: true = true;
   public [NodeTreeParentSymbol]: true = true;
 
-  public wraplet: RichWrapletApi<N>;
+  public wraplet: DependentWrapletApi<N>;
 
   constructor(protected core: Core<N, M>) {
     if (!isCore(core)) {
@@ -74,7 +72,7 @@ export abstract class AbstractWraplet<
 
     core.instantiateDependencies();
 
-    this.wraplet = createRichWrapletApi<N, M>({
+    this.wraplet = createCoreDependentWrapletApi<N, M>({
       core: this.core,
       wraplet: this,
       initializeCallback: initializeCallback,

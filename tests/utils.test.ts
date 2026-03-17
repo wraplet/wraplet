@@ -2,12 +2,10 @@ import "./setup";
 import {
   AbstractWraplet,
   Core,
-  customizeDefaultWrapletApi,
+  createCoreDependentWrapletApi,
   DefaultCore,
   DefaultWrapletSet,
   destroyWrapletsRecursively,
-  destructionCompleted,
-  destructionStarted,
   getWrapletsFromNode,
   Status,
   Wraplet,
@@ -17,7 +15,6 @@ import {
   addWrapletToNode,
   removeWrapletFromNode,
 } from "../src/NodeTreeManager/utils";
-import { DestroyListener } from "../src/Core/types/DestroyListener";
 import { handleAsyncLifecycleResults } from "../src/utils/handleAsyncLifecycleResults";
 
 it("Test removing and adding wraplets to nodes", () => {
@@ -83,28 +80,13 @@ it("destroyWrapletsRecursively", async () => {
     constructor(core: Core<Element>) {
       super(core);
 
-      const destroyListeners: DestroyListener[] = [];
-      this.wraplet = customizeDefaultWrapletApi(
-        {
-          status: this.status,
-          destroy: async () => {
-            if (!(await destructionStarted(this.status, this.core))) {
-              return;
-            }
-            counter();
-            await destructionCompleted(
-              this.status,
-              this.core,
-              this,
-              destroyListeners,
-            );
-          },
-          addDestroyListener(callback: DestroyListener) {
-            destroyListeners.push(callback);
-          },
+      this.wraplet = createCoreDependentWrapletApi({
+        core: core,
+        wraplet: this,
+        destroyCallback: async () => {
+          counter();
         },
-        this.wraplet,
-      );
+      });
     }
   }
 

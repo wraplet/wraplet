@@ -2,10 +2,8 @@ import "./setup";
 
 import {
   AbstractWraplet,
-  customizeDefaultWrapletApi,
+  createCoreDependentWrapletApi,
   DefaultCore,
-  destructionCompleted,
-  destructionStarted,
   LifecycleError,
   Status,
   WrapletDependencyMap,
@@ -13,7 +11,6 @@ import {
 import { BaseElementTestWraplet } from "./resources/BaseElementTestWraplet";
 import { DependencyInstance } from "../src/Wraplet/types/DependencyInstance";
 import { Core } from "../src";
-import { DestroyListener } from "../src/Core/types/DestroyListener";
 
 const funcCounter = jest.fn();
 beforeEach(() => {
@@ -40,25 +37,13 @@ class TestWrapletDependency extends AbstractWraplet {
   constructor(core: Core<Element>) {
     super(core);
 
-    const destroyListeners: DestroyListener[] = [];
-    this.wraplet = customizeDefaultWrapletApi(
-      {
-        status: this.status,
-        destroy: async () => {
-          await destructionStarted(this.status, this.core);
-
-          funcCounter();
-
-          await destructionCompleted(
-            this.status,
-            this.core,
-            this,
-            destroyListeners,
-          );
-        },
+    this.wraplet = createCoreDependentWrapletApi({
+      core: core,
+      wraplet: this,
+      destroyCallback: async () => {
+        funcCounter();
       },
-      this.wraplet,
-    );
+    });
   }
 }
 

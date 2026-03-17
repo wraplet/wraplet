@@ -25,10 +25,11 @@ export function removeWrapletFromNode<N extends Node>(
   wraplet: Wraplet<N>,
   node: N,
 ): boolean {
-  if (!node.wraplets) {
+  const wraplets = getWrapletsFromNode(node);
+  if (!wraplets) {
     return false;
   }
-  return node.wraplets.delete(wraplet);
+  return wraplets.delete(wraplet);
 }
 
 export function addWrapletToNode<N extends Node>(
