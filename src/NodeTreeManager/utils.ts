@@ -1,6 +1,7 @@
 import { Wraplet } from "../Wraplet/types/Wraplet";
 import { DefaultWrapletSet } from "../Set/DefaultWrapletSet";
 import { isWrapletSet, WrapletSet } from "../Set/types/WrapletSet";
+import { createLifecycleAsyncError } from "../utils/createLifecycleAsyncError";
 
 export function isParentNode(node: Node): node is ParentNode {
   return (
@@ -44,9 +45,9 @@ export function addWrapletToNode<N extends Node>(
 
 export async function actOnNodesRecursively(
   node: Node,
-  callback: (node: Node) => Promise<void>,
+  callback: (node: Node) => void,
 ): Promise<void> {
-  await callback(node);
+  callback(node);
   const children = node.childNodes;
   for (const child of children) {
     await actOnNodesRecursively(child, callback);
@@ -54,7 +55,8 @@ export async function actOnNodesRecursively(
 }
 
 export async function destroyWrapletsRecursively(node: Node): Promise<void> {
-  await actOnNodesRecursively(node, async (node) => {
+  const allWraplets: Wraplet[] = [];
+  await actOnNodesRecursively(node, (node) => {
     const wraplets = getWrapletsFromNode(node);
     if (!wraplets) {
       return;
@@ -67,7 +69,16 @@ export async function destroyWrapletsRecursively(node: Node): Promise<void> {
         continue;
       }
 
-      await wraplet.wraplet.destroy();
+      allWraplets.push(wraplet);
     }
   });
+
+  const results = await Promise.allSettled(
+    allWraplets.map((wraplet) => wraplet.wraplet.destroy()),
+  );
+
+  createLifecycleAsyncError(
+    "Some wraplets threw exceptions during destruction",
+    results,
+  );
 }

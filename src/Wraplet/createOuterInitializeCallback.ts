@@ -18,7 +18,7 @@ export function createOuterInitializeCallback<N extends Node>(
 ): () => Promise<void> {
   return async function () {
     const outerStatus: Status = args.status;
-    if (!(await initializationStarted(outerStatus))) {
+    if (!initializationStarted(outerStatus)) {
       return;
     }
 

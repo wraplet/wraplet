@@ -3,9 +3,7 @@ import { DestroyListener } from "../Core/types/DestroyListener";
 import { Wraplet } from "../Wraplet/types/Wraplet";
 import { LifecycleError } from "../errors";
 
-export async function initializationStarted(
-  status: StatusWritable,
-): Promise<boolean> {
+export function initializationStarted(status: StatusWritable): boolean {
   if (
     status.isInitialized ||
     status.isGettingInitialized ||
@@ -33,9 +31,7 @@ export async function initializationCompleted(
   }
 }
 
-export async function destructionStarted(
-  status: StatusWritable,
-): Promise<boolean> {
+export function destructionStarted(status: StatusWritable): boolean {
   if (status.isDestroyed) {
     return false;
   }

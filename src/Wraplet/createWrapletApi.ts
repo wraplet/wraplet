@@ -34,8 +34,8 @@ export const createWrapletApi = <N extends Node>(
     async () => {
       if (args.destroyCallback) {
         await args.destroyCallback();
-        removeWrapletFromNode(args.wraplet, args.node);
       }
+      removeWrapletFromNode(args.wraplet, args.node);
     },
   ).bind(api);
 
@@ -46,8 +46,8 @@ export const createWrapletApi = <N extends Node>(
       wraplet: args.wraplet,
     },
     async () => {
+      addWrapletToNode(args.wraplet, args.node);
       if (args.initializeCallback) {
-        addWrapletToNode(args.wraplet, args.node);
         await args.initializeCallback();
       }
     },
@@ -63,7 +63,10 @@ export const createWrapletApi = <N extends Node>(
 
     initialize: initializeCallback,
 
-    destroy: destroyCallback,
+    destroy: async () => {
+      await destroyCallback();
+      nodeAccessors.length = 0;
+    },
 
     accessNode: (callback: (node: N) => void) => {
       nodeAccessors.push(callback);

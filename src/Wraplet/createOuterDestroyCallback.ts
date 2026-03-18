@@ -19,18 +19,12 @@ export function createOuterDestroyCallback<N extends Node>(
 ): () => Promise<void> {
   return async function () {
     const outerStatus: Status = args.status;
-    if (!(await destructionStarted(outerStatus))) {
+    if (!destructionStarted(outerStatus)) {
       return;
     }
 
     if (destroyLogic) {
       await destroyLogic();
-    }
-
-    // @ts-expect-error This is optional.
-    if (this && this.__nodeAccessors && Array.isArray(this.__nodeAccessors)) {
-      // @ts-expect-error Clean up the __nodeAccessors array if it's available.
-      this.__nodeAccessors.length = 0;
     }
 
     await destructionCompleted(
