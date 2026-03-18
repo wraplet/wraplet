@@ -1,8 +1,6 @@
 import { destroyWrapletsRecursively } from "./utils";
 import { NodeTreeManager } from "./types/NodeTreeManager";
-import {
-  createLifecycleAsyncError
-} from "../utils/createLifecycleAsyncError";
+import { createLifecycleAsyncError } from "../utils/createLifecycleAsyncError";
 
 export type Initializer<CONTEXT> = (
   node: Node,

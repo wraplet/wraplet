@@ -7,7 +7,8 @@ import {
   MapError,
   MissingRequiredDependencyError,
   UnsupportedNodeTypeError,
-  LifecycleError, RequiredDependencyDestroyedError,
+  LifecycleError,
+  RequiredDependencyDestroyedError,
 } from "../errors";
 import { isWraplet, Wraplet } from "../Wraplet/types/Wraplet";
 import {

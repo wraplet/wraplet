@@ -2,8 +2,8 @@ import "./setup";
 
 import {
   AbstractWraplet,
-  DefaultCore, LifecycleAsyncErrors,
-  LifecycleError,
+  DefaultCore,
+  LifecycleAsyncErrors,
   WrapletDependencyMap,
 } from "../src";
 import { BaseElementTestWraplet } from "./resources/BaseElementTestWraplet";
