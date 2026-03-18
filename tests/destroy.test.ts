@@ -2,10 +2,8 @@ import "./setup";
 
 import {
   AbstractWraplet,
-  createCoreDependentWrapletApi,
-  DefaultCore,
+  DefaultCore, LifecycleAsyncErrors,
   LifecycleError,
-  Status,
   WrapletDependencyMap,
 } from "../src";
 import { BaseElementTestWraplet } from "./resources/BaseElementTestWraplet";
@@ -27,23 +25,8 @@ const testWrapletDependencySelectorIndestructibleAttribute =
 const testWrapletDependencySelectorMultipleAttribute =
   "data-test-dependency-selector-multiple";
 class TestWrapletDependency extends AbstractWraplet {
-  status: Status = {
-    isGettingInitialized: false,
-    isInitialized: false,
-    isDestroyed: false,
-    isGettingDestroyed: false,
-  };
-
-  constructor(core: Core<Element>) {
-    super(core);
-
-    this.wraplet = createCoreDependentWrapletApi({
-      core: core,
-      wraplet: this,
-      destroyCallback: async () => {
-        funcCounter();
-      },
-    });
+  protected async onDestroy(): Promise<void> {
+    funcCounter();
   }
 }
 
@@ -231,9 +214,9 @@ it("Test that if the required dependency has been destroyed then throw exception
     throw new Error("Dependency not found.");
   }
 
-  await expect(async () => {
-    await dependency.wraplet.destroy();
-  }).rejects.toThrow(LifecycleError);
+  await expect(dependency.wraplet.destroy).rejects.toThrow(
+    LifecycleAsyncErrors,
+  );
 });
 
 it("Destroy dependency listener", async () => {

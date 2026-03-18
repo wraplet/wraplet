@@ -22,7 +22,6 @@ describe("createCoreDependentWrapletApi", () => {
       addDependencyInitializedListener: jest.fn(),
       destroy: jest.fn().mockResolvedValue(undefined),
       addEventListener: jest.fn(),
-      getChildrenDependencies: jest.fn().mockReturnValue([]),
       setWrapletCreator: jest.fn(),
       setExistingInstance: jest.fn(),
       addExistingInstance: jest.fn(),
@@ -146,17 +145,5 @@ describe("createCoreDependentWrapletApi", () => {
 
     expect(callback).toHaveBeenCalledWith(node);
     expect(api.__nodeAccessors).toContain(callback);
-  });
-
-  it("should return node tree children from core", () => {
-    const childWraplet = {} as Wraplet;
-    mockCore.getChildrenDependencies.mockReturnValue([childWraplet]);
-
-    const api = createCoreDependentWrapletApi({
-      core: mockCore,
-      wraplet: mockWraplet,
-    });
-
-    expect(api.getChildrenDependencies()).toEqual([childWraplet]);
   });
 });

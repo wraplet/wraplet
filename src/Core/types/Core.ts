@@ -5,7 +5,6 @@ import {
   WrapletDependencyMap,
   WrapletDependencyMapWithDefaults,
 } from "../../Wraplet/types/WrapletDependencyMap";
-import { Wraplet } from "../../Wraplet/types/Wraplet";
 import { WrapletCreator } from "./WrapletCreator";
 import { is } from "../../utils/is";
 import { Status } from "../../Wraplet/types/Status";
@@ -107,8 +106,6 @@ export interface Core<
     callback: EventListenerOrEventListenerObject,
     options?: AddEventListenerOptions | boolean,
   ): void;
-
-  getChildrenDependencies(): Wraplet[];
 
   /**
    * Allows for overriding the default wraplet creation process.

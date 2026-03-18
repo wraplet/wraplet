@@ -379,57 +379,6 @@ describe("AbstractWraplet", () => {
     });
   });
 
-  describe("NodeTreeParent", () => {
-    it("should correctly implement the NodeTreeParent interface", async () => {
-      const attribute = "data-test-wraplet";
-      class TestWrapletDependency extends AbstractWraplet<Element> {}
-
-      const map = {
-        dependency1: {
-          selector: `[data-dependency-1]`,
-          multiple: false,
-          Class: TestWrapletDependency,
-          required: true,
-        },
-        dependency2: {
-          selector: `[data-dependency-2]`,
-          multiple: false,
-          Class: TestWrapletDependency,
-          required: true,
-        },
-        dependencies: {
-          selector: `[data-dependencies]`,
-          multiple: true,
-          Class: TestWrapletDependency,
-          required: true,
-        },
-      } as const satisfies WrapletDependencyMap;
-
-      class TestWraplet extends BaseElementTestWraplet<typeof map> {}
-
-      document.body.innerHTML = `
-<div ${attribute}>
-  <div data-dependency-1></div>
-  <div data-dependency-2></div>
-  <div data-dependencies></div>
-  <div data-dependencies></div>
-</div>
-`;
-      const wraplet = TestWraplet.create<typeof map, TestWraplet>(
-        attribute,
-        map,
-      );
-      if (!wraplet) {
-        throw new Error("Wraplets not created.");
-      }
-
-      await wraplet.wraplet.initialize();
-
-      const nodeTreeDependencies = wraplet.wraplet.getChildrenDependencies();
-      expect(nodeTreeDependencies.length).toBe(4);
-    });
-  });
-
   describe("Lifecycle", () => {
     it("should handle destruction scheduled during initialization", async () => {
       class TestWraplet extends AbstractWraplet {}

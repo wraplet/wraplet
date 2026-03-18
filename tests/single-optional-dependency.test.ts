@@ -50,18 +50,4 @@ describe("Test wraplet single optional dependency", () => {
     await wraplet.wraplet.initialize();
     expect(wraplet.getDependency("dependency")?.hasElement()).toBeTruthy();
   });
-
-  it("should return empty node tree dependencies when optional dependency is missing", async () => {
-    document.body.innerHTML = `<div ${testWrapletSelectorAttribute}></div>`;
-    const wraplet = TestWraplet.create<typeof dependenciesMap, TestWraplet>(
-      testWrapletSelectorAttribute,
-      dependenciesMap,
-    );
-    if (!wraplet) {
-      throw Error("Wraplet not initialized.");
-    }
-    await wraplet.wraplet.initialize();
-    expect(wraplet.getDependency("dependency")).toBeNull();
-    expect(wraplet.wraplet.getChildrenDependencies()).toHaveLength(0);
-  });
 });

@@ -42,7 +42,8 @@ export { createOuterDestroyCallback } from "./Wraplet/createOuterDestroyCallback
 export { createOuterInitializeCallback } from "./Wraplet/createOuterInitializeCallback";
 
 // NodeTree
-export type { NodeTreeParent } from "./NodeTreeManager/types/NodeTreeParent";
+export type { NodeTreeManager } from "./NodeTreeManager/types/NodeTreeManager";
+export { DefaultNodeTreeManager } from "./NodeTreeManager/DefaultNodeTreeManager";
 
 // WrapletDependencyMap
 export type { WrapletDependencyMap } from "./Wraplet/types/WrapletDependencyMap";

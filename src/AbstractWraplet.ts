@@ -2,10 +2,6 @@ import { WrapletDependencyMap } from "./Wraplet/types/WrapletDependencyMap";
 import { WrapletDependencies } from "./Wraplet/types/WrapletDependencies";
 import { Wraplet, WrapletSymbol } from "./Wraplet/types/Wraplet";
 import { DependencyInstance } from "./Wraplet/types/DependencyInstance";
-import {
-  NodeTreeParent,
-  NodeTreeParentSymbol,
-} from "./NodeTreeManager/types/NodeTreeParent";
 import { Core, isCore } from "./Core/types/Core";
 import { DefaultCore } from "./Core/DefaultCore";
 import { createCoreDependentWrapletApi } from "./Wraplet/createCoreDependentWrapletApi";
@@ -16,11 +12,8 @@ import { DependentWrapletApi } from "./Wraplet/types/DependentWrapletApi";
 export abstract class AbstractWraplet<
   N extends Node = Node,
   M extends WrapletDependencyMap = {},
->
-  implements Wraplet<N>, NodeTreeParent
-{
+> implements Wraplet<N> {
   public [WrapletSymbol]: true = true;
-  public [NodeTreeParentSymbol]: true = true;
 
   public wraplet: DependentWrapletApi<N>;
 

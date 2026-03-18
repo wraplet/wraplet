@@ -1,46 +1,35 @@
 import { destroyWrapletsRecursively } from "./utils";
 import { NodeTreeManager } from "./types/NodeTreeManager";
-import { Wraplet } from "../Wraplet/types/Wraplet";
-import { WrapletSet } from "../Set/types/WrapletSet";
-import { WrapletSetReadonly } from "../Set/types/WrapletSetReadonly";
-import { DefaultWrapletSet } from "../Set/DefaultWrapletSet";
-import { isNodeTreeParent } from "./types/NodeTreeParent";
+import {
+  createLifecycleAsyncError
+} from "../utils/createLifecycleAsyncError";
 
-export type Initializer = (node: Node) => Promise<Wraplet[]>;
+export type Initializer<CONTEXT> = (
+  node: Node,
+  context?: CONTEXT,
+) => Promise<void>;
 
-export default class DefaultNodeTreeManager implements NodeTreeManager {
-  private initializers: Initializer[] = [];
-  private items: WrapletSet = new DefaultWrapletSet();
+export class DefaultNodeTreeManager<
+  CONTEXT = unknown,
+> implements NodeTreeManager<CONTEXT> {
+  private initializers: Initializer<CONTEXT>[] = [];
 
-  public addWrapletInitializer(callback: Initializer): void {
+  public addNodeInitializer(callback: Initializer<CONTEXT>): void {
     this.initializers.push(callback);
   }
 
-  public async initializeNodeTree(node: Node): Promise<void> {
-    // Run initializers against the given node.
-    for (const initializer of this.initializers) {
-      const instantiatedWraplets = await initializer(node);
-      for (const instantiatedWraplet of instantiatedWraplets) {
-        this.items.add(instantiatedWraplet);
-        if (isNodeTreeParent(instantiatedWraplet)) {
-          const nodeTreeWraplets =
-            instantiatedWraplet.wraplet.getChildrenDependencies();
-          for (const nodeTreeWraplet of nodeTreeWraplets) {
-            this.items.add(nodeTreeWraplet);
-          }
-        }
-        instantiatedWraplet.wraplet.addDestroyListener(async (wraplet) => {
-          this.items.delete(wraplet);
-        });
-      }
-    }
+  public async initializeNode(node: Node, context?: CONTEXT): Promise<void> {
+    const results = await Promise.allSettled(
+      this.initializers.map((initializer) => initializer(node, context)),
+    );
+
+    createLifecycleAsyncError(
+      `There were errors during the node's initialization.`,
+      results,
+    );
   }
 
-  public async destroyNodeTree(node: Node): Promise<void> {
+  public async destroyNode(node: Node): Promise<void> {
     await destroyWrapletsRecursively(node);
-  }
-
-  public getSet(): WrapletSetReadonly {
-    return this.items as unknown as WrapletSetReadonly;
   }
 }

@@ -1,9 +1,7 @@
 import { Initializer } from "../DefaultNodeTreeManager";
-import { WrapletSetReadonly } from "../../Set/types/WrapletSetReadonly";
 
-export interface NodeTreeManager {
-  addWrapletInitializer(callback: Initializer): void;
-  initializeNodeTree(node: Node): Promise<void>;
-  destroyNodeTree(node: Node): Promise<void>;
-  getSet(): WrapletSetReadonly;
+export interface NodeTreeManager<CONTEXT = unknown> {
+  addNodeInitializer(callback: Initializer<CONTEXT>): void;
+  initializeNode(node: Node, context?: CONTEXT): Promise<void>;
+  destroyNode(node: Node): Promise<void>;
 }

@@ -6,15 +6,9 @@ import {
   createElementTree,
   predictElementCount,
 } from "./resources/utils";
-import DefaultNodeTreeManager from "../src/NodeTreeManager/DefaultNodeTreeManager";
-import {
-  AbstractWraplet,
-  Status,
-  WrapletApi,
-  WrapletDependencyMap,
-} from "../src";
+import { DefaultNodeTreeManager } from "../src/NodeTreeManager/DefaultNodeTreeManager";
+import { AbstractWraplet, Status, WrapletDependencyMap } from "../src";
 import { isParentNode } from "../src/NodeTreeManager/utils";
-import { Wraplet, WrapletSymbol } from "../src/Wraplet/types/Wraplet";
 
 it("Test default node tree manager destroy tree", async () => {
   const func = jest.fn();
@@ -41,23 +35,21 @@ it("Test default node tree manager destroy tree", async () => {
 
   const manager: NodeTreeManager = new DefaultNodeTreeManager();
 
-  manager.addWrapletInitializer(async (node) => {
+  manager.addNodeInitializer(async (node) => {
     if (!isParentNode(node)) {
-      return [];
+      return;
     }
 
     const wraplets = TestWraplet.createAll(attribute, {}, node);
     for (const wraplet of wraplets) {
       await wraplet.wraplet.initialize();
     }
-
-    return wraplets;
   });
 
-  await manager.initializeNodeTree(document);
+  await manager.initializeNode(document);
 
   const element = document.querySelector(`[${attribute}]`) as Element;
-  await manager.destroyNodeTree(element);
+  await manager.destroyNode(element);
 
   expect(func).toHaveBeenCalledTimes(2);
 });
@@ -76,7 +68,7 @@ it("Test default node tree manager initialize tree", async () => {
 
   const manager: NodeTreeManager = new DefaultNodeTreeManager();
   const func = jest.fn();
-  manager.addWrapletInitializer(async (node: Node) => {
+  manager.addNodeInitializer(async (node: Node) => {
     if (!isParentNode(node)) {
       throw new Error("Node is not parent node.");
     }
@@ -86,10 +78,9 @@ it("Test default node tree manager initialize tree", async () => {
       throw new Error("Wraplet not created.");
     }
     await wraplet.wraplet.initialize();
-    return [wraplet];
   });
 
-  await manager.initializeNodeTree(element);
+  await manager.initializeNode(element);
 
   if (!element.wraplets) {
     throw new Error("No wraplets found in the element.");
@@ -128,7 +119,7 @@ it("Test wraplet tree manager initialization performance", async () => {
 
   const manager: NodeTreeManager = new DefaultNodeTreeManager();
 
-  manager.addWrapletInitializer(async (node): Promise<Wraplet[]> => {
+  manager.addNodeInitializer(async (node): Promise<void> => {
     if (!isParentNode(node)) {
       throw new Error("Node is not parent node.");
     }
@@ -137,11 +128,10 @@ it("Test wraplet tree manager initialization performance", async () => {
     for (const wraplet of wraplets) {
       await wraplet.wraplet.initialize();
     }
-    return wraplets;
   });
 
   const startTime = performance.now();
-  await manager.initializeNodeTree(tree);
+  await manager.initializeNode(tree);
   const endTime = performance.now();
 
   expect(countNodesRecursively(tree)).toBe(
@@ -150,133 +140,19 @@ it("Test wraplet tree manager initialization performance", async () => {
   expect(endTime - startTime).toBeLessThan(1000);
 });
 
-it("Test searching for wraplets in the node tree manager", async () => {
-  class TestWrapletDependency extends AbstractWraplet<Element> {
-    public getValue(): string | null {
-      return this.node.getAttribute("data-value");
-    }
-  }
+it("Test default node tree manager handles rejected initializer", async () => {
+  const manager: NodeTreeManager = new DefaultNodeTreeManager();
+  const error = new Error("Initializer failed");
 
-  const map = {
-    dependency1: {
-      selector: `[data-dependency-1]`,
-      multiple: false,
-      Class: TestWrapletDependency,
-      required: true,
-    },
-    dependency2: {
-      selector: `[data-dependency-2]`,
-      multiple: false,
-      Class: TestWrapletDependency,
-      required: true,
-    },
-    dependencies: {
-      selector: `[data-dependencies]`,
-      multiple: true,
-      Class: TestWrapletDependency,
-      required: false,
-    },
-  } as const satisfies WrapletDependencyMap;
-
-  class TestWraplet extends AbstractWraplet<Node, typeof map> {
-    public static create(node: ParentNode, attribute: string): TestWraplet[] {
-      return TestWraplet.createWraplets(node, map, attribute);
-    }
-  }
-
-  document.body.innerHTML = `
-<div data-parent>
-    <div data-dependency-1 data-value="1"></div>
-    <div data-dependency-2></div>
-    <div data-dependencies></div>
-    <div data-dependencies></div>
-</div>
-`;
-
-  const manager = new DefaultNodeTreeManager();
-  manager.addWrapletInitializer(async (node: Node) => {
-    if (!isParentNode(node)) {
-      throw new Error("Node is not parent node.");
-    }
-    const wraplets = TestWraplet.create(node, "data-parent");
-    if (!wraplets) {
-      throw new Error("Wraplets not created.");
-    }
-    for (const wraplet of wraplets) {
-      await wraplet.wraplet.initialize();
-    }
-    return wraplets;
+  manager.addNodeInitializer(async () => {
+    throw error;
   });
 
-  await manager.initializeNodeTree(document);
+  const consoleSpy = jest.spyOn(console, "error").mockImplementation();
 
-  const set = manager.getSet();
+  await expect(manager.initializeNode(document)).rejects.toThrow(
+    "There were errors during the node's initialization.",
+  );
 
-  // Test findOne.
-  const wraplet = set.findOne((item) => {
-    return item instanceof TestWraplet;
-  });
-  if (!wraplet) {
-    throw new Error("Wraplet not found.");
-  }
-  expect(wraplet).toBeInstanceOf(TestWraplet);
-
-  // Test find.
-  const items = set.find((item: Wraplet) => {
-    if (item instanceof TestWraplet) {
-      return true;
-    } else if (item instanceof TestWrapletDependency) {
-      return item.getValue() === "1";
-    }
-
-    return false;
-  });
-
-  // We don't use "toHaveLength" because jest would attempt to display values of the properties, of items, which would
-  // result in error because "dependencies" properties access is validated.
-  expect(items.length).toBe(2);
-});
-
-it("Test initializing non-tree-parent wraplet", async () => {
-  class TestWraplet implements Wraplet {
-    [WrapletSymbol]: true = true;
-
-    public get wraplet(): WrapletApi {
-      return {
-        status: {
-          isGettingInitialized: false,
-          isInitialized: true,
-          isDestroyed: false,
-          isGettingDestroyed: false,
-        },
-        accessNode(): void {},
-        async initialize() {},
-        async destroy() {},
-        addDestroyListener(): void {},
-      };
-    }
-  }
-
-  const manager = new DefaultNodeTreeManager();
-  manager.addWrapletInitializer(async (node: Node) => {
-    if (!(node instanceof Document)) {
-      throw new Error("Node is not a Document");
-    }
-    const wraplet = new TestWraplet();
-    await wraplet.wraplet.initialize();
-    return [wraplet];
-  });
-
-  await manager.initializeNodeTree(document);
-
-  const set = manager.getSet();
-
-  // Test findOne.
-  const wraplet = set.findOne((item) => {
-    return item instanceof TestWraplet;
-  });
-  if (!wraplet) {
-    throw new Error("Wraplet not found.");
-  }
-  expect(wraplet).toBeInstanceOf(TestWraplet);
+  consoleSpy.mockRestore();
 });

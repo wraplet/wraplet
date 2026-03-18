@@ -6,9 +6,8 @@ import {
   InternalLogicError,
   MapError,
   MissingRequiredDependencyError,
-  RequiredDependencyDestroyedError,
   UnsupportedNodeTypeError,
-  LifecycleError,
+  LifecycleError, RequiredDependencyDestroyedError,
 } from "../errors";
 import { isWraplet, Wraplet } from "../Wraplet/types/Wraplet";
 import {
@@ -29,7 +28,6 @@ import {
   SelectorCallback,
   WrapletDependencyDefinitionWithDefaults,
 } from "../Wraplet/types/WrapletDependencyDefinition";
-import { NodeTreeParentSymbol } from "../NodeTreeManager/types/NodeTreeParent";
 import { MapWrapper } from "../Map/MapWrapper";
 import { WrapletCreator, WrapletCreatorArgs } from "./types/WrapletCreator";
 import { isArgCreator } from "./types/ArgCreator";
@@ -37,8 +35,9 @@ import { defaultWrapletCreator } from "./defaultWrapletCreator";
 import { Status, StatusWritable } from "../Wraplet/types/Status";
 import { DependencyLifecycleAsyncListener } from "./types/DependencyLifecycleAsyncListener";
 import { DependencyLifecycleListener } from "./types/DependencyLifecycleListener";
-import { handleAsyncLifecycleResults } from "../utils/handleAsyncLifecycleResults";
-import { AsyncResultsLifecycleData } from "../utils/types/AsyncResultsLifecycleData";
+import { ConsoleLogger } from "../Logger/ConsoleLogger";
+import { Logger } from "../Logger/types/Logger";
+import { createLifecycleAsyncError } from "../utils/createLifecycleAsyncError";
 
 type ListenerData = {
   node: Node;
@@ -52,7 +51,7 @@ export class DefaultCore<
   M extends WrapletDependencyMap = {},
 > implements Core<N, M> {
   public [CoreSymbol]: true = true;
-  public [NodeTreeParentSymbol]: true = true;
+  private logger: Logger;
   private dependenciesAreInstantiated: boolean = false;
   private statusWritable: StatusWritable = {
     isDestroyed: false,
@@ -102,8 +101,25 @@ export class DefaultCore<
       throw new MapError("The map provided to the Core is not a valid map.");
     }
 
-    this.processInitOptions(initOptions);
-    this.wrappedDependencies = {};
+    // Process init options.
+    const initOptionsWithDefaults: Required<CoreInitOptions<M>> = Object.assign(
+      this.defaultInitOptions(),
+      initOptions,
+    );
+
+    this.logger = initOptionsWithDefaults.logger;
+
+    for (const listener of initOptionsWithDefaults.dependencyInstantiatedListeners) {
+      this.instantiatedDependencyListeners.push(listener);
+    }
+
+    for (const listener of initOptionsWithDefaults.dependencyInitializedListeners) {
+      this.initializedDependencyListeners.push(listener);
+    }
+
+    for (const listener of initOptionsWithDefaults.dependencyDestroyedListeners) {
+      this.destroyedDependencyListeners.push(listener);
+    }
   }
 
   /**
@@ -140,27 +156,34 @@ export class DefaultCore<
             await wraplet.wraplet.initialize();
 
             const listenerResults = await Promise.allSettled(
-              this.initializedDependencyListeners.map(async (listener) => {
-                await listener(wraplet as DependencyInstance<M, keyof M>, id);
+              this.initializedDependencyListeners.map((listener) => {
+                return listener(wraplet as DependencyInstance<M, keyof M>, id);
               }),
             );
 
-            handleAsyncLifecycleResults(
-              `core's dependency "${id}" initialize listener.`,
-              [{ child: id, results: listenerResults }],
+            createLifecycleAsyncError(
+              `Errors in the core's dependency "${id}" initialize listeners.`,
+              listenerResults,
             );
           }),
         );
-        handleAsyncLifecycleResults(
-          `core's dependency "${id}" initialize callback.`,
-          [{ child: id, results: results }],
+
+        createLifecycleAsyncError(
+          `Error at "${id}" dependency's initialization.`,
+          results,
         );
       }),
     );
 
-    handleAsyncLifecycleResults(`core: initialize error.`, [
-      { results: results },
-    ]);
+    const error = createLifecycleAsyncError(
+      `Error at Core's initialization.`,
+      results,
+      false,
+    );
+    if (error) {
+      this.logger.dumpError(error);
+      throw error;
+    }
 
     this.statusWritable.isInitialized = true;
     this.statusWritable.isGettingInitialized = false;
@@ -231,31 +254,6 @@ export class DefaultCore<
       this.directDependencies as WrapletDependencies<M>,
     );
     this.dependenciesAreInstantiated = true;
-  }
-
-  public getChildrenDependencies(): Wraplet[] {
-    const dependencies: Wraplet[] = [];
-    for (const dependency of Object.values(this.dependencies)) {
-      if (dependency === null) {
-        continue;
-      }
-      if (isWrapletSet(dependency)) {
-        for (const item of dependency) {
-          dependencies.push(item);
-        }
-      } else {
-        dependencies.push(dependency);
-      }
-    }
-
-    // Return only descendants.
-    return dependencies.filter((dependency) => {
-      let result = false;
-      dependency.wraplet.accessNode((childsNode) => {
-        result = this.node.contains(childsNode);
-      });
-      return result;
-    });
   }
 
   private findExistingWraplet(id: keyof M, childElement: Node): Wraplet | null {
@@ -544,9 +542,9 @@ export class DefaultCore<
         results.push({ status: "rejected", reason: requiredError });
       }
 
-      handleAsyncLifecycleResults(
-        `core's dependency "${id}" destroy listener error.`,
-        [{ child: id, results: results }],
+      createLifecycleAsyncError(
+        `Errors in the destruction callbacks of the "${id} dependency."`,
+        results,
       );
     }) as DestroyListener;
   }
@@ -728,77 +726,60 @@ export class DefaultCore<
     });
   }
 
-  private defaultInitOptions(): CoreInitOptions<M> {
+  private defaultInitOptions(): Required<CoreInitOptions<M>> {
     return {
       dependencyInstantiatedListeners: [],
+      dependencyInitializedListeners: [],
       dependencyDestroyedListeners: [],
+      logger: ConsoleLogger.getGlobalLogger(),
     };
   }
 
-  private processInitOptions(
-    initOptionsPartial: Partial<CoreInitOptions<M>>,
-  ): void {
-    const initOptions: CoreInitOptions<M> = Object.assign(
-      this.defaultInitOptions(),
-      initOptionsPartial,
-    );
-
-    if (initOptions.dependencyInstantiatedListeners) {
-      for (const listener of initOptions.dependencyInstantiatedListeners) {
-        this.instantiatedDependencyListeners.push(listener);
-      }
-    }
-
-    if (initOptions.dependencyInitializedListeners) {
-      for (const listener of initOptions.dependencyInitializedListeners) {
-        this.initializedDependencyListeners.push(listener);
-      }
-    }
-
-    if (initOptions.dependencyDestroyedListeners) {
-      for (const listener of initOptions.dependencyDestroyedListeners) {
-        this.destroyedDependencyListeners.push(listener);
-      }
-    }
-  }
-
   private async destroyDependencies(): Promise<void> {
-    const allResults: AsyncResultsLifecycleData[] = [];
-
-    for (const [key, dependency] of Object.entries(this.directDependencies)) {
-      if (!dependency || !this.map[key]["destructible"]) {
-        continue;
-      }
-
-      const wraplets: Wraplet[] = [];
-
-      if (isWrapletSet(dependency)) {
-        for (const item of dependency) {
-          wraplets.push(item);
+    const results = await Promise.allSettled(
+      Object.entries(this.directDependencies).map(async ([id, dependency]) => {
+        if (!dependency || !this.map[id]["destructible"]) {
+          return;
         }
-      } else {
-        wraplets.push(dependency);
-      }
 
-      // Run all destroy callbacks in parallel.
-      const results = await Promise.allSettled(
-        wraplets.map(async (wraplet) => {
-          if (
-            wraplet.wraplet.status.isDestroyed ||
-            wraplet.wraplet.status.isGettingDestroyed
-          ) {
-            return;
+        const wraplets: Wraplet[] = [];
+
+        if (isWrapletSet(dependency)) {
+          for (const item of dependency) {
+            wraplets.push(item);
           }
-          return await wraplet.wraplet.destroy();
-        }),
-      );
+        } else {
+          wraplets.push(dependency);
+        }
 
-      allResults.push({ child: key, results });
-    }
+        const results = await Promise.allSettled(
+          wraplets.map(async (wraplet) => {
+            if (
+              wraplet.wraplet.status.isDestroyed ||
+              wraplet.wraplet.status.isGettingDestroyed
+            ) {
+              return;
+            }
+            return wraplet.wraplet.destroy();
+          }),
+        );
 
-    handleAsyncLifecycleResults(
-      `core's one of the destroy listeners.`,
-      allResults,
+        createLifecycleAsyncError(
+          `Errors during destruction of the "${id}" dependency.`,
+          results,
+        );
+      }),
     );
+
+    const error = createLifecycleAsyncError(
+      `Errors during the dependencies destruction.`,
+      results,
+      false,
+    );
+
+    if (error) {
+      this.logger.dumpError(error);
+      throw error;
+    }
   }
 }

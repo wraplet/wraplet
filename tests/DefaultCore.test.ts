@@ -583,22 +583,6 @@ describe("Test DefaultCore", () => {
     expect(func).toHaveBeenCalledTimes(2);
   });
 
-  it("Test DefaultCore initOptions with empty listeners", async () => {
-    const node = document.createElement("div");
-    const core = new DefaultCore(
-      node,
-      {},
-      {
-        dependencyInstantiatedListeners: undefined,
-        dependencyDestroyedListeners: undefined,
-      },
-    );
-    core.instantiateDependencies();
-    await core.initializeDependencies();
-    await core.destroy();
-    expect(core.status.isDestroyed).toBe(true);
-  });
-
   describe("Test setExistingInstance and addExistingInstance validations", () => {
     it("should throw when setExistingInstance is called on a multiple dependency", () => {
       const element = document.createElement("div");
@@ -809,6 +793,7 @@ describe("Test DefaultCore", () => {
   });
 
   it("handles exceptions in the lifecycle callbacks", async () => {
+    const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation();
     const depListInst = jest.fn();
     const depListInit = jest.fn();
     const depListDestroy = jest.fn();
@@ -911,8 +896,10 @@ describe("Test DefaultCore", () => {
       core.instantiateDependencies();
       await core.initializeDependencies();
     };
-
     await expect(runIntializeWithErrorInListener).rejects.toThrow();
+
+    // Multiple errors result in a single printout.
+    expect(consoleErrorSpy).toHaveBeenCalledTimes(1);
 
     const runDestroyWithErrorInListener = async () => {
       const core = new DefaultCore(element, map);
@@ -936,6 +923,8 @@ describe("Test DefaultCore", () => {
     expect(depApiInit).toHaveBeenCalledTimes(2);
 
     expect(depApiDestroy).toHaveBeenCalledTimes(1);
+
+    consoleErrorSpy.mockRestore();
   });
 
   it("Test DefaultCore throws when initializeDependencies is called twice", async () => {
