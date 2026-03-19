@@ -793,7 +793,7 @@ describe("Test DefaultCore", () => {
   });
 
   it("handles exceptions in the lifecycle callbacks", async () => {
-    const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation();
+    const consoleDirSpy = jest.spyOn(console, "dir").mockImplementation();
     const depListInst = jest.fn();
     const depListInit = jest.fn();
     const depListDestroy = jest.fn();
@@ -899,7 +899,7 @@ describe("Test DefaultCore", () => {
     await expect(runIntializeWithErrorInListener).rejects.toThrow();
 
     // Multiple errors result in a single printout.
-    expect(consoleErrorSpy).toHaveBeenCalledTimes(1);
+    expect(consoleDirSpy).toHaveBeenCalledTimes(1);
 
     const runDestroyWithErrorInListener = async () => {
       const core = new DefaultCore(element, map);
@@ -924,7 +924,7 @@ describe("Test DefaultCore", () => {
 
     expect(depApiDestroy).toHaveBeenCalledTimes(1);
 
-    consoleErrorSpy.mockRestore();
+    consoleDirSpy.mockRestore();
   });
 
   it("Test DefaultCore throws when initializeDependencies is called twice", async () => {

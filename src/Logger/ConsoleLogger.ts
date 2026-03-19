@@ -1,5 +1,4 @@
 import { Logger } from "./types/Logger";
-import * as util from "util";
 
 export class ConsoleLogger implements Logger {
   static #instance: ConsoleLogger = new ConsoleLogger();
@@ -7,9 +6,7 @@ export class ConsoleLogger implements Logger {
   private constructor() {}
 
   public dumpError(error: Error): void {
-    console.error(
-      util.inspect(error, { showHidden: false, depth: null, colors: true }),
-    );
+    console.dir(error, { depth: null });
   }
 
   public static getGlobalLogger(): Logger {
