@@ -1,5 +1,5 @@
 import { StatusWritable } from "../Wraplet/types/Status";
-import { DestroyListener } from "../Core/types/DestroyListener";
+import { DestroyListener } from "../DependencyManager/types/DestroyListener";
 import { Wraplet } from "../Wraplet/types/Wraplet";
 import { LifecycleError } from "../errors";
 

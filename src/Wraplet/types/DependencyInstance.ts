@@ -1,6 +1,7 @@
 import { WrapletDependencyMap } from "./WrapletDependencyMap";
+import { InstantiableReturnType } from "../../utils/types/Utils";
 
 export type DependencyInstance<
   M extends WrapletDependencyMap,
   K extends keyof M = keyof M,
-> = InstanceType<M[K]["Class"]>;
+> = InstantiableReturnType<M[K]["Class"]>;

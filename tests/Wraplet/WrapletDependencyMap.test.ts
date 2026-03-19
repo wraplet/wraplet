@@ -98,8 +98,10 @@ describe("isWrapletChildrenMap", () => {
           multiple: true,
           required: false,
           destructible: true,
-          coreOptions: {},
-          map: {},
+          injector: {
+            data: null,
+            callback: () => {},
+          },
           args: [],
         } satisfies WrapletDependencyDefinitionWithDefaults,
       }),

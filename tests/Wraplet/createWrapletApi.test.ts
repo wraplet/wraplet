@@ -1,10 +1,21 @@
+import { WrapletApi, WrapletSymbol } from "../../src";
 import { createWrapletApi } from "../../src/Wraplet/createWrapletApi";
 import { Wraplet } from "../../src/Wraplet/types/Wraplet";
 
 describe("createWrapletApi", () => {
+  class MockWraplet implements Wraplet {
+    wraplet: WrapletApi;
+    [WrapletSymbol]: true = true;
+
+    constructor() {
+      this.wraplet = jest.fn().mockImplementation() as any;
+    }
+  }
+
+  const mockWraplet = new MockWraplet();
+
   it("should handle initialize without initializeCallback", async () => {
     const mockNode = document.createElement("div");
-    const mockWraplet = {} as Wraplet<HTMLDivElement>;
 
     const api = createWrapletApi({
       node: mockNode,
@@ -18,7 +29,6 @@ describe("createWrapletApi", () => {
 
   it("should handle destroy without destroyCallback", async () => {
     const mockNode = document.createElement("div");
-    const mockWraplet = {} as Wraplet<HTMLDivElement>;
 
     const api = createWrapletApi({
       node: mockNode,
@@ -33,7 +43,6 @@ describe("createWrapletApi", () => {
 
   it("should handle initialize with initializeCallback", async () => {
     const mockNode = document.createElement("div");
-    const mockWraplet = {} as Wraplet<HTMLDivElement>;
     const initializeCallback = jest.fn();
 
     const api = createWrapletApi({
@@ -50,7 +59,6 @@ describe("createWrapletApi", () => {
 
   it("should handle destroy with destroyCallback", async () => {
     const mockNode = document.createElement("div");
-    const mockWraplet = {} as Wraplet<HTMLDivElement>;
     const destroyCallback = jest.fn();
 
     const api = createWrapletApi({
@@ -70,7 +78,6 @@ describe("createWrapletApi", () => {
 
   it("should cleanup private arrays", async () => {
     const mockNode = document.createElement("div");
-    const mockWraplet = {} as Wraplet<HTMLDivElement>;
     const accessNodeCallback = jest.fn();
     const destroyListenerCallback = jest.fn();
 
@@ -91,5 +98,45 @@ describe("createWrapletApi", () => {
 
     expect(api.__nodeAccessors).toHaveLength(0);
     expect(api.__destroyListeners).toHaveLength(0);
+  });
+
+  describe("createWrapletApi arguments validation", () => {
+    it("should throw when wraplet is not a valid wraplet instance", () => {
+      expect(() =>
+        createWrapletApi({
+          node: document.createElement("div"),
+          wraplet: {} as any,
+        }),
+      ).toThrow("Correct wraplet instance has to be provided.");
+    });
+
+    it("should throw when node is not a valid Node instance", () => {
+      expect(() =>
+        createWrapletApi({
+          node: "not-a-node" as any,
+          wraplet: mockWraplet,
+        }),
+      ).toThrow("Correct node has to be provided.");
+    });
+
+    it("should throw when initializeCallback is not a function", () => {
+      expect(() =>
+        createWrapletApi({
+          node: document.createElement("div"),
+          wraplet: mockWraplet,
+          initializeCallback: "not-a-function" as any,
+        }),
+      ).toThrow("initializeCallback has to be a function.");
+    });
+
+    it("should throw when destroyCallback is not a function", () => {
+      expect(() =>
+        createWrapletApi({
+          node: document.createElement("div"),
+          wraplet: mockWraplet,
+          destroyCallback: "not-a-function" as any,
+        }),
+      ).toThrow("destroyCallback has to be a function.");
+    });
   });
 });

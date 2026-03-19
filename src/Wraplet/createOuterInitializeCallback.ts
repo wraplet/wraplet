@@ -1,10 +1,10 @@
 import { Status } from "./types/Status";
-import { WrapletApiFactoryBasicCallback } from "./types/WrapletApiFactoryBasicCallback";
 import {
   initializationCompleted,
   initializationStarted,
 } from "../Wraplet/statusActions";
 import { Wraplet } from "./types/Wraplet";
+import { WrapletApiFactoryBasicCallback } from "./types/WrapletApiFactoryCallbacks";
 
 export type OuterInitializeCallbackArgs<N extends Node> = {
   wraplet: Wraplet<N>;

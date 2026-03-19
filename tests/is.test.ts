@@ -3,10 +3,11 @@ import "./setup";
 import { is } from "../src/utils/is";
 
 // Type guards using the shared `is` helper
-import { CoreSymbol, isCore } from "../src/Core/types/Core";
+import {
+  CoreSymbol,
+  isCore,
+} from "../src/DependencyManager/types/DependencyManager";
 import { WrapletSymbol, isWraplet } from "../src/Wraplet/types/Wraplet";
-import { ArgCreatorSymbol, isArgCreator } from "../src/Core/types/ArgCreator";
-import { DynamicMapSymbol, isDynamicMap } from "../src/Map/types/DynamicMap";
 import { WrapletSetSymbol, isWrapletSet } from "../src/Set/types/WrapletSet";
 import { KeyValueStorageSymbol, isKeyValueStorage } from "../src/storage";
 
@@ -26,16 +27,6 @@ describe("utils/is and related type guards (positive cases)", () => {
   it("isWraplet returns true when object has WrapletSymbol", () => {
     const obj: unknown = { [WrapletSymbol]: true };
     expect(isWraplet(obj)).toBe(true);
-  });
-
-  it("isArgCreator returns true when object has ArgCreatorSymbol", () => {
-    const obj: unknown = { [ArgCreatorSymbol]: true, createArg: jest.fn() };
-    expect(isArgCreator(obj)).toBe(true);
-  });
-
-  it("isDynamicMap returns true when object has DynamicMapSymbol", () => {
-    const obj: unknown = { [DynamicMapSymbol]: true, create: jest.fn() };
-    expect(isDynamicMap(obj)).toBe(true);
   });
 
   it("isWrapletSet returns true when object has WrapletSetSymbol", () => {

@@ -7,7 +7,12 @@ import {
   predictElementCount,
 } from "./resources/utils";
 import { DefaultNodeTreeManager } from "../src/NodeTreeManager/DefaultNodeTreeManager";
-import { AbstractWraplet, Status, WrapletDependencyMap } from "../src";
+import {
+  AbstractDependentWraplet,
+  AbstractWraplet,
+  Status,
+  WrapletDependencyMap,
+} from "../src";
 import { isParentNode } from "../src/NodeTreeManager/utils";
 
 it("Test default node tree manager destroy tree", async () => {
@@ -101,9 +106,9 @@ it("Test wraplet tree manager initialization performance", async () => {
       Class: TestWrapletDependency,
       required: true,
     },
-  } as const satisfies WrapletDependencyMap;
+  } satisfies WrapletDependencyMap;
 
-  class TestWraplet extends AbstractWraplet<Node, typeof map> {
+  class TestWraplet extends AbstractDependentWraplet<Node, typeof map> {
     public static create(node: ParentNode, attribute: string): TestWraplet[] {
       return TestWraplet.createWraplets(node, map, attribute);
     }

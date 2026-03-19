@@ -1,8 +1,8 @@
 import { createOuterInitializeCallback } from "../../src/Wraplet/createOuterInitializeCallback";
-import { Status } from "../../src";
+import { StatusWritable } from "../../src/Wraplet/types/Status";
 
 describe("createOuterInitializeCallback", () => {
-  let status: Status = {
+  let status: StatusWritable = {
     isInitialized: false,
     isGettingInitialized: false,
     isDestroyed: false,
@@ -39,6 +39,26 @@ describe("createOuterInitializeCallback", () => {
 
     expect(customInitializeLogic).toHaveBeenCalledTimes(1);
     expect(status.isInitialized).toBe(true);
+  });
+
+  it("should return early when already initialized", async () => {
+    status.isInitialized = true;
+    const destroyCallback = jest.fn().mockResolvedValue(undefined);
+    const customInitializeLogic = jest.fn().mockResolvedValue(undefined);
+
+    const initializeCallback = createOuterInitializeCallback(
+      {
+        destroyCallback: destroyCallback,
+        status: status,
+        wraplet: mockWrapletApi,
+      },
+      customInitializeLogic,
+    );
+
+    await initializeCallback();
+
+    expect(customInitializeLogic).not.toHaveBeenCalled();
+    expect(status.isGettingInitialized).toBe(false);
   });
 
   it("should work even without custom logic provided", async () => {

@@ -1,14 +1,15 @@
 import "../setup";
 import {
-  DefaultCore,
+  Core,
   isWraplet,
-  MapRepeat,
   Wraplet,
   WrapletApi,
   WrapletDependencyMap,
 } from "../../src";
-import { WrapletSymbol } from "../../src/Wraplet/types/Wraplet";
+import { WrapletSymbol } from "../../src";
 import { BaseElementTestWraplet } from "../resources/BaseElementTestWraplet";
+import { Injector } from "../../src/Injector/types/Injector";
+import { CoreOptions } from "../../src/DependencyManager/types/CoreOptions";
 
 it("Test isWraplet", () => {
   class NoWrapletClass {}
@@ -52,8 +53,8 @@ describe("Test recursive wraplets", () => {
         readonly selector: (node: ParentNode) => Element[];
         readonly Class: typeof TestWraplet;
         readonly multiple: false;
+        readonly injector: Injector<Node, WrapletDependencyMap, CoreOptions>;
         readonly required: false;
-        readonly map: any;
       };
     } = {
       dependency: {
@@ -63,11 +64,11 @@ describe("Test recursive wraplets", () => {
           );
         },
         Class: TestWraplet,
+        injector: Core.createInjector(1),
         multiple: false,
         required: false,
-        map: MapRepeat.create(1),
       },
-    } as const satisfies WrapletDependencyMap;
+    } satisfies WrapletDependencyMap;
 
     document.body.innerHTML = `
 <div ${attribute}>
@@ -116,8 +117,6 @@ describe("Test recursive wraplets", () => {
       M extends WrapletDependencyMap = WrapletDependencyMap,
     > extends BaseElementTestWraplet<M> {}
 
-    // The circular dependency between the map and the TestWrapletDependency confuses TypeScript. That's
-    // why we need to clarify the map's type.
     const map = {
       dependency: {
         selector: (node) => {
@@ -129,7 +128,7 @@ describe("Test recursive wraplets", () => {
         Class: TestWrapletDependency,
         multiple: false,
         required: false,
-        map: {
+        injector: Core.createInjector({
           dependencyParent: {
             selector: (node) => {
               return Array.from(node.children).filter((dependency) =>
@@ -139,11 +138,11 @@ describe("Test recursive wraplets", () => {
             Class: TestWraplet,
             multiple: false,
             required: false,
-            map: MapRepeat.create(2),
+            injector: Core.createInjector(2),
           },
-        },
+        }),
       },
-    } as const satisfies WrapletDependencyMap;
+    } satisfies WrapletDependencyMap;
 
     document.body.innerHTML = `
 <div ${attribute} data-level="1">
@@ -196,7 +195,7 @@ describe("Test recursive wraplets", () => {
     // We make sure that we start from a single instance of the TestWraplet. If we used the
     // "create" method here, then the TestWraplet would be created multiple times – once for each
     // element with the ${attribute}.
-    const core = new DefaultCore(mainElement, map);
+    const core = new Core(mainElement, map);
     const parent1 = new TestWraplet(core);
 
     if (!parent1) {

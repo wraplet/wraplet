@@ -1,4 +1,4 @@
-import { DestroyListener } from "../../Core/types/DestroyListener";
+import { DestroyListener } from "../../DependencyManager/types/DestroyListener";
 
 import { Status } from "./Status";
 import { Wraplet } from "../../Wraplet/types/Wraplet";

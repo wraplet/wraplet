@@ -1,14 +1,14 @@
 import "./setup";
 
 import {
+  AbstractDependentWraplet,
   AbstractWraplet,
-  DefaultCore,
+  Core,
   LifecycleAsyncErrors,
   WrapletDependencyMap,
 } from "../src";
 import { BaseElementTestWraplet } from "./resources/BaseElementTestWraplet";
 import { DependencyInstance } from "../src/Wraplet/types/DependencyInstance";
-import { Core } from "../src";
 
 const funcCounter = jest.fn();
 beforeEach(() => {
@@ -123,10 +123,10 @@ it("Test that dependencies are removed from the nodes after being destroyed", as
 it("Test that listeneres are being detached during destruction", async () => {
   const listener = jest.fn();
   class TestWrapletDependency extends AbstractWraplet {
-    constructor(core: Core) {
-      super(core);
+    constructor(node: Node) {
+      super(node);
 
-      this.core.addEventListener(this.node, "click", () => {
+      this.nodeManager.addListener("click", () => {
         listener();
       });
     }
@@ -140,7 +140,7 @@ it("Test that listeneres are being detached during destruction", async () => {
       multiple: false,
       required: false,
     },
-  } as const satisfies WrapletDependencyMap;
+  } satisfies WrapletDependencyMap;
 
   class TestWraplet extends BaseElementTestWraplet<typeof dependenciesMap> {}
 
@@ -189,7 +189,7 @@ it("Test that if the required dependency has been destroyed then throw exception
       multiple: false,
       required: true,
     },
-  } as const satisfies WrapletDependencyMap;
+  } satisfies WrapletDependencyMap;
 
   class TestWraplet extends BaseElementTestWraplet<typeof dependenciesMap> {}
 
@@ -234,7 +234,7 @@ it("Destroy dependency listener", async () => {
       multiple: false,
       required: false,
     },
-  } as const satisfies WrapletDependencyMap;
+  } satisfies WrapletDependencyMap;
 
   class TestWraplet extends BaseElementTestWraplet<typeof dependenciesMap> {
     protected async onDependencyDestroyed<
@@ -283,7 +283,7 @@ it("Test isDestroyed values", async () => {
       multiple: false,
       required: false,
     },
-  } as const satisfies WrapletDependencyMap;
+  } satisfies WrapletDependencyMap;
 
   class TestWraplet extends BaseElementTestWraplet<typeof dependenciesMap> {
     protected async onDependencyDestroyed() {
@@ -313,10 +313,10 @@ it("Test isDestroyed values", async () => {
 });
 
 it("Test order of invoked destroy listeners is reversed", async () => {
-  class TestWraplet extends AbstractWraplet {}
+  class TestWraplet extends AbstractDependentWraplet {}
 
   const element = document.createElement("div");
-  const core = new DefaultCore(element, {});
+  const core = new Core(element, {});
   const wraplet = new TestWraplet(core);
 
   await wraplet.wraplet.initialize();

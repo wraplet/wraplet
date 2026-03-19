@@ -10,7 +10,7 @@ export type WrapletDependencyMap = {
 export type WrapletDependencyMapWithDefaults<
   M extends WrapletDependencyMap = WrapletDependencyMap,
 > = {
-  [key in keyof M]: WrapletDependencyDefinitionWithDefaults<M[key], M>;
+  [key in keyof M]: WrapletDependencyDefinitionWithDefaults<M[key]>;
 };
 
 export type SingleDependencyKeys<M extends WrapletDependencyMap> = Extract<
@@ -44,7 +44,7 @@ function isDependencyMapItem(item: Record<string, unknown>): boolean {
         "multiple",
         "required",
         "destructible",
-        "coreOptions",
+        "injector",
         "map",
         "args",
       ].includes(key)

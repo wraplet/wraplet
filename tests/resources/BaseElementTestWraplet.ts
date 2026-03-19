@@ -1,15 +1,10 @@
 /* istanbul ignore file */
-import { AbstractWraplet, WrapletDependencyMap } from "../../src";
+import { AbstractDependentWraplet, WrapletDependencyMap } from "../../src";
 import { WrapletDependencies } from "../../src/Wraplet/types/WrapletDependencies";
-import { Core } from "../../src";
 
 export abstract class BaseElementTestWraplet<
   M extends WrapletDependencyMap = WrapletDependencyMap,
-> extends AbstractWraplet<Element, M> {
-  constructor(core: Core<Element, M>) {
-    super(core);
-  }
-
+> extends AbstractDependentWraplet<Element, M> {
   public getDependency<C extends keyof M>(name: C): WrapletDependencies<M>[C] {
     return this.d[name];
   }

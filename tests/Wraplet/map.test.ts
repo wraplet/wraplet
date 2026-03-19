@@ -1,12 +1,16 @@
 import "../setup";
-import { AbstractWraplet, DefaultCore, WrapletDependencyMap } from "../../src";
+import {
+  AbstractDependentWraplet,
+  Core,
+  WrapletDependencyMap,
+} from "../../src";
 import { BaseElementTestWraplet } from "../resources/BaseElementTestWraplet";
 import { MapError } from "../../src/errors";
 
 describe("Test wraplet map", () => {
   const testWrapletSelectorAttribute = "data-test-selector";
 
-  class TestWrapletChild extends AbstractWraplet<any> {}
+  class TestWrapletChild extends AbstractDependentWraplet<any> {}
 
   const childrenMap = {
     children: {
@@ -18,9 +22,12 @@ describe("Test wraplet map", () => {
 
   class TestWraplet extends BaseElementTestWraplet<typeof childrenMap> {}
 
-  class TestNodeWraplet extends AbstractWraplet<Node, typeof childrenMap> {
+  class TestNodeWraplet extends AbstractDependentWraplet<
+    Node,
+    typeof childrenMap
+  > {
     constructor(node: Node) {
-      super(new DefaultCore(node, childrenMap));
+      super(new Core(node, childrenMap));
     }
   }
 

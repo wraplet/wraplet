@@ -20,8 +20,8 @@ import {
 } from "../Wraplet/types/WrapletDependencyMap";
 import { isParentNode } from "../NodeTreeManager/utils";
 import { DependencyInstance } from "../Wraplet/types/DependencyInstance";
-import { CoreInitOptions } from "./types/CoreInitOptions";
-import { Core, CoreSymbol } from "./types/Core";
+import { CoreOptions } from "./types/CoreOptions";
+import { DependencyManager, CoreSymbol } from "./types/DependencyManager";
 import { DestroyListener } from "./types/DestroyListener";
 import { isWrapletSet, WrapletSet } from "../Set/types/WrapletSet";
 import { DefaultWrapletSet } from "../Set/DefaultWrapletSet";
@@ -29,29 +29,21 @@ import {
   SelectorCallback,
   WrapletDependencyDefinitionWithDefaults,
 } from "../Wraplet/types/WrapletDependencyDefinition";
-import { MapWrapper } from "../Map/MapWrapper";
-import { WrapletCreator, WrapletCreatorArgs } from "./types/WrapletCreator";
-import { isArgCreator } from "./types/ArgCreator";
-import { defaultWrapletCreator } from "./defaultWrapletCreator";
 import { Status, StatusWritable } from "../Wraplet/types/Status";
 import { DependencyLifecycleAsyncListener } from "./types/DependencyLifecycleAsyncListener";
 import { DependencyLifecycleListener } from "./types/DependencyLifecycleListener";
 import { ConsoleLogger } from "../Logger/ConsoleLogger";
 import { Logger } from "../Logger/types/Logger";
 import { createLifecycleAsyncError } from "../utils/createLifecycleAsyncError";
+import { isMapTreeBuilder, MapTreeBuilder } from "../Map/MapTreeBuilder";
+import { Injector } from "../Injector/types/Injector";
 
-type ListenerData = {
-  node: Node;
-  eventName: string;
-  callback: EventListenerOrEventListenerObject;
-  options?: AddEventListenerOptions | boolean;
-};
-
-export class DefaultCore<
+export class Core<
   N extends Node = Node,
   M extends WrapletDependencyMap = {},
-> implements Core<N, M> {
+> implements DependencyManager<N, M> {
   public [CoreSymbol]: true = true;
+
   private logger: Logger;
   private dependenciesAreInstantiated: boolean = false;
   private statusWritable: StatusWritable = {
@@ -65,7 +57,7 @@ export class DefaultCore<
     return this.statusWritable;
   }
 
-  public mapWrapper: MapWrapper<M>;
+  private readonly mapTree: MapTreeBuilder<M>;
   private directDependencies: Partial<WrapletDependencies<M>> = {};
   private wrappedDependencies: Partial<WrapletDependencies<M>> = {};
 
@@ -81,44 +73,41 @@ export class DefaultCore<
     M,
     keyof M
   >[] = [];
-  private listeners: ListenerData[] = [];
-
-  private wrapletCreator: WrapletCreator<Node, WrapletDependencyMap> =
-    defaultWrapletCreator;
 
   constructor(
     public node: N,
-    map: M | MapWrapper<M>,
-    initOptions: Partial<CoreInitOptions<M>> = {},
+    map: M | MapTreeBuilder<M>,
+    options: Partial<CoreOptions<M>> = {},
   ) {
     if (!(node instanceof Node)) {
       throw new Error("The node provided to the Core is not a valid node.");
     }
     if (isWrapletDependencyMap(map)) {
-      this.mapWrapper = new MapWrapper(map);
-    } else if (map instanceof MapWrapper) {
-      this.mapWrapper = map;
+      this.mapTree = new MapTreeBuilder<M>();
+      this.mapTree.setMap(map);
+    } else if (isMapTreeBuilder(map)) {
+      this.mapTree = map;
     } else {
       throw new MapError("The map provided to the Core is not a valid map.");
     }
 
     // Process init options.
-    const initOptionsWithDefaults: Required<CoreInitOptions<M>> = Object.assign(
-      this.defaultInitOptions(),
-      initOptions,
+    const optionsWithDefaults: Required<CoreOptions<M>> = Object.assign(
+      this.defaultOptions(),
+      options,
     );
 
-    this.logger = initOptionsWithDefaults.logger;
+    this.logger = optionsWithDefaults.logger;
 
-    for (const listener of initOptionsWithDefaults.dependencyInstantiatedListeners) {
+    for (const listener of optionsWithDefaults.dependencyInstantiatedListeners) {
       this.instantiatedDependencyListeners.push(listener);
     }
 
-    for (const listener of initOptionsWithDefaults.dependencyInitializedListeners) {
+    for (const listener of optionsWithDefaults.dependencyInitializedListeners) {
       this.initializedDependencyListeners.push(listener);
     }
 
-    for (const listener of initOptionsWithDefaults.dependencyDestroyedListeners) {
+    for (const listener of optionsWithDefaults.dependencyDestroyedListeners) {
       this.destroyedDependencyListeners.push(listener);
     }
   }
@@ -197,7 +186,7 @@ export class DefaultCore<
   }
 
   public get map(): WrapletDependencyMapWithDefaults<M> {
-    return this.mapWrapper.getStartingMap() as WrapletDependencyMapWithDefaults<M>;
+    return this.mapTree.getMap();
   }
 
   public instantiateDependencies(): void {
@@ -219,8 +208,6 @@ export class DefaultCore<
       const dependencyDefinition = this.map[id];
       const multiple = dependencyDefinition.multiple;
 
-      const mapWrapper = this.mapWrapper.clone([...this.mapWrapper.path, id]);
-
       this.validateMapItem(id, dependencyDefinition);
       if (multiple) {
         if (!dependencies[id]) {
@@ -231,7 +218,6 @@ export class DefaultCore<
         // We can assert as much because items
         const instantiatedDependencies = this.instantiateMultipleDependencies(
           dependencyDefinition,
-          mapWrapper,
           this.node,
           id,
         );
@@ -246,7 +232,6 @@ export class DefaultCore<
 
       dependencies[id] = this.instantiateSingleWrapletDependency(
         dependencyDefinition,
-        mapWrapper,
         this.node,
         id,
       );
@@ -317,8 +302,7 @@ export class DefaultCore<
   }
 
   private instantiateSingleWrapletDependency<T extends keyof M>(
-    dependencyDefinition: WrapletDependencyDefinitionWithDefaults<M[T], M>,
-    dependencyMap: MapWrapper<WrapletDependencyMapWithDefaults<M>>,
+    dependencyDefinition: WrapletDependencyDefinitionWithDefaults<M[T]>,
     node: ParentNode,
     id: Extract<T, string>,
   ): WrapletDependencies<M>[T] | null {
@@ -354,15 +338,13 @@ export class DefaultCore<
     return this.instantiateWrapletItem<T>(
       id,
       dependencyDefinition,
-      dependencyMap,
       childElement,
     ) as WrapletDependencies<M>[T];
   }
 
   private instantiateWrapletItem<T extends keyof M>(
     id: Extract<T, string>,
-    dependencyDefinition: WrapletDependencyDefinitionWithDefaults<M[T], M>,
-    dependencyMap: MapWrapper<WrapletDependencyMapWithDefaults<M>>,
+    dependencyDefinition: WrapletDependencyDefinitionWithDefaults<M[T]>,
     node: Node,
   ): Wraplet | null {
     // Re-use existing wraplet.
@@ -371,25 +353,16 @@ export class DefaultCore<
       return existingWraplet;
     }
 
-    const wrapletClass = dependencyDefinition.Class;
-    const creatorArgs: WrapletCreatorArgs<Node, WrapletDependencyMap> = {
-      id: id,
-      Class: wrapletClass,
-      element: node,
-      map: dependencyMap,
-      initOptions: dependencyDefinition.coreOptions,
-      args: dependencyDefinition.args,
-    };
-
-    creatorArgs.args = creatorArgs.args.map((arg) => {
-      if (isArgCreator<Node, WrapletDependencyMap>(arg)) {
-        return arg.createArg(creatorArgs);
-      }
-      return arg;
-    });
     let wraplet: Wraplet | null = null;
     try {
-      wraplet = this.wrapletCreator(creatorArgs, this.constructor as any);
+      wraplet = new dependencyDefinition.Class(
+        dependencyDefinition.injector.callback(
+          node,
+          this.mapTree.createChild(id),
+          dependencyDefinition.injector.data,
+        ),
+        ...dependencyDefinition.args,
+      );
     } catch (e) {
       if (e instanceof UnsupportedNodeTypeError) {
         if (!dependencyDefinition.required) {
@@ -411,8 +384,7 @@ export class DefaultCore<
   }
 
   private instantiateMultipleDependencies<T extends keyof M>(
-    dependencyDefinition: WrapletDependencyDefinitionWithDefaults<M[T], M>,
-    dependencyMap: MapWrapper<WrapletDependencyMapWithDefaults<M>>,
+    dependencyDefinition: WrapletDependencyDefinitionWithDefaults<M[T]>,
     node: ParentNode,
     id: Extract<T, string>,
   ): WrapletSet {
@@ -432,7 +404,6 @@ export class DefaultCore<
         wraplet = this.instantiateWrapletItem(
           id,
           dependencyDefinition,
-          dependencyMap,
           childElement,
         );
       }
@@ -461,12 +432,6 @@ export class DefaultCore<
     callback: DependencyLifecycleAsyncListener<M, keyof M>,
   ): void {
     this.initializedDependencyListeners.push(callback);
-  }
-
-  public setWrapletCreator(
-    wrapletCreator: WrapletCreator<Node, WrapletDependencyMap>,
-  ): void {
-    this.wrapletCreator = wrapletCreator;
   }
 
   public setExistingInstance<
@@ -590,17 +555,6 @@ export class DefaultCore<
       return;
     }
 
-    // Remove listeners.
-    for (const listener of this.listeners) {
-      const node = listener.node;
-      const eventName = listener.eventName;
-      const callback = listener.callback;
-      const options = listener.options;
-      node.removeEventListener(eventName, callback, options);
-    }
-
-    this.listeners.length = 0;
-
     await this.destroyDependencies();
 
     this.statusWritable.isInitialized = false;
@@ -623,16 +577,6 @@ export class DefaultCore<
     return typeof selector === "string"
       ? defaultSelectorCallback(selector, node)
       : selector(node);
-  }
-
-  public addEventListener(
-    node: Node,
-    eventName: string,
-    callback: EventListenerOrEventListenerObject,
-    options?: AddEventListenerOptions | boolean,
-  ) {
-    this.listeners.push({ node, eventName, callback, options });
-    node.addEventListener(eventName, callback, options);
   }
 
   public get dependencies(): WrapletDependencies<M> {
@@ -663,7 +607,7 @@ export class DefaultCore<
 
   private validateMapItem(
     id: string,
-    item: WrapletDependencyDefinitionWithDefaults<M[keyof M], M>,
+    item: WrapletDependencyDefinitionWithDefaults<M[keyof M]>,
   ): void {
     const selector = item.selector;
     const isRequired = item.required;
@@ -682,7 +626,7 @@ export class DefaultCore<
 
   private validateMapItemForNonParent(
     id: string,
-    item: WrapletDependencyDefinitionWithDefaults<M[keyof M], M>,
+    item: WrapletDependencyDefinitionWithDefaults<M[keyof M]>,
   ): void {
     if (item.required) {
       throw new MapError(
@@ -694,7 +638,7 @@ export class DefaultCore<
   private validateElements(
     id: Extract<keyof M, string>,
     elements: Node[],
-    mapItem: WrapletDependencyDefinitionWithDefaults<M[keyof M], M>,
+    mapItem: WrapletDependencyDefinitionWithDefaults<M[keyof M]>,
   ): void {
     if (elements.length === 0 && mapItem.required) {
       throw new MissingRequiredDependencyError(
@@ -727,7 +671,7 @@ export class DefaultCore<
     });
   }
 
-  private defaultInitOptions(): Required<CoreInitOptions<M>> {
+  private defaultOptions(): Required<CoreOptions<M>> {
     return {
       dependencyInstantiatedListeners: [],
       dependencyInitializedListeners: [],
@@ -782,5 +726,43 @@ export class DefaultCore<
       this.logger.dumpError(error);
       throw error;
     }
+  }
+
+  /**
+   * Creates a definition for creating a node wrapper.
+   *
+   * @param map_or_position
+   *   You can provide a map or a number representing the
+   *   relative position of the ancestor map that should be
+   *   reused.
+   *
+   *   This is useful for recursive maps.
+   * @param options
+   */
+  public static createInjector<N extends Node, M extends WrapletDependencyMap>(
+    map_or_position: WrapletDependencyMap | number,
+    options?: CoreOptions,
+  ): Injector<N, M, CoreOptions> {
+    return {
+      data: options || {},
+      callback: (node, map, data) => {
+        let currentMap: MapTreeBuilder = map;
+
+        const integerGuard = (input: unknown): input is number =>
+          Number.isInteger(map_or_position);
+
+        if (integerGuard(map_or_position)) {
+          for (let i = 0; i < map_or_position; i++) {
+            currentMap = currentMap.getParent();
+          }
+        } else if (isWrapletDependencyMap(map_or_position)) {
+          currentMap.setMap(map_or_position);
+        } else {
+          throw new Error(`Invalid map argument.`);
+        }
+
+        return new Core(node, currentMap, data);
+      },
+    };
   }
 }

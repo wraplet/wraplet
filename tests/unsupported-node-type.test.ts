@@ -1,15 +1,20 @@
-import { AbstractWraplet, DefaultCore, UnsupportedNodeTypeError } from "../src";
+import {
+  AbstractDependentWraplet,
+  AbstractWraplet,
+  Core,
+  UnsupportedNodeTypeError,
+} from "../src";
 
 describe("Unsupported node type", () => {
   it("should throw UnsupportedNodeTypeError if the node type is not supported", () => {
-    class TestWraplet extends AbstractWraplet<HTMLDivElement> {
+    class TestWraplet extends AbstractDependentWraplet<HTMLDivElement> {
       protected supportedNodeTypes() {
         return this.supportedNodeTypesGuard([HTMLDivElement]);
       }
     }
 
     const span = document.createElement("span");
-    const core = new DefaultCore(span, {});
+    const core = new Core(span, {});
 
     expect(() => new TestWraplet(core as any)).toThrow(
       UnsupportedNodeTypeError,
@@ -20,14 +25,14 @@ describe("Unsupported node type", () => {
   });
 
   it("should NOT throw if the node type IS supported", () => {
-    class TestWraplet extends AbstractWraplet<HTMLDivElement> {
+    class TestWraplet extends AbstractDependentWraplet<HTMLDivElement> {
       protected supportedNodeTypes() {
         return this.supportedNodeTypesGuard([HTMLDivElement]);
       }
     }
 
     const div = document.createElement("div");
-    const core = new DefaultCore(div, {});
+    const core = new Core(div, {});
 
     expect(() => new TestWraplet(core as any)).not.toThrow();
   });
@@ -41,7 +46,7 @@ describe("Unsupported node type", () => {
       }
     }
 
-    class ParentWraplet extends AbstractWraplet<
+    class ParentWraplet extends AbstractDependentWraplet<
       HTMLDivElement,
       {
         children: {
@@ -56,7 +61,7 @@ describe("Unsupported node type", () => {
     const div = document.createElement("div");
     div.innerHTML = "<span></span><div></div>";
 
-    const core = new DefaultCore(div, {
+    const core = new Core(div, {
       children: {
         Class: UnsupportedChildWraplet,
         selector: "span, div",
@@ -77,13 +82,13 @@ describe("Unsupported node type", () => {
 
   it("should rethrow other errors during child instantiation", async () => {
     class ErrorChildWraplet extends AbstractWraplet {
-      constructor(core: any) {
-        super(core);
+      constructor(node: Node) {
+        super(node);
         throw new Error("Some other error");
       }
     }
 
-    class ParentWraplet extends AbstractWraplet<
+    class ParentWraplet extends AbstractDependentWraplet<
       HTMLSpanElement,
       {
         child: {
@@ -98,7 +103,7 @@ describe("Unsupported node type", () => {
     const span = document.createElement("span");
     span.innerHTML = "<div data-child></div>";
 
-    const core = new DefaultCore(span, {
+    const core = new Core(span, {
       child: {
         Class: ErrorChildWraplet,
         selector: "div",
@@ -121,7 +126,7 @@ describe("Unsupported node type", () => {
       }
     }
 
-    class ParentWraplet extends AbstractWraplet<
+    class ParentWraplet extends AbstractDependentWraplet<
       HTMLDivElement,
       {
         child: {
@@ -136,7 +141,7 @@ describe("Unsupported node type", () => {
     const div = document.createElement("div");
     div.innerHTML = "<div></div>";
 
-    const core = new DefaultCore(div, {
+    const core = new Core(div, {
       child: {
         Class: UnsupportedChildWraplet,
         selector: "div",
@@ -153,14 +158,14 @@ describe("Unsupported node type", () => {
   });
 
   it("should pass if descendant has been provided", async () => {
-    class TestWraplet extends AbstractWraplet<HTMLElement> {
+    class TestWraplet extends AbstractDependentWraplet<HTMLElement> {
       protected supportedNodeTypes() {
         return this.supportedNodeTypesGuard([HTMLElement]);
       }
     }
 
     const div = document.createElement("div");
-    const core = new DefaultCore(div, {});
+    const core = new Core(div, {});
 
     expect(() => new TestWraplet(core)).not.toThrow();
   });

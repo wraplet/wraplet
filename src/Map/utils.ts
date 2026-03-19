@@ -3,22 +3,21 @@ import {
   WrapletDependencyDefinitionWithDefaults,
 } from "../Wraplet/types/WrapletDependencyDefinition";
 import {
-  isWrapletDependencyMap,
   WrapletDependencyMap,
   WrapletDependencyMapWithDefaults,
 } from "../Wraplet/types/WrapletDependencyMap";
 
 export function addDefaultsToDependencyDefinition<
-  M extends WrapletDependencyMap,
-  T extends WrapletDependencyDefinition<M>,
->(definition: T): WrapletDependencyDefinitionWithDefaults<T, M> {
+  T extends WrapletDependencyDefinition,
+>(definition: T): WrapletDependencyDefinitionWithDefaults<T> {
   return {
-    ...{
+    ...({
       args: [],
       destructible: true,
-      map: {},
-      coreOptions: {},
-    },
+      injector: {
+        callback: (node: Node) => node,
+      },
+    } satisfies Partial<WrapletDependencyDefinition>),
     ...definition,
   };
 }
@@ -30,15 +29,6 @@ export function fillMapWithDefaults<M extends WrapletDependencyMap>(
   for (const id of Object.keys(map)) {
     const def = map[id];
     newMap[id] = addDefaultsToDependencyDefinition(def);
-
-    const subMap = def["map"];
-    if (subMap && isWrapletDependencyMap(subMap)) {
-      newMap[id]["map"] = fillMapWithDefaults(subMap);
-    }
   }
   return newMap as WrapletDependencyMapWithDefaults<M>;
-}
-
-export function pathsEqual(a: string[], b: string[]) {
-  return a.length === b.length && a.every((v, i) => v === b[i]);
 }

@@ -1,13 +1,18 @@
 import "./setup";
-import { AbstractWraplet, DefaultCore, WrapletDependencyMap } from "../src";
+import {
+  AbstractDependentWraplet,
+  AbstractWraplet,
+  Core,
+  WrapletDependencyMap,
+} from "../src";
 import { BaseElementTestWraplet } from "./resources/BaseElementTestWraplet";
 import { DependencyInstance } from "../src/Wraplet/types/DependencyInstance";
-import { Core } from "../src";
+import { DependencyManager } from "../src";
 
 const testWrapletSelectorAttribute = "data-test-selector";
 const testWrapletDependencySelectorAttribute = `${testWrapletSelectorAttribute}-dependency`;
 
-class TestWrapletDependency extends AbstractWraplet {}
+class TestWrapletDependency extends AbstractDependentWraplet {}
 
 const dependenciesMap = {
   dependency: {
@@ -15,8 +20,9 @@ const dependenciesMap = {
     Class: TestWrapletDependency,
     multiple: false,
     required: false,
+    injector: Core.createInjector({}),
   },
-} as const satisfies WrapletDependencyMap;
+} satisfies WrapletDependencyMap;
 
 class TestWraplet extends BaseElementTestWraplet<typeof dependenciesMap> {
   public hasNode(): boolean {
@@ -24,19 +30,19 @@ class TestWraplet extends BaseElementTestWraplet<typeof dependenciesMap> {
   }
 }
 
-describe("AbstractWraplet", () => {
+describe("AbstractDependentWraplet", () => {
   describe("Instantiation & Initialization", () => {
     it("should require a node for initialization", () => {
-      class TestWraplet extends AbstractWraplet {}
+      class TestWraplet extends AbstractDependentWraplet {}
       const func = () => {
         new TestWraplet(undefined as any);
       };
       expect(func).toThrow(Error);
     });
 
-    it("should prohibit direct AbstractWraplet instantiation", () => {
+    it("should prohibit direct AbstractDependentWraplet instantiation", () => {
       const func = () => {
-        (AbstractWraplet as any).createWraplets(undefined, undefined);
+        (AbstractDependentWraplet as any).createWraplets(undefined, undefined);
       };
       expect(func).toThrow(Error);
     });
@@ -59,7 +65,7 @@ describe("AbstractWraplet", () => {
     it("should match the top element during creation", () => {
       const attribute = "data-test-selector";
 
-      class TestWraplet extends AbstractWraplet {
+      class TestWraplet extends AbstractDependentWraplet {
         public static create(node: ParentNode): TestWraplet {
           const wraplets = this.createWraplets(node, {}, attribute);
           expect(wraplets.length).toEqual(1);
@@ -78,7 +84,7 @@ describe("AbstractWraplet", () => {
       it("should create and initialize wraplets", async () => {
         const attribute = "data-test-create-and-initialize";
 
-        class TestWraplet extends AbstractWraplet {
+        class TestWraplet extends AbstractDependentWraplet {
           public static createAndInit(
             node: ParentNode,
           ): Promise<TestWraplet[]> {
@@ -112,7 +118,10 @@ describe("AbstractWraplet", () => {
           },
         } satisfies WrapletDependencyMap;
 
-        class TestWraplet extends AbstractWraplet<Element, typeof map> {
+        class TestWraplet extends AbstractDependentWraplet<
+          Element,
+          typeof map
+        > {
           public static async createAndInit(
             node: ParentNode,
           ): Promise<TestWraplet[]> {
@@ -138,7 +147,7 @@ describe("AbstractWraplet", () => {
       it("should return an empty array when no matching elements exist", async () => {
         const attribute = "data-test-no-match";
 
-        class TestWraplet extends AbstractWraplet {
+        class TestWraplet extends AbstractDependentWraplet {
           public static async createAndInit(
             node: ParentNode,
           ): Promise<TestWraplet[]> {
@@ -155,9 +164,9 @@ describe("AbstractWraplet", () => {
       it("should pass additional arguments via createAndInitializeWraplets", async () => {
         const attribute = "data-test-caiw-args";
 
-        class TestWraplet extends AbstractWraplet {
+        class TestWraplet extends AbstractDependentWraplet {
           public extraArg: string;
-          constructor(core: Core, extraArg: string) {
+          constructor(core: DependencyManager, extraArg: string) {
             super(core);
             this.extraArg = extraArg;
           }
@@ -255,11 +264,8 @@ describe("AbstractWraplet", () => {
           dependency: DependencyInstance<typeof map, K>,
           id: K,
         ) {
-          if (this.isDependencyInstance(dependency, id, "dependency1")) {
-            dependency.testMethod1();
-          }
-          if (!this.isDependencyInstance(dependency, id)) {
-            throw new Error("Invalid dependency instance.");
+          if (id === "dependency1") {
+            (dependency as TestWrapletDependency1).testMethod1();
           }
         }
       }
@@ -335,10 +341,10 @@ describe("AbstractWraplet", () => {
     it("should pass arguments to dependencies correctly", async () => {
       class TestWrapletDependency extends AbstractWraplet {
         constructor(
-          core: Core,
+          node: Node,
           public arg1: string,
         ) {
-          super(core);
+          super(node);
         }
       }
 
@@ -381,11 +387,11 @@ describe("AbstractWraplet", () => {
 
   describe("Lifecycle", () => {
     it("should handle destruction scheduled during initialization", async () => {
-      class TestWraplet extends AbstractWraplet {}
+      class TestWraplet extends AbstractDependentWraplet {}
 
       const element = document.createElement("div");
 
-      const core = new DefaultCore(element, {});
+      const core = new Core(element, {});
       const wraplet = new TestWraplet(core);
 
       const func = jest.fn();
@@ -413,14 +419,14 @@ describe("AbstractWraplet", () => {
     it("should auto-detect overridden onInitialized callback", async () => {
       const onInitializedFn = jest.fn();
 
-      class TestWraplet extends AbstractWraplet {
+      class TestWraplet extends AbstractDependentWraplet {
         protected async onInitialize(): Promise<void> {
           onInitializedFn();
         }
       }
 
       const element = document.createElement("div");
-      const core = new DefaultCore(element, {});
+      const core = new Core(element, {});
       const wraplet = new TestWraplet(core);
 
       await wraplet.wraplet.initialize();
@@ -429,10 +435,10 @@ describe("AbstractWraplet", () => {
     });
 
     it("should not call onInitialized when not overridden", async () => {
-      class TestWraplet extends AbstractWraplet {}
+      class TestWraplet extends AbstractDependentWraplet {}
 
       const element = document.createElement("div");
-      const core = new DefaultCore(element, {});
+      const core = new Core(element, {});
       const wraplet = new TestWraplet(core);
 
       await expect(wraplet.wraplet.initialize()).resolves.not.toThrow();
@@ -441,14 +447,14 @@ describe("AbstractWraplet", () => {
     it("should auto-detect overridden onDestroyed callback", async () => {
       const onDestroyedFn = jest.fn();
 
-      class TestWraplet extends AbstractWraplet {
+      class TestWraplet extends AbstractDependentWraplet {
         protected async onDestroy(): Promise<void> {
           onDestroyedFn();
         }
       }
 
       const element = document.createElement("div");
-      const core = new DefaultCore(element, {});
+      const core = new Core(element, {});
       const wraplet = new TestWraplet(core);
 
       await wraplet.wraplet.initialize();

@@ -5,9 +5,7 @@ import {
   WrapletDependencyMap,
   WrapletDependencyMapWithDefaults,
 } from "../../Wraplet/types/WrapletDependencyMap";
-import { WrapletCreator } from "./WrapletCreator";
 import { is } from "../../utils/is";
-import { Status } from "../../Wraplet/types/Status";
 import { DependencyLifecycleAsyncListener } from "./DependencyLifecycleAsyncListener";
 import { DependencyLifecycleListener } from "./DependencyLifecycleListener";
 import { DependencyInstance } from "../../Wraplet/types/DependencyInstance";
@@ -19,26 +17,21 @@ export { CoreSymbol };
  * Dependency manager interface that defines the public API for managing wraplet relationships
  * and lifecycles.
  */
-export interface Core<
+export interface DependencyManager<
   N extends Node = Node,
   M extends WrapletDependencyMap = {},
 > {
   [CoreSymbol]: true;
 
   /**
-   * Core status.
+   * The node that the manager is managing.
    */
-  status: Status;
+  node: N;
 
   /**
    * The children map that defines the relationships between nodes.
    */
   map: WrapletDependencyMapWithDefaults<M>;
-
-  /**
-   * Node attached to the current wraplet.
-   */
-  node: N;
 
   /**
    * Instantiate dependencies based on the map and the current node.
@@ -93,35 +86,18 @@ export interface Core<
   ): void;
 
   /**
-   * Destroy all dependencies.
-   */
-  destroy(): Promise<void>;
-
-  /**
-   * Add an event listener to a node and track it for cleanup.
-   */
-  addEventListener(
-    node: Node,
-    eventName: string,
-    callback: EventListenerOrEventListenerObject,
-    options?: AddEventListenerOptions | boolean,
-  ): void;
-
-  /**
-   * Allows for overriding the default wraplet creation process.
-   */
-  setWrapletCreator(
-    wrapletCreator: WrapletCreator<Node, WrapletDependencyMap>,
-  ): void;
-
-  /**
    * Get the available dependencies.
    */
   readonly dependencies: WrapletDependencies<M>;
+
+  /**
+   * Destroy all dependencies.
+   */
+  destroy(): Promise<void>;
 }
 
 export function isCore<N extends Node, M extends WrapletDependencyMap>(
   object: unknown,
-): object is Core<N, M> {
+): object is DependencyManager<N, M> {
   return is(object, CoreSymbol);
 }

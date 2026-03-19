@@ -1,10 +1,8 @@
 import "./setup";
 import {
-  createCoreDependentWrapletApi,
-  DefaultArgCreator,
-  DefaultCore,
+  createWrapletApi,
+  Core,
   DefaultWrapletSet,
-  Status,
   WrapletApi,
   WrapletDependencyMap,
 } from "../src";
@@ -13,27 +11,37 @@ import {
   TooManyChildrenFoundError,
   MapError,
 } from "../src";
-import { Core } from "../src";
-import { DestroyListener } from "../src/Core/types/DestroyListener";
+import { DependencyManager } from "../src";
 import { Wraplet, WrapletSymbol } from "../src/Wraplet/types/Wraplet";
-import { WrapletCreator } from "../src";
 import { StatusWritable } from "../src/Wraplet/types/Status";
+import { fillMapWithDefaults } from "../src/Map/utils";
 
-describe("Test DefaultCore", () => {
+describe("Test Core", () => {
   class TestWrapletClass implements Wraplet {
     [WrapletSymbol]: true = true;
+    public wraplet: WrapletApi;
 
-    constructor(private core: Core) {
-      this.wraplet = createCoreDependentWrapletApi({
-        core: core,
+    constructor(private node: Node) {
+      this.wraplet = createWrapletApi({
+        node: node,
         wraplet: this,
       });
     }
-
-    public wraplet: WrapletApi;
   }
 
-  it("Test DefaultCore not allowing required children if provided node is not a ParentNode", () => {
+  class TestWrapletClassWithDependencies implements Wraplet {
+    [WrapletSymbol]: true = true;
+    public wraplet: WrapletApi;
+
+    constructor(private dm: DependencyManager) {
+      this.wraplet = createWrapletApi({
+        node: dm.node,
+        wraplet: this,
+      });
+    }
+  }
+
+  it("Test Core not allowing required children if provided node is not a ParentNode", () => {
     const map = {
       children: {
         selector: "[data-something]",
@@ -46,21 +54,21 @@ describe("Test DefaultCore", () => {
     const node = document.createTextNode("test");
 
     const func1 = () => {
-      const childrenManager = new DefaultCore(node, map);
+      const childrenManager = new Core(node, map);
       childrenManager.instantiateDependencies();
     };
 
     expect(func1).toThrow(MapError);
 
     const func2 = () => {
-      const childrenManager = new DefaultCore(node, {});
+      const childrenManager = new Core(node, {});
       childrenManager.instantiateDependencies();
     };
 
     expect(func2).not.toThrow(MapError);
   });
 
-  it("Test DefaultCore allowing non-required children if provided node is not a ParentNode", () => {
+  it("Test Core allowing non-required children if provided node is not a ParentNode", () => {
     const map = {
       children: {
         selector: "[data-something]",
@@ -72,7 +80,7 @@ describe("Test DefaultCore", () => {
 
     const node = document.createTextNode("test");
 
-    const core = new DefaultCore(node, map);
+    const core = new Core(node, map);
     expect(() => {
       core.instantiateDependencies();
     }).not.toThrow();
@@ -81,7 +89,7 @@ describe("Test DefaultCore", () => {
   it("should throw ChildrenAreNotAvailableError when accessing children before they are instantiated", () => {
     const node = document.createElement("div");
     const map = {} as const satisfies WrapletDependencyMap;
-    const core = new DefaultCore(node, map);
+    const core = new Core(node, map);
 
     expect(() => core.dependencies).toThrow(DependenciesAreNotAvailableError);
     expect(() => core.dependencies).toThrow(
@@ -89,7 +97,7 @@ describe("Test DefaultCore", () => {
     );
   });
 
-  it("Test DefaultCore child without selector", async () => {
+  it("Test Core child without selector", async () => {
     const node = document.createElement("div");
     node.innerHTML = "<div></div>";
 
@@ -101,7 +109,7 @@ describe("Test DefaultCore", () => {
       },
     } as const satisfies WrapletDependencyMap;
 
-    const core: Core<Node, typeof map> = new DefaultCore(node, map);
+    const core: DependencyManager<Node, typeof map> = new Core(node, map);
 
     const func = async () => {
       core.instantiateDependencies();
@@ -112,7 +120,7 @@ describe("Test DefaultCore", () => {
     expect(core.dependencies["children"]).toBeNull();
   });
 
-  it("Test DefaultCore too many elements found", async () => {
+  it("Test Core too many elements found", async () => {
     const node = document.createElement("div");
     node.innerHTML = "<div data-something></div><div data-something></div>";
 
@@ -125,7 +133,7 @@ describe("Test DefaultCore", () => {
       },
     } as const satisfies WrapletDependencyMap;
 
-    const core: Core<Node, typeof map> = new DefaultCore(node, map);
+    const core: DependencyManager<Node, typeof map> = new Core(node, map);
 
     const func = async () => {
       core.instantiateDependencies();
@@ -135,7 +143,7 @@ describe("Test DefaultCore", () => {
     await expect(func).rejects.toThrow(TooManyChildrenFoundError);
   });
 
-  it("Test DefaultCore multiple without selector", async () => {
+  it("Test Core multiple without selector", async () => {
     const node = document.createElement("div");
     node.innerHTML = "<div data-something></div><div data-something></div>";
 
@@ -147,7 +155,7 @@ describe("Test DefaultCore", () => {
       },
     } as const satisfies WrapletDependencyMap;
 
-    const core: Core<Node, typeof map> = new DefaultCore(node, map);
+    const core: DependencyManager<Node, typeof map> = new Core(node, map);
 
     core.instantiateDependencies();
     await core.initializeDependencies();
@@ -155,7 +163,7 @@ describe("Test DefaultCore", () => {
     expect(core.dependencies["children"]).toBeInstanceOf(DefaultWrapletSet);
   });
 
-  it("Test DefaultCore destroy children listeners", async () => {
+  it("Test Core destroy children listeners", async () => {
     const node = document.createElement("div");
     node.innerHTML =
       "<div data-children></div><div data-children><div data-child></div>";
@@ -175,7 +183,7 @@ describe("Test DefaultCore", () => {
       },
     } as const satisfies WrapletDependencyMap;
 
-    const core: Core<Node, typeof map> = new DefaultCore(node, map);
+    const core: DependencyManager<Node, typeof map> = new Core(node, map);
 
     const func = jest.fn();
     core.addDependencyDestroyedListener(async () => {
@@ -194,7 +202,7 @@ describe("Test DefaultCore", () => {
     expect(func).toHaveBeenCalledTimes(3);
   });
 
-  it("Test DefaultCore instantiate children listeners", async () => {
+  it("Test Core instantiate children listeners", async () => {
     const node = document.createElement("div");
     node.innerHTML = "<div data-children></div><div data-children></div>";
 
@@ -215,7 +223,7 @@ describe("Test DefaultCore", () => {
 
     const func = jest.fn();
 
-    const core: Core<Node, typeof map> = new DefaultCore(node, map);
+    const core: DependencyManager<Node, typeof map> = new Core(node, map);
     const funcInitialized = jest.fn();
 
     core.addDependencyInstantiatedListener(async () => {
@@ -232,88 +240,7 @@ describe("Test DefaultCore", () => {
     expect(funcInitialized).toHaveBeenCalledTimes(2);
   });
 
-  it("uses ArgCreator to compute child constructor arguments", async () => {
-    const node = document.createElement("div");
-    node.innerHTML = "<div data-child></div>";
-
-    // Local wraplet class that records received args beyond core
-    class ArgAwareWraplet implements Wraplet {
-      [WrapletSymbol]: true = true;
-      private status: Status = {
-        isGettingInitialized: false,
-        isGettingDestroyed: false,
-        isInitialized: false,
-        isDestroyed: false,
-      };
-      protected isGettingInitialized = false;
-      protected isInitialized = false;
-      protected isGettingDestroyed = false;
-      protected isDestroyed = false;
-
-      public received: unknown[];
-      private destroyListeners: DestroyListener[] = [];
-
-      constructor(
-        private core: Core,
-        ...rest: unknown[]
-      ) {
-        this.received = rest;
-      }
-
-      public wraplet: WrapletApi = {
-        status: this.status,
-
-        accessNode: (callback: (node: Node) => void) => {
-          callback(this.core.node);
-        },
-        addDestroyListener: (callback: DestroyListener): void => {
-          this.destroyListeners.push(callback);
-        },
-        destroy: async () => {
-          for (const listener of this.destroyListeners) {
-            await listener(this);
-          }
-          this.isDestroyed = true;
-        },
-        initialize: async () => {
-          this.isInitialized = true;
-        },
-      };
-    }
-
-    // Arg creator mock that should be invoked by DefaultCore.defaultWrapletCreator
-    const createdValue = { via: "ArgCreator" };
-    const createArgMock = jest.fn().mockImplementation(() => createdValue);
-    // Use DefaultArgCreator to tag with ArgCreatorSymbol
-    const argCreator = DefaultArgCreator.create(createArgMock);
-
-    const map = {
-      child: {
-        selector: "[data-child]",
-        Class: ArgAwareWraplet,
-        multiple: false,
-        required: true,
-        args: [argCreator, 42, "plain"],
-      },
-    } as const satisfies WrapletDependencyMap;
-
-    const core: Core<Node, typeof map> = new DefaultCore(node, map);
-    core.instantiateDependencies();
-    await core.initializeDependencies();
-
-    // ArgCreator should be called once with proper WrapletCreatorArgs
-    expect(createArgMock).toHaveBeenCalledTimes(1);
-    const callArg = createArgMock.mock.calls[0][0];
-    expect(callArg.Class).toBe(ArgAwareWraplet);
-    expect(callArg.element).toBe(node.querySelector("[data-child]"));
-    expect(callArg.args).toEqual([createdValue, 42, "plain"]);
-
-    // The constructed wraplet should receive the processed value instead of the ArgCreator instance
-    const child = core.dependencies.child;
-    expect(child.received).toEqual([createdValue, 42, "plain"]);
-  });
-
-  it("Test DefaultCore cannot be destroyed twice", async () => {
+  it("Test Core cannot be destroyed twice", async () => {
     const node = document.createElement("div");
     node.innerHTML =
       "<div data-children></div><div data-children></div><div data-child></div>";
@@ -333,7 +260,7 @@ describe("Test DefaultCore", () => {
       },
     } as const satisfies WrapletDependencyMap;
 
-    const core: Core<Node, typeof map> = new DefaultCore(node, map);
+    const core: DependencyManager<Node, typeof map> = new Core(node, map);
 
     core.instantiateDependencies();
     await core.initializeDependencies();
@@ -346,12 +273,12 @@ describe("Test DefaultCore", () => {
     await expect(func).rejects.toThrow("Dependencies are already destroyed.");
   });
 
-  it("Test DefaultCore user accessing non-existing children", async () => {
+  it("Test Core user accessing non-existing children", async () => {
     const node = document.createElement("div");
 
     const map = {} as const satisfies WrapletDependencyMap;
 
-    const core: Core<Node, typeof map> = new DefaultCore(node, map);
+    const core: DependencyManager<Node, typeof map> = new Core(node, map);
 
     core.instantiateDependencies();
     await core.initializeDependencies();
@@ -363,10 +290,10 @@ describe("Test DefaultCore", () => {
 
     expect(func).toThrow("Dependency 'child' has not been found.");
   });
-  it("Test DefaultCore user accessing dependencies with symbol key", async () => {
+  it("Test Core user accessing dependencies with symbol key", async () => {
     const node = document.createElement("div");
     const map = {} as const satisfies WrapletDependencyMap;
-    const core: Core<Node, typeof map> = new DefaultCore(node, map);
+    const core: DependencyManager<Node, typeof map> = new Core(node, map);
     core.instantiateDependencies();
     await core.initializeDependencies();
     const func = () => {
@@ -375,12 +302,12 @@ describe("Test DefaultCore", () => {
     };
     expect(func).toThrow("Symbol access is not supported for dependencies.");
   });
-  it("Test DefaultCore user setting dependencies directly", async () => {
+  it("Test Core user setting dependencies directly", async () => {
     const node = document.createElement("div");
 
     const map = {} satisfies WrapletDependencyMap;
 
-    const core: Core<Node, typeof map> = new DefaultCore(node, map);
+    const core: DependencyManager<Node, typeof map> = new Core(node, map);
 
     core.instantiateDependencies();
     await core.initializeDependencies();
@@ -394,7 +321,7 @@ describe("Test DefaultCore", () => {
     );
   });
 
-  it("Test DefaultCore with selector callback", async () => {
+  it("Test Core with selector callback", async () => {
     const attribute = "data-test-selector";
     const node = document.createElement("div");
     node.innerHTML = `<div ${attribute}></div><div ${attribute}></div>`;
@@ -410,7 +337,7 @@ describe("Test DefaultCore", () => {
       },
     } as const satisfies WrapletDependencyMap;
 
-    const core: Core<Node, typeof map> = new DefaultCore(node, map);
+    const core: DependencyManager<Node, typeof map> = new Core(node, map);
 
     core.instantiateDependencies();
     await core.initializeDependencies();
@@ -418,9 +345,9 @@ describe("Test DefaultCore", () => {
     expect(core.dependencies["children"].size).toBe(2);
   });
 
-  it("Test DefaultCore status getter", () => {
+  it("Test Core status getter", () => {
     const node = document.createElement("div");
-    const core = new DefaultCore(node, {});
+    const core = new Core(node, {});
     expect(core.status).toEqual({
       isDestroyed: false,
       isGettingDestroyed: false,
@@ -429,7 +356,7 @@ describe("Test DefaultCore", () => {
     });
   });
 
-  it("Test DefaultCore postponed destruction during initialization", async () => {
+  it("Test Core postponed destruction during initialization", async () => {
     const node = document.createElement("div");
     node.innerHTML = "<div data-child></div>";
     const map = {
@@ -441,7 +368,7 @@ describe("Test DefaultCore", () => {
       },
     } as const satisfies WrapletDependencyMap;
 
-    const core = new DefaultCore(node, map);
+    const core = new Core(node, map);
     core.instantiateDependencies();
 
     const initPromise = core.initializeDependencies();
@@ -453,9 +380,9 @@ describe("Test DefaultCore", () => {
     expect(core.status.isDestroyed).toBe(true);
   });
 
-  it("Test DefaultCore destruction of uninitialized core", async () => {
+  it("Test Core destruction of uninitialized core", async () => {
     const node = document.createElement("div");
-    const core = new DefaultCore(node, {});
+    const core = new Core(node, {});
 
     expect(core.status.isInitialized).toBe(false);
     await core.destroy();
@@ -464,7 +391,7 @@ describe("Test DefaultCore", () => {
     expect(core.status.isGettingDestroyed).toBe(false);
   });
 
-  it("Test DefaultCore initOptions", async () => {
+  it("Test Core initOptions", async () => {
     const attribute = "data-test-selector";
     const node = document.createElement("div");
     node.innerHTML = `<div ${attribute}></div>`;
@@ -483,7 +410,7 @@ describe("Test DefaultCore", () => {
     const funcInstantiate = jest.fn();
     const funcDestroy = jest.fn();
     const funcInitialized = jest.fn();
-    const core: Core<Node, typeof map> = new DefaultCore(node, map, {
+    const core: DependencyManager<Node, typeof map> = new Core(node, map, {
       dependencyInstantiatedListeners: [
         async (child) => {
           funcInstantiate();
@@ -513,12 +440,12 @@ describe("Test DefaultCore", () => {
     expect(funcDestroy).toHaveBeenCalledTimes(1);
   });
 
-  it("Test DefaultCore invalid map error", () => {
+  it("Test Core invalid map error", () => {
     class SomeClass {}
     const node = document.createElement("div");
     const classInstance = new SomeClass() as any;
     const func = () => {
-      new DefaultCore(node, classInstance);
+      new Core(node, classInstance);
     };
     expect(func).toThrow("The map provided to the Core is not a valid map.");
   });
@@ -527,60 +454,9 @@ describe("Test DefaultCore", () => {
     const invalidNode = {} as any;
     const map = {} as const satisfies WrapletDependencyMap;
 
-    expect(() => new DefaultCore(invalidNode, map)).toThrow(
+    expect(() => new Core(invalidNode, map)).toThrow(
       "The node provided to the Core is not a valid node.",
     );
-  });
-
-  it("Test DefaultCore custom wraplet creator", async () => {
-    const attributeChildren = "data-test-wraplet-children";
-    const attributeChild = "data-test-wraplet-child";
-
-    const map = {
-      children: {
-        selector: `[${attributeChildren}]`,
-        Class: TestWrapletClass,
-        multiple: true,
-        required: true,
-      },
-      child: {
-        selector: `[${attributeChild}]`,
-        Class: TestWrapletClass,
-        multiple: false,
-        required: true,
-      },
-    } as const satisfies WrapletDependencyMap;
-
-    const element = document.createElement("div");
-
-    const elementChildrenItem = document.createElement("div");
-    elementChildrenItem.setAttribute(attributeChildren, "");
-    element.appendChild(elementChildrenItem);
-
-    const elementChildItem = document.createElement("div");
-    elementChildItem.setAttribute(attributeChild, "");
-    element.appendChild(elementChildItem);
-
-    const core = new DefaultCore(element, map);
-
-    const func = jest.fn();
-
-    const creator: WrapletCreator<Node, WrapletDependencyMap> = (args) => {
-      expect(["child", "children"]).toContain(args.id);
-      func();
-      const core = new DefaultCore(args.element, {}, args.initOptions);
-      return new args.Class(core, ...args.args);
-    };
-
-    core.setWrapletCreator(creator);
-
-    core.instantiateDependencies();
-    await core.initializeDependencies();
-
-    expect(core.dependencies.child).toBeInstanceOf(TestWrapletClass);
-    expect(core.dependencies.children.size).toBe(1);
-
-    expect(func).toHaveBeenCalledTimes(2);
   });
 
   describe("Test setExistingInstance and addExistingInstance validations", () => {
@@ -594,10 +470,10 @@ describe("Test DefaultCore", () => {
         },
       } satisfies WrapletDependencyMap;
 
-      const core = new DefaultCore(element, map);
+      const core = new Core(element, map);
 
-      const childCore = new DefaultCore(document.createElement("div"), {});
-      const instance = new TestWrapletClass(childCore);
+      const childCore = new Core(document.createElement("div"), {});
+      const instance = new TestWrapletClassWithDependencies(childCore);
 
       expect(() =>
         // @ts-expect-error We test a runtime error when a wrong input has been provided
@@ -616,11 +492,10 @@ describe("Test DefaultCore", () => {
         },
       } satisfies WrapletDependencyMap;
 
-      const core = new DefaultCore(element, map);
+      const core = new Core(element, map);
 
-      const childCore = new DefaultCore(document.createElement("div"), {});
-      const instance1 = new TestWrapletClass(childCore);
-      const instance2 = new TestWrapletClass(childCore);
+      const instance1 = new TestWrapletClass(document.createElement("div"));
+      const instance2 = new TestWrapletClass(document.createElement("div"));
 
       core.setExistingInstance("child", instance1);
 
@@ -639,7 +514,7 @@ describe("Test DefaultCore", () => {
         },
       } satisfies WrapletDependencyMap;
 
-      const core = new DefaultCore(element, map);
+      const core = new Core(element, map);
 
       expect(() => core.setExistingInstance("child", {} as any)).toThrow(
         MapError,
@@ -648,6 +523,7 @@ describe("Test DefaultCore", () => {
 
     it("should allow adding multiple instances with addExistingInstance", () => {
       const element = document.createElement("div");
+
       const map = {
         children: {
           Class: TestWrapletClass,
@@ -656,13 +532,14 @@ describe("Test DefaultCore", () => {
         },
       } satisfies WrapletDependencyMap;
 
-      const core = new DefaultCore(element, map);
+      const core = new Core(element, map);
 
-      const childCore = new DefaultCore(document.createElement("div"), {});
-      const instance1 = new TestWrapletClass(childCore);
-      const instance2 = new TestWrapletClass(childCore);
-
+      const elementChild1 = document.createElement("div");
+      const instance1 = new TestWrapletClass(elementChild1);
       core.addExistingInstance("children", instance1);
+
+      const elementChild2 = document.createElement("div");
+      const instance2 = new TestWrapletClass(elementChild2);
       core.addExistingInstance("children", instance2);
 
       core.instantiateDependencies();
@@ -680,10 +557,9 @@ describe("Test DefaultCore", () => {
         },
       } satisfies WrapletDependencyMap;
 
-      const core = new DefaultCore(element, map);
+      const core = new Core(element, map);
 
-      const childCore = new DefaultCore(document.createElement("div"), {});
-      const instance = new TestWrapletClass(childCore);
+      const instance = new TestWrapletClass(document.createElement("div"));
 
       // @ts-expect-error We test runtime error when a wrong input has been provided, even if TS protested.
       expect(() => core.addExistingInstance("child", instance)).toThrow(
@@ -704,10 +580,9 @@ describe("Test DefaultCore", () => {
         },
       } satisfies WrapletDependencyMap;
 
-      const core = new DefaultCore(element, map);
+      const core = new Core(element, map);
 
-      const childCore = new DefaultCore(document.createElement("div"), {});
-      const instance = new TestWrapletClass(childCore);
+      const instance = new TestWrapletClass(document.createElement("div"));
 
       core.setExistingInstance("child", instance);
 
@@ -715,7 +590,7 @@ describe("Test DefaultCore", () => {
     });
   });
 
-  describe("Test DefaultCore required dependencies without selector", () => {
+  describe("Test Core required dependencies without selector", () => {
     const map = {
       child: {
         Class: TestWrapletClass,
@@ -731,13 +606,12 @@ describe("Test DefaultCore", () => {
 
     it("has manually provided required dependencies", async () => {
       const element = document.createElement("div");
-      const core = new DefaultCore(element, map);
+      const core = new Core(element, map);
 
-      const childElement = document.createElement("div");
-      const childCore = new DefaultCore(childElement, {});
-
-      const childInstance = new TestWrapletClass(childCore);
-      const childrenInstance = new TestWrapletClass(childCore);
+      const childInstance = new TestWrapletClass(document.createElement("div"));
+      const childrenInstance = new TestWrapletClass(
+        document.createElement("div"),
+      );
 
       core.setExistingInstance("child", childInstance);
       core.addExistingInstance("children", childrenInstance);
@@ -759,7 +633,7 @@ describe("Test DefaultCore", () => {
       } satisfies WrapletDependencyMap;
 
       const element = document.createElement("div");
-      const core = new DefaultCore(element, map);
+      const core = new Core(element, map);
 
       const func = () => {
         core.instantiateDependencies();
@@ -780,7 +654,7 @@ describe("Test DefaultCore", () => {
       } satisfies WrapletDependencyMap;
 
       const element = document.createElement("div");
-      const core = new DefaultCore(element, map);
+      const core = new Core(element, map);
 
       const func = () => {
         core.instantiateDependencies();
@@ -803,10 +677,11 @@ describe("Test DefaultCore", () => {
 
     class TestWrapletChild1 implements Wraplet {
       [WrapletSymbol]: true = true;
+      public wraplet: WrapletApi;
 
-      constructor(core: Core) {
-        this.wraplet = createCoreDependentWrapletApi({
-          core: core,
+      constructor(node: Node) {
+        this.wraplet = createWrapletApi({
+          node,
           wraplet: this,
           initializeCallback: this.onInit.bind(this),
           destroyCallback: this.onDestroy.bind(this),
@@ -820,16 +695,14 @@ describe("Test DefaultCore", () => {
       private async onDestroy() {
         depApiDestroy();
       }
-
-      public wraplet: WrapletApi;
     }
 
     class TestWrapletChild2 implements Wraplet {
       [WrapletSymbol]: true = true;
 
-      constructor(core: Core) {
-        this.wraplet = createCoreDependentWrapletApi({
-          core: core,
+      constructor(node: Node) {
+        this.wraplet = createWrapletApi({
+          node,
           wraplet: this,
         });
       }
@@ -863,7 +736,7 @@ describe("Test DefaultCore", () => {
     if (!element) throw new Error("Element not found");
 
     const runInstantiateWithErrorInListener = () => {
-      const core = new DefaultCore(element, map);
+      const core = new Core(element, map);
       core.addDependencyInstantiatedListener(() => {
         throw new Error("Test error in a listener");
       });
@@ -885,7 +758,7 @@ describe("Test DefaultCore", () => {
     expect(depListInst).toHaveBeenCalledTimes(0);
 
     const runIntializeWithErrorInListener = async () => {
-      const core = new DefaultCore(element, map);
+      const core = new Core(element, map);
       core.addDependencyInitializedListener(async () => {
         throw new Error("Test error in a listener");
       });
@@ -902,7 +775,7 @@ describe("Test DefaultCore", () => {
     expect(consoleDirSpy).toHaveBeenCalledTimes(1);
 
     const runDestroyWithErrorInListener = async () => {
-      const core = new DefaultCore(element, map);
+      const core = new Core(element, map);
       core.addDependencyDestroyedListener(async () => {
         throw new Error("Test error in a listener");
       });
@@ -927,9 +800,9 @@ describe("Test DefaultCore", () => {
     consoleDirSpy.mockRestore();
   });
 
-  it("Test DefaultCore throws when initializeDependencies is called twice", async () => {
+  it("Test Core throws when initializeDependencies is called twice", async () => {
     const node = document.createElement("div");
-    const core = new DefaultCore(node, {});
+    const core = new Core(node, {});
     core.instantiateDependencies();
     await core.initializeDependencies();
 
@@ -938,9 +811,9 @@ describe("Test DefaultCore", () => {
     );
   });
 
-  it("Test DefaultCore throws when instantiateDependencies is called twice", () => {
+  it("Test Core throws when instantiateDependencies is called twice", () => {
     const node = document.createElement("div");
-    const core = new DefaultCore(node, {});
+    const core = new Core(node, {});
     core.instantiateDependencies();
 
     expect(() => core.instantiateDependencies()).toThrow(
@@ -948,7 +821,7 @@ describe("Test DefaultCore", () => {
     );
   });
 
-  it("Test DefaultCore skips already initialized wraplet during initializeDependencies", async () => {
+  it("Test Core skips already initialized wraplet during initializeDependencies", async () => {
     const node = document.createElement("div");
     node.innerHTML = "<div data-child></div>";
 
@@ -961,7 +834,7 @@ describe("Test DefaultCore", () => {
       },
     } as const satisfies WrapletDependencyMap;
 
-    const core = new DefaultCore(node, map);
+    const core = new Core(node, map);
     core.instantiateDependencies();
 
     // Fully initialize the child before core init
@@ -977,7 +850,7 @@ describe("Test DefaultCore", () => {
     }
   });
 
-  it("Test DefaultCore findExistingWraplet reuses existing multiple wraplet", async () => {
+  it("Test Core findExistingWraplet reuses existing multiple wraplet", async () => {
     const node = document.createElement("div");
     node.innerHTML = "<div data-child></div>";
 
@@ -987,13 +860,15 @@ describe("Test DefaultCore", () => {
       [WrapletSymbol]: true = true;
       public wraplet: WrapletApi;
 
-      constructor(core: Core) {
-        this.wraplet = createCoreDependentWrapletApi({ core, wraplet: this });
+      constructor(dm: DependencyManager) {
+        this.wraplet = createWrapletApi({
+          node: dm.node,
+          wraplet: this,
+          initializeCallback: dm.initializeDependencies,
+          destroyCallback: dm.destroy,
+        });
         constructorFn();
       }
-
-      async onInit() {}
-      async onDestroy() {}
     }
 
     const map = {
@@ -1005,11 +880,11 @@ describe("Test DefaultCore", () => {
       },
     } as const satisfies WrapletDependencyMap;
 
-    const core = new DefaultCore(node, map);
+    const core = new Core(node, map);
 
     // First, add an existing instance for the same element
     const childElement = node.querySelector("[data-child]")!;
-    const existingCore = new DefaultCore(childElement, {});
+    const existingCore = new Core(childElement, {});
     const existingWraplet = new ChildWraplet(existingCore);
     core.addExistingInstance("child", existingWraplet as any);
 
@@ -1032,8 +907,8 @@ describe("Test DefaultCore", () => {
         [WrapletSymbol]: true = true;
         public wraplet: WrapletApi;
 
-        constructor(core: Core) {
-          this.wraplet = createCoreDependentWrapletApi({ core, wraplet: this });
+        constructor(node: Node) {
+          this.wraplet = createWrapletApi({ node, wraplet: this });
           constructorFn();
         }
       }
@@ -1047,12 +922,11 @@ describe("Test DefaultCore", () => {
         },
       } satisfies WrapletDependencyMap;
 
-      const core = new DefaultCore(node, map);
+      const core = new Core(node, map);
 
       // Add an existing instance for a different element (not matched by selector)
       const externalElement = document.createElement("div");
-      const existingCore = new DefaultCore(externalElement, {});
-      const existingWraplet = new ChildWraplet(existingCore);
+      const existingWraplet = new ChildWraplet(externalElement);
       core.addExistingInstance("child", existingWraplet);
 
       // Instantiate — findExistingWraplet won't match the external element to any selector result,
@@ -1074,8 +948,13 @@ describe("Test DefaultCore", () => {
         [WrapletSymbol]: true = true;
         public wraplet: WrapletApi;
 
-        constructor(core: Core) {
-          this.wraplet = createCoreDependentWrapletApi({ core, wraplet: this });
+        constructor(dm: DependencyManager) {
+          this.wraplet = createWrapletApi({
+            node: dm.node,
+            wraplet: this,
+            initializeCallback: dm.initializeDependencies,
+            destroyCallback: dm.destroy,
+          });
           constructorFn();
         }
       }
@@ -1090,10 +969,10 @@ describe("Test DefaultCore", () => {
       } satisfies WrapletDependencyMap;
 
       const childElement = node.querySelector("[data-child]")!;
-      const core = new DefaultCore(node, map);
+      const core = new Core(node, map);
 
       // Manually set up an existing wraplet for the same element via private access
-      const existingCore = new DefaultCore(childElement, {});
+      const existingCore = new Core(childElement, {});
       const existingWraplet = new ChildWraplet(existingCore);
       const coreAny = core as any;
       coreAny.directDependencies["child"] = existingWraplet;
@@ -1112,8 +991,13 @@ describe("Test DefaultCore", () => {
         [WrapletSymbol]: true = true;
         public wraplet: WrapletApi;
 
-        constructor(core: Core) {
-          this.wraplet = createCoreDependentWrapletApi({ core, wraplet: this });
+        constructor(dm: DependencyManager) {
+          this.wraplet = createWrapletApi({
+            node: dm.node,
+            wraplet: this,
+            initializeCallback: core.initializeDependencies,
+            destroyCallback: core.destroy,
+          });
         }
       }
 
@@ -1126,11 +1010,11 @@ describe("Test DefaultCore", () => {
         },
       } satisfies WrapletDependencyMap;
 
-      const core = new DefaultCore(node, map);
+      const core = new Core(node, map);
 
       // Set up an existing wraplet for a DIFFERENT element
       const differentElement = document.createElement("span");
-      const existingCore = new DefaultCore(differentElement, {});
+      const existingCore = new Core(differentElement, {});
       const existingWraplet = new ChildWraplet(existingCore);
       const coreAny = core as any;
       coreAny.directDependencies["child"] = existingWraplet;
@@ -1150,8 +1034,13 @@ describe("Test DefaultCore", () => {
         [WrapletSymbol]: true = true;
         public wraplet: WrapletApi;
 
-        constructor(core: Core) {
-          this.wraplet = createCoreDependentWrapletApi({ core, wraplet: this });
+        constructor(dm: DependencyManager) {
+          this.wraplet = createWrapletApi({
+            node: dm.node,
+            wraplet: this,
+            initializeCallback: dm.initializeDependencies,
+            destroyCallback: dm.destroy,
+          });
         }
       }
 
@@ -1165,12 +1054,12 @@ describe("Test DefaultCore", () => {
       } satisfies WrapletDependencyMap;
 
       const childElement = node.querySelector("[data-child]")!;
-      const core = new DefaultCore(node, map);
+      const core = new Core(node, map);
 
       // Create two wraplets wrapping the same element
-      const core1 = new DefaultCore(childElement, {});
+      const core1 = new Core(childElement, {});
       const wraplet1 = new ChildWraplet(core1);
-      const core2 = new DefaultCore(childElement, {});
+      const core2 = new Core(childElement, {});
       const wraplet2 = new ChildWraplet(core2);
 
       const set = new DefaultWrapletSet();
@@ -1197,7 +1086,7 @@ describe("Test DefaultCore", () => {
         },
       } as const satisfies WrapletDependencyMap;
 
-      const core = new DefaultCore(node, map);
+      const core = new Core(node, map);
 
       // Set directDependencies to a non-Wraplet value for a single dep
       const coreAny = core as any;
@@ -1215,8 +1104,13 @@ describe("Test DefaultCore", () => {
         [WrapletSymbol]: true = true;
         public wraplet: WrapletApi;
 
-        constructor(core: Core) {
-          this.wraplet = createCoreDependentWrapletApi({ core, wraplet: this });
+        constructor(dm: DependencyManager) {
+          this.wraplet = createWrapletApi({
+            node: dm.node,
+            wraplet: this,
+            initializeCallback: dm.initializeDependencies,
+            destroyCallback: dm.destroy,
+          });
         }
       }
 
@@ -1229,11 +1123,11 @@ describe("Test DefaultCore", () => {
         },
       } satisfies WrapletDependencyMap;
 
-      const core = new DefaultCore(node, map);
+      const core = new Core(node, map);
 
       // Set directDependencies to a non-WrapletSet value for a multiple dep
       const coreAny = core as any;
-      const fakeCore = new DefaultCore(document.createElement("div"), {});
+      const fakeCore = new Core(document.createElement("div"), {});
       coreAny.directDependencies["children"] = new ChildWraplet(fakeCore);
 
       expect(() =>
@@ -1242,7 +1136,7 @@ describe("Test DefaultCore", () => {
     });
   });
 
-  it("Test DefaultCore removeDependency skips nullification when wraplet is different", async () => {
+  it("Test Core removeDependency skips nullification when wraplet is different", async () => {
     const node = document.createElement("div");
     node.innerHTML = "<div data-child></div>";
 
@@ -1255,7 +1149,7 @@ describe("Test DefaultCore", () => {
       },
     } satisfies WrapletDependencyMap;
 
-    const core = new DefaultCore(node, map);
+    const core = new Core(node, map);
     core.instantiateDependencies();
     await core.initializeDependencies();
 
@@ -1264,8 +1158,7 @@ describe("Test DefaultCore", () => {
 
     // Replace the dependency with a different wraplet instance
     const differentElement = document.createElement("div");
-    const differentCore = new DefaultCore(differentElement, {});
-    const differentWraplet = new TestWrapletClass(differentCore);
+    const differentWraplet = new TestWrapletClass(differentElement);
     const coreAny = core as any;
     coreAny.directDependencies["child"] = differentWraplet;
 
@@ -1277,7 +1170,7 @@ describe("Test DefaultCore", () => {
     expect(coreAny.directDependencies["child"]).toBe(differentWraplet);
   });
 
-  it("Test DefaultCore instantiateDependencies skips assignment when already instantiated", () => {
+  it("Test Core instantiateDependencies skips assignment when already instantiated", () => {
     const node = document.createElement("div");
     node.innerHTML = "<div data-child></div>";
 
@@ -1290,7 +1183,7 @@ describe("Test DefaultCore", () => {
       },
     } as const satisfies WrapletDependencyMap;
 
-    const core = new DefaultCore(node, map);
+    const core = new Core(node, map);
     const coreAny = core as any;
 
     // First instantiate normally
@@ -1316,7 +1209,7 @@ describe("Test DefaultCore", () => {
     expect(coreAny.directDependencies).toBe(originalDeps);
   });
 
-  it("Test DefaultCore instantiateWrapletItem reuses existing wraplet", () => {
+  it("instantiateWrapletItem reuses existing wraplet", () => {
     const node = document.createElement("div");
     node.innerHTML = "<div data-child></div>";
 
@@ -1326,8 +1219,13 @@ describe("Test DefaultCore", () => {
       [WrapletSymbol]: true = true;
       public wraplet: WrapletApi;
 
-      constructor(core: Core) {
-        this.wraplet = createCoreDependentWrapletApi({ core, wraplet: this });
+      constructor(dm: DependencyManager) {
+        this.wraplet = createWrapletApi({
+          node: dm.node,
+          wraplet: this,
+          initializeCallback: dm.initializeDependencies,
+          destroyCallback: dm.destroy,
+        });
         constructorFn();
       }
     }
@@ -1342,21 +1240,18 @@ describe("Test DefaultCore", () => {
     } satisfies WrapletDependencyMap;
 
     const childElement = node.querySelector("[data-child]")!;
-    const core = new DefaultCore(node, map);
+    const core = new Core(node, map);
 
     // Set up existing wraplet
-    const existingCore = new DefaultCore(childElement, {});
+    const existingCore = new Core(childElement, {});
     const existingWraplet = new ChildWraplet(existingCore);
     const coreAny = core as any;
     coreAny.directDependencies["child"] = existingWraplet;
 
-    const mapWrapper = coreAny.mapWrapper;
-
     // Call instantiateWrapletItem — it should find and reuse the existing wraplet
     const result = coreAny.instantiateWrapletItem(
       "child",
-      mapWrapper.getStartingMap()["child"],
-      mapWrapper,
+      fillMapWithDefaults(map)["child"],
       childElement,
     );
     expect(result).toBe(existingWraplet);
@@ -1371,9 +1266,9 @@ describe("Test DefaultCore", () => {
       [WrapletSymbol]: true = true;
       public wraplet: WrapletApi;
 
-      constructor(core: Core) {
-        this.wraplet = createCoreDependentWrapletApi({
-          core: core,
+      constructor(node: Node) {
+        this.wraplet = createWrapletApi({
+          node,
           wraplet: this,
           destroyCallback: async () => {
             fn();
@@ -1399,7 +1294,7 @@ describe("Test DefaultCore", () => {
 
     const element = document.createElement("div");
     element.innerHTML = `<div data-dep1></div><div data-dep2></div>`;
-    const core = new DefaultCore(element, map);
+    const core = new Core(element, map);
 
     core.instantiateDependencies();
 
@@ -1436,5 +1331,65 @@ describe("Test DefaultCore", () => {
 
     // `fn` should run only once: for dep1.
     expect(fn).toHaveBeenCalledTimes(1);
+  });
+
+  it("allows for coreless leaf-dependencies", async () => {
+    class CorelessWraplet implements Wraplet {
+      [WrapletSymbol]: true = true;
+      public wraplet: WrapletApi;
+
+      constructor(private node: Node) {
+        this.wraplet = createWrapletApi({
+          node: node,
+          wraplet: this,
+        });
+      }
+
+      public getNode(): Node {
+        return this.node;
+      }
+    }
+
+    const map = {
+      child: {
+        selector: "[data-something]",
+        Class: CorelessWraplet,
+        multiple: false,
+        required: true,
+      },
+    } satisfies WrapletDependencyMap;
+
+    const node = document.createElement("div");
+    const childNode = document.createElement("div");
+    childNode.setAttribute("data-something", "");
+    node.appendChild(childNode);
+
+    const core = new Core(node, map);
+    core.instantiateDependencies();
+    await core.initializeDependencies();
+
+    const child = core.dependencies.child;
+
+    expect(child).toBeInstanceOf(CorelessWraplet);
+    expect(child.getNode()).toBe(childNode);
+  });
+
+  it("throws on invalid map argument in createInjector", () => {
+    const injector = Core.createInjector(
+      "invalid" as unknown as WrapletDependencyMap,
+    );
+
+    const fakeMapTreeBuilder = {
+      getParent: jest.fn(),
+      setMap: jest.fn(),
+    };
+
+    expect(() =>
+      injector.callback(
+        document.createElement("div"),
+        fakeMapTreeBuilder as any,
+        {},
+      ),
+    ).toThrow("Invalid map argument.");
   });
 });

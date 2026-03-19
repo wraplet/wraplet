@@ -1,4 +1,4 @@
-import { WrapletApiFactoryBasicCallback } from "./WrapletApiFactoryBasicCallback";
+import { WrapletApiFactoryBasicCallback } from "./WrapletApiFactoryCallbacks";
 import { Wraplet } from "./Wraplet";
 
 export type WrapletApiFactoryArgs<N extends Node = Node> = {

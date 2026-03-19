@@ -1,4 +1,6 @@
-export type Constructable<T> = { new (...args: any[]): T };
+export type Constructable<T, F = any> = {
+  new (firstArg: F, ...args: any[]): T;
+};
 
 export type InstantiableReturnType<T> = T extends {
   new (...args: any[]): infer R;

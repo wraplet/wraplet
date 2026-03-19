@@ -1,16 +1,16 @@
 import "./setup";
-import { AbstractWraplet, DefaultCore, WrapletDependencyMap } from "../src";
+import { AbstractDependentWraplet, Core, WrapletDependencyMap } from "../src";
 import { BaseElementTestWraplet } from "./resources/BaseElementTestWraplet";
-import { Core } from "../src/Core/types/Core";
+import { DependencyManager } from "../src/DependencyManager/types/DependencyManager";
 
 describe("Test passing arguments", () => {
   const testWrapletSelectorAttribute = "data-test-selector";
   const testWrapletChildSelectorAttribute = `${testWrapletSelectorAttribute}-child`;
 
-  class TestWrapletChild extends AbstractWraplet<any> {
+  class TestWrapletChild extends AbstractDependentWraplet<any> {
     private someString: string;
     constructor(element: Element, stringArgument: string) {
-      super(new DefaultCore(element, {}));
+      super(new Core(element, {}));
       this.someString = stringArgument;
     }
     public getSomeString(): string {
@@ -32,8 +32,11 @@ describe("Test passing arguments", () => {
     typeof childrenMap
   > {
     private readonly someString: string;
-    constructor(core: Core<E, typeof childrenMap>, stringArgument: string) {
-      super(core);
+    constructor(
+      dm: DependencyManager<E, typeof childrenMap>,
+      stringArgument: string,
+    ) {
+      super(dm);
       this.someString = stringArgument;
     }
 

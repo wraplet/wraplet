@@ -1,17 +1,42 @@
-import { DestroyListener } from "../Core/types/DestroyListener";
+import { DestroyListener } from "../DependencyManager/types/DestroyListener";
 import { WrapletApiFactoryArgs } from "./types/WrapletApiFactoryArgs";
 import { WrapletApi, WrapletApiDebug } from "./types/WrapletApi";
 import { createOuterInitializeCallback } from "./createOuterInitializeCallback";
 import { createOuterDestroyCallback } from "./createOuterDestroyCallback";
-import { Wraplet } from "../Wraplet/types/Wraplet";
+import { isWraplet, Wraplet } from "./types/Wraplet";
 import {
   addWrapletToNode,
   removeWrapletFromNode,
 } from "../NodeTreeManager/utils";
 
+function validateWrapletApiFactoryArgs<N extends Node>(
+  args: WrapletApiFactoryArgs<N>,
+): void {
+  if (!isWraplet(args.wraplet)) {
+    throw new Error("Correct wraplet instance has to be provided.");
+  }
+
+  if (!(args.node instanceof Node)) {
+    throw new Error("Correct node has to be provided.");
+  }
+
+  if (
+    args.initializeCallback &&
+    typeof args.initializeCallback !== "function"
+  ) {
+    throw new Error("initializeCallback has to be a function.");
+  }
+
+  if (args.destroyCallback && typeof args.destroyCallback !== "function") {
+    throw new Error("destroyCallback has to be a function.");
+  }
+}
+
 export const createWrapletApi = <N extends Node>(
   args: WrapletApiFactoryArgs<N>,
 ): WrapletApi<N> & WrapletApiDebug<N> => {
+  validateWrapletApiFactoryArgs(args);
+
   const nodeAccessors: ((node: N) => void)[] = [];
 
   const defaultStatus = {

@@ -1,76 +1,65 @@
-import { WrapletDependencyMap } from "./Wraplet/types/WrapletDependencyMap";
-import { WrapletDependencies } from "./Wraplet/types/WrapletDependencies";
-import { Wraplet, WrapletSymbol } from "./Wraplet/types/Wraplet";
-import { DependencyInstance } from "./Wraplet/types/DependencyInstance";
-import { Core, isCore } from "./Core/types/Core";
-import { DefaultCore } from "./Core/DefaultCore";
-import { createCoreDependentWrapletApi } from "./Wraplet/createCoreDependentWrapletApi";
-import { Constructable } from "./utils/types/Utils";
-import { UnsupportedNodeTypeError } from "./errors";
-import { DependentWrapletApi } from "./Wraplet/types/DependentWrapletApi";
+import { WrapletDependencyMap } from "./types/WrapletDependencyMap";
+import { WrapletDependencies } from "./types/WrapletDependencies";
+import { Wraplet } from "./types/Wraplet";
+import { DependencyInstance } from "./types/DependencyInstance";
+import {
+  DependencyManager,
+  isCore,
+} from "../DependencyManager/types/DependencyManager";
+import { Core } from "../DependencyManager/Core";
+import { Constructable } from "../utils/types/Utils";
+import { isOverridden } from "./utils";
+import { AbstractWraplet } from "./AbstractWraplet";
+import { createWrapletApi } from "./createWrapletApi";
 
-export abstract class AbstractWraplet<
+export abstract class AbstractDependentWraplet<
   N extends Node = Node,
   M extends WrapletDependencyMap = {},
-> implements Wraplet<N> {
-  public [WrapletSymbol]: true = true;
-
-  public wraplet: DependentWrapletApi<N>;
-
-  constructor(protected core: Core<N, M>) {
+>
+  extends AbstractWraplet<N>
+  implements Wraplet<N>
+{
+  constructor(protected core: DependencyManager<N, M>) {
     if (!isCore(core)) {
-      throw new Error("AbstractWraplet requires a Core instance.");
+      throw new Error("AbstractDependentWraplet requires a Core instance.");
     }
 
-    const supportedNodeTypes = this.supportedNodeTypes();
-    if (supportedNodeTypes !== null) {
-      if (!supportedNodeTypes.find((value) => core.node instanceof value)) {
-        throw new UnsupportedNodeTypeError(
-          `Node type ${core.node.constructor.name} is not supported by the ${this.constructor.name} wraplet.`,
-        );
-      }
-    }
+    super(core.node);
 
-    const isOverridden = (methodName: string): boolean =>
-      Object.prototype.hasOwnProperty.call(
-        Object.getPrototypeOf(this),
-        methodName,
-      );
-
-    if (isOverridden("onDependencyInitialized")) {
+    if (isOverridden(this, "onDependencyInitialized")) {
       core.addDependencyInitializedListener(
         this.onDependencyInitialized.bind(this),
       );
     }
 
-    if (isOverridden("onDependencyInstantiated")) {
+    if (isOverridden(this, "onDependencyInstantiated")) {
       core.addDependencyInstantiatedListener(
         this.onDependencyInstantiated.bind(this),
       );
     }
 
-    if (isOverridden("onDependencyDestroyed")) {
+    if (isOverridden(this, "onDependencyDestroyed")) {
       core.addDependencyDestroyedListener(
         this.onDependencyDestroyed.bind(this),
       );
     }
 
-    const initializeCallback = isOverridden("onInitialize")
-      ? this.onInitialize.bind(this)
-      : undefined;
-
-    const destroyCallback = isOverridden("onDestroy")
-      ? this.onDestroy.bind(this)
-      : undefined;
-
     core.instantiateDependencies();
 
-    this.wraplet = createCoreDependentWrapletApi<N, M>({
-      core: this.core,
+    this.wraplet = createWrapletApi<N>({
+      node: this.node,
       wraplet: this,
-      initializeCallback: initializeCallback,
-      destroyCallback: destroyCallback,
+      initializeCallback: this.onInitialize.bind(this),
+      destroyCallback: this.onDestroy.bind(this),
     });
+  }
+
+  protected async onDestroy(): Promise<void> {
+    await this.core.destroy();
+  }
+
+  protected async onInitialize(): Promise<void> {
+    await this.core.initializeDependencies();
   }
 
   /**
@@ -120,29 +109,6 @@ export abstract class AbstractWraplet<
   }
 
   /**
-   * Wrapped node.
-   */
-  protected get node(): N {
-    return this.core.node;
-  }
-
-  /**
-   * This method gets invoked when the wraplet is initialized.
-   */
-  /* istanbul ignore next -- Base method; only called when overridden by subclass. */
-  protected async onInitialize(): Promise<void> {
-    throw new Error("Method has to be implemented by subclass.");
-  }
-
-  /**
-   * This method gets invoked when the wraplet is destroyed.
-   */
-  /* istanbul ignore next -- Base method; only called when overridden by subclass. */
-  protected async onDestroy(): Promise<void> {
-    throw new Error("Method has to be implemented by subclass.");
-  }
-
-  /**
    * Subclasses must return an array of constructors covering all types in union N.
    * Wrap the result in the `supportedTypeCheck` helper to make sure that the array contains all
    * and only classes that extend the given type.
@@ -151,43 +117,11 @@ export abstract class AbstractWraplet<
     return null;
   }
 
-  /**
-   * Helper for subclasses to easily satisfy the exhaustive check.
-   */
-  protected supportedNodeTypesGuard<T extends readonly Constructable<N>[]>(
-    types: T & (Exclude<N, InstanceType<T[number]>> extends never ? T : never),
-  ): T {
-    return types;
-  }
-
-  /**
-   * This method makes sure that the given instance is an instance of a class belonging to the
-   * given dependency.
-   *
-   * @param item
-   * @param actualUnknownId
-   * @param onlyId
-   *   By hardcoding onlyId you can filter out any other dependencies. It allows you to learn not
-   *   only that the class is correct, but also that the dependency is correct (in the case multiple
-   *   dependencies can use the same class).
-   * @protected
-   */
-  protected isDependencyInstance<K extends keyof M>(
-    item: DependencyInstance<M, keyof M>,
-    actualUnknownId: keyof M,
-    onlyId: K | null = null,
-  ): item is DependencyInstance<M, K> {
-    return (
-      actualUnknownId === (onlyId || actualUnknownId) &&
-      item instanceof this.core.map[actualUnknownId]["Class"]
-    );
-  }
-
   protected static createCore<N extends Node, M extends WrapletDependencyMap>(
     node: N,
     map: M,
-  ): Core<N, M> {
-    return new DefaultCore(node, map);
+  ): DependencyManager<N, M> {
+    return new Core(node, map);
   }
 
   /**
@@ -197,7 +131,7 @@ export abstract class AbstractWraplet<
     T extends abstract new (
       core: any,
       ...args: any[]
-    ) => AbstractWraplet<any, any>,
+    ) => AbstractDependentWraplet<any, any>,
   >(
     this: T,
     node: ParentNode,
@@ -206,11 +140,11 @@ export abstract class AbstractWraplet<
     additional_args: unknown[] = [],
   ): InstanceType<T>[] {
     // @ts-expect-error TypeScript doesn't like this, but we still do this check.
-    if (this === AbstractWraplet) {
+    if (this === AbstractDependentWraplet) {
       throw new Error("You cannot instantiate an abstract class.");
     }
 
-    const self = this as T & typeof AbstractWraplet;
+    const self = this as T & typeof AbstractDependentWraplet;
 
     const result: InstanceType<T>[] = [];
 
@@ -233,7 +167,7 @@ export abstract class AbstractWraplet<
    */
   protected static async createAndInitializeWraplets<
     T extends {
-      new (core: any, ...args: any[]): AbstractWraplet<any, any>;
+      new (core: any, ...args: any[]): AbstractDependentWraplet<any, any>;
     },
   >(
     this: T,
@@ -242,7 +176,7 @@ export abstract class AbstractWraplet<
     attribute: string,
     additional_args: unknown[] = [],
   ): Promise<InstanceType<T>[]> {
-    const self = this as T & typeof AbstractWraplet;
+    const self = this as T & typeof AbstractDependentWraplet;
 
     const wraplets: InstanceType<T>[] = self.createWraplets(
       node,

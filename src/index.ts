@@ -1,22 +1,18 @@
 // Core
-export type { Core } from "./Core/types/Core";
-export type { WrapletCreator } from "./Core/types/WrapletCreator";
-export type { ArgCreator } from "./Core/types/ArgCreator";
-export type { DependencyLifecycleAsyncListener } from "./Core/types/DependencyLifecycleAsyncListener";
-export type { DependencyLifecycleListener } from "./Core/types/DependencyLifecycleListener";
-export { DefaultCore } from "./Core/DefaultCore";
-export { DefaultArgCreator } from "./Core/DefaultArgCreator";
-export { defaultWrapletCreator } from "./Core/defaultWrapletCreator";
+export type { DependencyManager } from "./DependencyManager/types/DependencyManager";
+export type { WrapletCreator } from "./DependencyManager/types/WrapletCreator";
+export type { DependencyLifecycleAsyncListener } from "./DependencyManager/types/DependencyLifecycleAsyncListener";
+export type { DependencyLifecycleListener } from "./DependencyManager/types/DependencyLifecycleListener";
+export { Core } from "./DependencyManager/Core";
 
-export { AbstractWraplet } from "./AbstractWraplet";
+export { AbstractWraplet } from "./Wraplet/AbstractWraplet";
+export { AbstractDependentWraplet } from "./Wraplet/AbstractDependentWraplet";
 export {
   destroyWrapletsRecursively,
   getWrapletsFromNode,
 } from "./NodeTreeManager/utils";
 
 // Map
-export type { DynamicMap } from "./Map/types/DynamicMap";
-export { MapRepeat } from "./Map/MapRepeat";
 
 // WrapletSet
 export type { WrapletSetReadonly } from "./Set/types/WrapletSetReadonly";
@@ -28,14 +24,11 @@ export { DefaultWrapletSet } from "./Set/DefaultWrapletSet";
 // Wraplet
 export type { Wraplet } from "./Wraplet/types/Wraplet";
 export type { WrapletApi, WrapletApiDebug } from "./Wraplet/types/WrapletApi";
-export type { DependentWrapletApi } from "./Wraplet/types/DependentWrapletApi";
 export type { WrapletApiFactoryArgs } from "./Wraplet/types/WrapletApiFactoryArgs";
-export type { RichWrapletApiFactoryArgs } from "./Wraplet/types/RichWrapletApiFactoryArgs";
 export type { Status } from "./Wraplet/types/Status";
 
 export { isWraplet, WrapletSymbol } from "./Wraplet/types/Wraplet";
 
-export * from "./Wraplet/createCoreDependentWrapletApi";
 export * from "./Wraplet/createWrapletApi";
 export * from "./Wraplet/statusActions";
 export { createOuterDestroyCallback } from "./Wraplet/createOuterDestroyCallback";

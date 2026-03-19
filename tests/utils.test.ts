@@ -1,13 +1,10 @@
 import "./setup";
 import {
-  AbstractWraplet,
+  AbstractDependentWraplet,
   Core,
-  createCoreDependentWrapletApi,
-  DefaultCore,
   DefaultWrapletSet,
   destroyWrapletsRecursively,
   getWrapletsFromNode,
-  Status,
   Wraplet,
   WrapletSet,
 } from "../src";
@@ -48,9 +45,9 @@ it("getWrapletsFromNode returns null for node without wraplets", () => {
 });
 it("addWrapletToNode", () => {
   const element = document.createElement("div");
-  class TestWraplet extends AbstractWraplet {}
+  class TestWraplet extends AbstractDependentWraplet {}
 
-  const core = new DefaultCore(element, {});
+  const core = new Core(element, {});
   const wraplet = new TestWraplet(core);
 
   addWrapletToNode(wraplet, element);
@@ -68,28 +65,13 @@ it("destroyWrapletsRecursively", async () => {
 
   const counter = jest.fn();
 
-  class TestWraplet extends AbstractWraplet {
-    status: Status = {
-      isGettingInitialized: false,
-      isInitialized: false,
-      isDestroyed: false,
-      isGettingDestroyed: false,
-    };
-
-    constructor(core: Core<Element>) {
-      super(core);
-
-      this.wraplet = createCoreDependentWrapletApi({
-        core: core,
-        wraplet: this,
-        destroyCallback: async () => {
-          counter();
-        },
-      });
+  class TestWraplet extends AbstractDependentWraplet {
+    protected async onDestroy(): Promise<void> {
+      counter();
     }
   }
 
-  const core = new DefaultCore(element, {});
+  const core = new Core(element, {});
   const wraplet = new TestWraplet(core);
   await wraplet.wraplet.initialize();
 
