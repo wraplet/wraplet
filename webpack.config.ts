@@ -2,6 +2,7 @@ import webpack from "webpack";
 import path from "path";
 import { fileURLToPath } from "url";
 import AmbientDtsPlugin from "./plugins/AmbientDtsPlugin";
+const NodePolyfillPlugin = require('node-polyfill-webpack-plugin');
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -64,6 +65,7 @@ const indexEsmConfig: webpack.Configuration = {
       outputPath: path.resolve(__dirname, "dist", "ambient.d.ts"),
       dtsDir: path.resolve(__dirname, "dist"),
     }),
+    new NodePolyfillPlugin(),
   ],
 };
 
