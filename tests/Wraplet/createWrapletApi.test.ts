@@ -1,10 +1,14 @@
-import { WrapletApi, WrapletSymbol } from "../../src";
-import { createWrapletApi } from "../../src/Wraplet/createWrapletApi";
-import { Wraplet } from "../../src/Wraplet/types/Wraplet";
+import { createWrapletApi, WrapletApi, WrapletSymbol } from "../../src";
+import { createNodelessWrapletApi } from "../../src/Wraplet/createNodelessWrapletApi";
+import {
+  NodelessWrapletSymbol,
+  Wraplet,
+} from "../../src/Wraplet/types/Wraplet";
 
 describe("createWrapletApi", () => {
   class MockWraplet implements Wraplet {
     wraplet: WrapletApi;
+    [NodelessWrapletSymbol]: true = true;
     [WrapletSymbol]: true = true;
 
     constructor() {
@@ -103,26 +107,15 @@ describe("createWrapletApi", () => {
   describe("createWrapletApi arguments validation", () => {
     it("should throw when wraplet is not a valid wraplet instance", () => {
       expect(() =>
-        createWrapletApi({
-          node: document.createElement("div"),
+        createNodelessWrapletApi({
           wraplet: {} as any,
         }),
       ).toThrow("Correct wraplet instance has to be provided.");
     });
 
-    it("should throw when node is not a valid Node instance", () => {
-      expect(() =>
-        createWrapletApi({
-          node: "not-a-node" as any,
-          wraplet: mockWraplet,
-        }),
-      ).toThrow("Correct node has to be provided.");
-    });
-
     it("should throw when initializeCallback is not a function", () => {
       expect(() =>
-        createWrapletApi({
-          node: document.createElement("div"),
+        createNodelessWrapletApi({
           wraplet: mockWraplet,
           initializeCallback: "not-a-function" as any,
         }),
@@ -131,12 +124,22 @@ describe("createWrapletApi", () => {
 
     it("should throw when destroyCallback is not a function", () => {
       expect(() =>
-        createWrapletApi({
-          node: document.createElement("div"),
+        createNodelessWrapletApi({
           wraplet: mockWraplet,
           destroyCallback: "not-a-function" as any,
         }),
       ).toThrow("destroyCallback has to be a function.");
+    });
+  });
+
+  describe("createWrapletApi arguments validation", () => {
+    it("should throw when node is not a valid Node instance", () => {
+      expect(() =>
+        createWrapletApi({
+          node: "not-a-node" as any,
+          wraplet: mockWraplet,
+        }),
+      ).toThrow("Correct node has to be provided.");
     });
   });
 });

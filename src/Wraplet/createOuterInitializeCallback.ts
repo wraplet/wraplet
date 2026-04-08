@@ -3,17 +3,17 @@ import {
   initializationCompleted,
   initializationStarted,
 } from "../Wraplet/statusActions";
-import { Wraplet } from "./types/Wraplet";
+import { NodelessWraplet } from "./types/Wraplet";
 import { WrapletApiFactoryBasicCallback } from "./types/WrapletApiFactoryCallbacks";
 
-export type OuterInitializeCallbackArgs<N extends Node> = {
-  wraplet: Wraplet<N>;
+export type OuterInitializeCallbackArgs = {
+  wraplet: NodelessWraplet;
   destroyCallback: () => Promise<void>;
   status: Status;
 };
 
-export function createOuterInitializeCallback<N extends Node>(
-  args: OuterInitializeCallbackArgs<N>,
+export function createOuterInitializeCallback(
+  args: OuterInitializeCallbackArgs,
   initializeLogic?: WrapletApiFactoryBasicCallback,
 ): () => Promise<void> {
   return async function () {

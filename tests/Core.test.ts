@@ -1,10 +1,12 @@
 import "./setup";
 import {
-  createWrapletApi,
   Core,
   DefaultWrapletSet,
-  WrapletApi,
   WrapletDependencyMap,
+  createWrapletApi,
+  WrapletApi,
+  NodelessWrapletApi,
+  createNodelessWrapletApi,
 } from "../src";
 import {
   DependenciesAreNotAvailableError,
@@ -12,12 +14,18 @@ import {
   MapError,
 } from "../src";
 import { DependencyManager } from "../src";
-import { Wraplet, WrapletSymbol } from "../src/Wraplet/types/Wraplet";
+import {
+  NodelessWraplet,
+  NodelessWrapletSymbol,
+  Wraplet,
+  WrapletSymbol,
+} from "../src/Wraplet/types/Wraplet";
 import { StatusWritable } from "../src/Wraplet/types/Status";
 import { fillMapWithDefaults } from "../src/Map/utils";
 
 describe("Test Core", () => {
   class TestWrapletClass implements Wraplet {
+    [NodelessWrapletSymbol]: true = true;
     [WrapletSymbol]: true = true;
     public wraplet: WrapletApi;
 
@@ -30,6 +38,7 @@ describe("Test Core", () => {
   }
 
   class TestWrapletClassWithDependencies implements Wraplet {
+    [NodelessWrapletSymbol]: true = true;
     [WrapletSymbol]: true = true;
     public wraplet: WrapletApi;
 
@@ -676,6 +685,7 @@ describe("Test Core", () => {
     const depApiDestroy = jest.fn();
 
     class TestWrapletChild1 implements Wraplet {
+      [NodelessWrapletSymbol]: true = true;
       [WrapletSymbol]: true = true;
       public wraplet: WrapletApi;
 
@@ -698,6 +708,7 @@ describe("Test Core", () => {
     }
 
     class TestWrapletChild2 implements Wraplet {
+      [NodelessWrapletSymbol]: true = true;
       [WrapletSymbol]: true = true;
 
       constructor(node: Node) {
@@ -857,6 +868,7 @@ describe("Test Core", () => {
     const constructorFn = jest.fn();
 
     class ChildWraplet implements Wraplet {
+      [NodelessWrapletSymbol]: true = true;
       [WrapletSymbol]: true = true;
       public wraplet: WrapletApi;
 
@@ -904,6 +916,7 @@ describe("Test Core", () => {
       const constructorFn = jest.fn();
 
       class ChildWraplet implements Wraplet {
+        [NodelessWrapletSymbol]: true = true;
         [WrapletSymbol]: true = true;
         public wraplet: WrapletApi;
 
@@ -945,6 +958,7 @@ describe("Test Core", () => {
       const constructorFn = jest.fn();
 
       class ChildWraplet implements Wraplet {
+        [NodelessWrapletSymbol]: true = true;
         [WrapletSymbol]: true = true;
         public wraplet: WrapletApi;
 
@@ -988,6 +1002,7 @@ describe("Test Core", () => {
       node.innerHTML = "<div data-child></div>";
 
       class ChildWraplet implements Wraplet {
+        [NodelessWrapletSymbol]: true = true;
         [WrapletSymbol]: true = true;
         public wraplet: WrapletApi;
 
@@ -1031,6 +1046,7 @@ describe("Test Core", () => {
       node.innerHTML = "<div data-child></div>";
 
       class ChildWraplet implements Wraplet {
+        [NodelessWrapletSymbol]: true = true;
         [WrapletSymbol]: true = true;
         public wraplet: WrapletApi;
 
@@ -1101,6 +1117,7 @@ describe("Test Core", () => {
       const node = document.createElement("div");
 
       class ChildWraplet implements Wraplet {
+        [NodelessWrapletSymbol]: true = true;
         [WrapletSymbol]: true = true;
         public wraplet: WrapletApi;
 
@@ -1216,6 +1233,7 @@ describe("Test Core", () => {
     const constructorFn = jest.fn();
 
     class ChildWraplet implements Wraplet {
+      [NodelessWrapletSymbol]: true = true;
       [WrapletSymbol]: true = true;
       public wraplet: WrapletApi;
 
@@ -1263,6 +1281,7 @@ describe("Test Core", () => {
     const fn = jest.fn();
 
     class WrapletClass implements Wraplet {
+      [NodelessWrapletSymbol]: true = true;
       [WrapletSymbol]: true = true;
       public wraplet: WrapletApi;
 
@@ -1335,6 +1354,7 @@ describe("Test Core", () => {
 
   it("allows for coreless leaf-dependencies", async () => {
     class CorelessWraplet implements Wraplet {
+      [NodelessWrapletSymbol]: true = true;
       [WrapletSymbol]: true = true;
       public wraplet: WrapletApi;
 
@@ -1391,5 +1411,64 @@ describe("Test Core", () => {
         {},
       ),
     ).toThrow("Invalid map argument.");
+  });
+
+  it("handles nodeless wraplets", async () => {
+    class TestNodelessWraplet implements NodelessWraplet {
+      [NodelessWrapletSymbol]: true = true;
+      public wraplet: NodelessWrapletApi;
+
+      constructor() {
+        this.wraplet = createNodelessWrapletApi({
+          wraplet: this,
+        });
+      }
+    }
+
+    const map = {
+      dep: {
+        Class: TestNodelessWraplet,
+        required: true,
+        multiple: false,
+      },
+    } satisfies WrapletDependencyMap;
+
+    const core = new Core(document.createElement("div"), map);
+
+    const instance = new TestNodelessWraplet();
+
+    core.setExistingInstance("dep", instance);
+
+    core.instantiateDependencies();
+
+    await core.initializeDependencies();
+
+    const child = core.dependencies.dep;
+
+    expect(child).toBe(instance);
+  });
+
+  it("throws when dependency class does not produce a Wraplet instance", () => {
+    class NotAWraplet {}
+
+    const map = {
+      broken: {
+        selector: "[data-broken]",
+        Class: NotAWraplet as any,
+        multiple: false,
+        required: true,
+      },
+    } satisfies WrapletDependencyMap;
+
+    const node = document.createElement("div");
+    const child = document.createElement("div");
+    child.setAttribute("data-broken", "");
+    node.appendChild(child);
+
+    const core = new Core(node, map);
+
+    expect(() => core.instantiateDependencies()).toThrow(
+      "Created dependency is not a Wraplet instance.",
+    );
   });
 });

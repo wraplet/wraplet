@@ -1,5 +1,5 @@
 import { Status } from "./types/Status";
-import { Wraplet } from "./types/Wraplet";
+import { NodelessWraplet } from "./types/Wraplet";
 import { DestroyListener } from "../DependencyManager/types/DestroyListener";
 import {
   destructionCompleted,
@@ -7,14 +7,14 @@ import {
 } from "../Wraplet/statusActions";
 import { WrapletApiFactoryBasicCallback } from "./types/WrapletApiFactoryCallbacks";
 
-export type OuterDestroyCallbackArgs<N extends Node> = {
-  wraplet: Wraplet<N>;
-  destroyListeners: DestroyListener<Wraplet<N>>[];
+export type OuterDestroyCallbackArgs = {
+  wraplet: NodelessWraplet;
+  destroyListeners: DestroyListener[];
   status: Status;
 };
 
-export function createOuterDestroyCallback<N extends Node>(
-  args: OuterDestroyCallbackArgs<N>,
+export function createOuterDestroyCallback(
+  args: OuterDestroyCallbackArgs,
   destroyLogic?: WrapletApiFactoryBasicCallback,
 ): () => Promise<void> {
   return async function () {

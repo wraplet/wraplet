@@ -3,13 +3,16 @@ import {
   Core,
   isWraplet,
   Wraplet,
-  WrapletApi,
   WrapletDependencyMap,
+  WrapletApi,
 } from "../../src";
 import { WrapletSymbol } from "../../src";
 import { BaseElementTestWraplet } from "../resources/BaseElementTestWraplet";
 import { Injector } from "../../src/Injector/types/Injector";
 import { CoreOptions } from "../../src/DependencyManager/types/CoreOptions";
+import { NodelessWrapletSymbol } from "../../src/Wraplet/types/Wraplet";
+import { NodelessWrapletApiSymbol } from "../../src/Wraplet/types/NodelessWrapletApi";
+import { WrapletApiSymbol } from "../../src/Wraplet/types/WrapletApi";
 
 it("Test isWraplet", () => {
   class NoWrapletClass {}
@@ -19,8 +22,11 @@ it("Test isWraplet", () => {
   expect(isWraplet(noWraplet)).toBe(false);
 
   class WrapletClass implements Wraplet {
+    [NodelessWrapletSymbol]: true = true;
     [WrapletSymbol]: true = true;
     wraplet: WrapletApi = {
+      [NodelessWrapletApiSymbol]: true,
+      [WrapletApiSymbol]: true,
       destroy: async () => {},
       initialize: async () => {},
       status: {

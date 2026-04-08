@@ -23,12 +23,19 @@ export { DefaultWrapletSet } from "./Set/DefaultWrapletSet";
 
 // Wraplet
 export type { Wraplet } from "./Wraplet/types/Wraplet";
-export type { WrapletApi, WrapletApiDebug } from "./Wraplet/types/WrapletApi";
+export type {
+  NodelessWrapletApi,
+  NodelessWrapletApiDebug,
+} from "./Wraplet/types/NodelessWrapletApi";
+export type { WrapletApiDebug } from "./Wraplet/types/WrapletApi";
+export type { WrapletApi } from "./Wraplet/types/WrapletApi";
+export type { NodelessWrapletApiFactoryArgs } from "./Wraplet/types/NodelessWrapletApiFactoryArgs";
 export type { WrapletApiFactoryArgs } from "./Wraplet/types/WrapletApiFactoryArgs";
 export type { Status } from "./Wraplet/types/Status";
 
 export { isWraplet, WrapletSymbol } from "./Wraplet/types/Wraplet";
 
+export * from "./Wraplet/createNodelessWrapletApi";
 export * from "./Wraplet/createWrapletApi";
 export * from "./Wraplet/statusActions";
 export { createOuterDestroyCallback } from "./Wraplet/createOuterDestroyCallback";

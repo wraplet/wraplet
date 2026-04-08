@@ -1,98 +1,52 @@
-import { DestroyListener } from "../DependencyManager/types/DestroyListener";
-import { WrapletApiFactoryArgs } from "./types/WrapletApiFactoryArgs";
-import { WrapletApi, WrapletApiDebug } from "./types/WrapletApi";
-import { createOuterInitializeCallback } from "./createOuterInitializeCallback";
-import { createOuterDestroyCallback } from "./createOuterDestroyCallback";
-import { isWraplet, Wraplet } from "./types/Wraplet";
 import {
   addWrapletToNode,
   removeWrapletFromNode,
 } from "../NodeTreeManager/utils";
+import { createNodelessWrapletApi } from "./createNodelessWrapletApi";
+import { WrapletApiFactoryArgs } from "./types/WrapletApiFactoryArgs";
+import {
+  WrapletApi,
+  WrapletApiDebug,
+  WrapletApiSymbol,
+} from "./types/WrapletApi";
 
-function validateWrapletApiFactoryArgs<N extends Node>(
+function validateNodeWrapletApiFactoryArgs<N extends Node>(
   args: WrapletApiFactoryArgs<N>,
 ): void {
-  if (!isWraplet(args.wraplet)) {
-    throw new Error("Correct wraplet instance has to be provided.");
-  }
-
   if (!(args.node instanceof Node)) {
     throw new Error("Correct node has to be provided.");
-  }
-
-  if (
-    args.initializeCallback &&
-    typeof args.initializeCallback !== "function"
-  ) {
-    throw new Error("initializeCallback has to be a function.");
-  }
-
-  if (args.destroyCallback && typeof args.destroyCallback !== "function") {
-    throw new Error("destroyCallback has to be a function.");
   }
 }
 
 export const createWrapletApi = <N extends Node>(
   args: WrapletApiFactoryArgs<N>,
 ): WrapletApi<N> & WrapletApiDebug<N> => {
-  validateWrapletApiFactoryArgs(args);
-
   const nodeAccessors: ((node: N) => void)[] = [];
 
-  const defaultStatus = {
-    isGettingInitialized: false,
-    isDestroyed: false,
-    isInitialized: false,
-    isGettingDestroyed: false,
+  const originalInitCallback = args.initializeCallback;
+
+  args.initializeCallback = async () => {
+    addWrapletToNode(args.wraplet, args.node);
+    if (originalInitCallback) {
+      await originalInitCallback();
+    }
   };
 
-  const api: Partial<WrapletApi<N> & WrapletApiDebug<N>> = {};
+  const originalDestroyCallback = args.destroyCallback;
+  args.destroyCallback = async () => {
+    if (originalDestroyCallback) {
+      await originalDestroyCallback();
+    }
+    removeWrapletFromNode(args.wraplet, args.node);
+    nodeAccessors.length = 0;
+  };
 
-  const destroyListeners: DestroyListener<Wraplet<N>>[] = [];
-
-  const destroyCallback = createOuterDestroyCallback(
-    {
-      status: defaultStatus,
-      wraplet: args.wraplet,
-      destroyListeners: destroyListeners,
-    },
-    async () => {
-      if (args.destroyCallback) {
-        await args.destroyCallback();
-      }
-      removeWrapletFromNode(args.wraplet, args.node);
-    },
-  ).bind(api);
-
-  const initializeCallback = createOuterInitializeCallback(
-    {
-      status: defaultStatus,
-      destroyCallback: destroyCallback,
-      wraplet: args.wraplet,
-    },
-    async () => {
-      addWrapletToNode(args.wraplet, args.node);
-      if (args.initializeCallback) {
-        await args.initializeCallback();
-      }
-    },
-  ).bind(api);
-
-  return Object.assign(api, {
+  const nodelessWrapletApi = createNodelessWrapletApi(args);
+  validateNodeWrapletApiFactoryArgs(args);
+  return Object.assign(nodelessWrapletApi, {
+    [WrapletApiSymbol]: true as const,
     __nodeAccessors: nodeAccessors,
-    __destroyListeners: destroyListeners,
-    status: defaultStatus,
-    addDestroyListener: (callback: DestroyListener<Wraplet<N>>) => {
-      destroyListeners.push(callback);
-    },
-
-    initialize: initializeCallback,
-
-    destroy: async () => {
-      await destroyCallback();
-      nodeAccessors.length = 0;
-    },
-
+    addDestroyListener: nodelessWrapletApi.addDestroyListener,
     accessNode: (callback: (node: N) => void) => {
       nodeAccessors.push(callback);
       callback(args.node);

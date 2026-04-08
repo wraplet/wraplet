@@ -10,7 +10,12 @@ import {
   LifecycleError,
   RequiredDependencyDestroyedError,
 } from "../errors";
-import { isWraplet, Wraplet } from "../Wraplet/types/Wraplet";
+import {
+  isNodelessWraplet,
+  isWraplet,
+  NodelessWraplet,
+  Wraplet,
+} from "../Wraplet/types/Wraplet";
 import {
   isWrapletDependencyMap,
   MultipleDependencyKeys,
@@ -285,6 +290,7 @@ export class Core<
           "Internal logic error. Expected a Wraplet.",
         );
       }
+
       let isSame = false;
       existingDependency.wraplet.accessNode((node) => {
         if (node === childElement) {
@@ -355,7 +361,7 @@ export class Core<
 
     let wraplet: Wraplet | null = null;
     try {
-      wraplet = new dependencyDefinition.Class(
+      const instance = new dependencyDefinition.Class(
         dependencyDefinition.injector.callback(
           node,
           this.mapTree.createChild(id),
@@ -363,6 +369,11 @@ export class Core<
         ),
         ...dependencyDefinition.args,
       );
+      if (!isWraplet(instance)) {
+        throw new Error("Created dependency is not a Wraplet instance.");
+      }
+
+      wraplet = instance;
     } catch (e) {
       if (e instanceof UnsupportedNodeTypeError) {
         if (!dependencyDefinition.required) {
@@ -449,7 +460,7 @@ export class Core<
       throw new MapError(`Dependency is already set.`);
     }
 
-    if (!isWraplet(wraplet)) {
+    if (!isNodelessWraplet(wraplet)) {
       throw new MapError(`Provided instance is not a valid wraplet.`);
     }
 
@@ -483,7 +494,7 @@ export class Core<
 
   private prepareIndividualWraplet<K extends Extract<keyof M, string>>(
     id: K,
-    wraplet: Wraplet,
+    wraplet: NodelessWraplet,
   ) {
     // Listen for the dependency's destruction.
     wraplet.wraplet.addDestroyListener(
@@ -687,7 +698,7 @@ export class Core<
           return;
         }
 
-        const wraplets: Wraplet[] = [];
+        const wraplets: NodelessWraplet[] = [];
 
         if (isWrapletSet(dependency)) {
           for (const item of dependency) {
