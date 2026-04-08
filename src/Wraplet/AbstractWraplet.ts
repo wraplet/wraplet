@@ -5,6 +5,7 @@ import { isOverridden } from "./utils";
 import { NodeManager } from "./NodeManager";
 import { createWrapletApi } from "./createWrapletApi";
 import { WrapletApi } from "./types/WrapletApi";
+import { WrapletApiFactoryBasicCallback } from "./types/WrapletApiFactoryCallbacks";
 
 export abstract class AbstractWraplet<
   N extends Node = Node,
@@ -29,6 +30,15 @@ export abstract class AbstractWraplet<
       }
     }
 
+    this.wraplet = this.createWrapletApi();
+  }
+
+  /**
+   * Creates the WrapletApi for this wraplet. Subclasses (e.g. AbstractDependentWraplet)
+   * can override this to supply their own lifecycle callbacks without causing a
+   * double-creation of WrapletApi.
+   */
+  protected createWrapletApi(): WrapletApi<N> {
     const initializeCallback = isOverridden(
       this,
       "onInitialize",
@@ -41,10 +51,21 @@ export abstract class AbstractWraplet<
       ? this.onDestroy.bind(this)
       : undefined;
 
-    this.wraplet = createWrapletApi<N>({
-      node,
+    return this.buildWrapletApi(initializeCallback, destroyCallback);
+  }
+
+  /**
+   * Builds a WrapletApi with the given callbacks and ensures NodeManager cleanup
+   * is always wired into the destroy path.
+   */
+  protected buildWrapletApi(
+    initializeCallback?: WrapletApiFactoryBasicCallback,
+    destroyCallback?: WrapletApiFactoryBasicCallback,
+  ): WrapletApi<N> {
+    return createWrapletApi<N>({
+      node: this.node,
       wraplet: this,
-      initializeCallback: initializeCallback,
+      initializeCallback,
       destroyCallback: async () => {
         if (destroyCallback) {
           await destroyCallback();

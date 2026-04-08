@@ -207,6 +207,10 @@ export class Core<
         const dependencyDefinition = this.map[id];
         this.validateMapItemForNonParent(id, dependencyDefinition);
       }
+      this.wrappedDependencies = this.wrapDependencies(
+        this.directDependencies as WrapletDependencies<M>,
+      );
+      this.dependenciesAreInstantiated = true;
       return;
     }
     for (const id in this.map) {

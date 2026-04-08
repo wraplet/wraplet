@@ -10,8 +10,7 @@ import { Core } from "../DependencyManager/Core";
 import { Constructable } from "../utils/types/Utils";
 import { isOverridden } from "./utils";
 import { AbstractWraplet } from "./AbstractWraplet";
-
-import { createWrapletApi } from "./createWrapletApi";
+import { WrapletApi } from "./types/WrapletApi";
 
 export abstract class AbstractDependentWraplet<
   N extends Node = Node,
@@ -50,13 +49,18 @@ export abstract class AbstractDependentWraplet<
     }
 
     core.instantiateDependencies();
+  }
 
-    this.wraplet = createWrapletApi<N>({
-      node: this.node,
-      wraplet: this,
-      initializeCallback: this.onInitialize.bind(this),
-      destroyCallback: this.onDestroy.bind(this),
-    });
+  /**
+   * Override createWrapletApi to provide Core-aware lifecycle callbacks
+   * instead of the base class's version — this avoids creating two WrapletApi
+   * instances.
+   */
+  protected createWrapletApi(): WrapletApi<N> {
+    return this.buildWrapletApi(
+      this.onInitialize.bind(this),
+      this.onDestroy.bind(this),
+    );
   }
 
   protected async onDestroy(): Promise<void> {
