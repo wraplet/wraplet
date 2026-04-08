@@ -760,7 +760,7 @@ export class Core<
         let currentMap: MapTreeBuilder = map;
 
         const integerGuard = (input: unknown): input is number =>
-          Number.isInteger(map_or_position);
+          Number.isInteger(input);
 
         if (integerGuard(map_or_position)) {
           for (let i = 0; i < map_or_position; i++) {

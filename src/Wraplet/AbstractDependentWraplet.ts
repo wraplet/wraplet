@@ -27,19 +27,23 @@ export abstract class AbstractDependentWraplet<
 
     super(core.node);
 
-    if (isOverridden(this, "onDependencyInitialized")) {
+    if (
+      isOverridden(this, "onDependencyInitialized", AbstractDependentWraplet)
+    ) {
       core.addDependencyInitializedListener(
         this.onDependencyInitialized.bind(this),
       );
     }
 
-    if (isOverridden(this, "onDependencyInstantiated")) {
+    if (
+      isOverridden(this, "onDependencyInstantiated", AbstractDependentWraplet)
+    ) {
       core.addDependencyInstantiatedListener(
         this.onDependencyInstantiated.bind(this),
       );
     }
 
-    if (isOverridden(this, "onDependencyDestroyed")) {
+    if (isOverridden(this, "onDependencyDestroyed", AbstractDependentWraplet)) {
       core.addDependencyDestroyedListener(
         this.onDependencyDestroyed.bind(this),
       );

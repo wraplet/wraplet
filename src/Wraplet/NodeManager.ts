@@ -2,6 +2,7 @@ export class NodeManager<N extends Node> {
   private listeners: {
     callback: EventListenerOrEventListenerObject;
     event: string;
+    options?: AddEventListenerOptions | boolean;
   }[] = [];
 
   constructor(private node: N) {}
@@ -15,12 +16,17 @@ export class NodeManager<N extends Node> {
     this.listeners.push({
       callback,
       event: eventName,
+      options: options,
     });
   }
 
   destroy(): void {
     for (const listener of this.listeners) {
-      this.node.removeEventListener(listener.event, listener.callback);
+      this.node.removeEventListener(
+        listener.event,
+        listener.callback,
+        listener.options,
+      );
     }
     this.listeners.length = 0;
   }

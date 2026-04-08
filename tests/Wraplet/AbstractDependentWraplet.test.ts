@@ -1,15 +1,15 @@
-import "./setup";
+import "../setup";
 import {
   AbstractDependentWraplet,
   AbstractWraplet,
   Core,
   WrapletDependencyMap,
-} from "../src";
-import { BaseElementTestWraplet } from "./resources/BaseElementTestWraplet";
-import { DependencyInstance } from "../src/Wraplet/types/DependencyInstance";
-import { DependencyManager } from "../src";
+} from "../../src";
+import { BaseElementTestWraplet } from "../resources/BaseElementTestWraplet";
+import { DependencyInstance } from "../../src/Wraplet/types/DependencyInstance";
+import { DependencyManager } from "../../src";
 
-import { isWrapletApi } from "../src/Wraplet/types/WrapletApi";
+import { isWrapletApi } from "../../src/Wraplet/types/WrapletApi";
 
 const testWrapletSelectorAttribute = "data-test-selector";
 const testWrapletDependencySelectorAttribute = `${testWrapletSelectorAttribute}-dependency`;
@@ -574,5 +574,47 @@ describe("AbstractDependentWraplet", () => {
       await expect(wraplet.wraplet.initialize()).resolves.not.toThrow();
       await expect(wraplet.wraplet.destroy()).resolves.not.toThrow();
     });
+  });
+
+  it("handles method overrides when only parent overrides", async () => {
+    const funcInit = jest.fn();
+    const funcDestroy = jest.fn();
+    const funcOnDependencyDestroyed = jest.fn();
+    const funcOnDependencyInstantiated = jest.fn();
+    const funcOnDependencyInitialized = jest.fn();
+    class LevelOne extends AbstractDependentWraplet {
+      protected async onInitialize() {
+        funcInit();
+      }
+
+      protected async onDestroy() {
+        funcDestroy();
+      }
+
+      protected async onDependencyDestroyed() {
+        funcOnDependencyDestroyed();
+      }
+
+      protected async onDependencyInstantiated() {
+        funcOnDependencyInstantiated();
+      }
+
+      protected async onDependencyInitialized() {
+        funcOnDependencyInitialized();
+      }
+    }
+    class LevelTwo extends LevelOne {}
+
+    const core = new Core(document.createElement("div"), {});
+
+    const wraplet = new LevelTwo(core);
+    await wraplet.wraplet.initialize();
+    await wraplet.wraplet.destroy();
+
+    expect(funcInit).toHaveBeenCalledTimes(1);
+    expect(funcDestroy).toHaveBeenCalledTimes(1);
+    expect(funcOnDependencyDestroyed).not.toHaveBeenCalledTimes(1);
+    expect(funcOnDependencyInstantiated).not.toHaveBeenCalledTimes(1);
+    expect(funcOnDependencyInitialized).not.toHaveBeenCalledTimes(1);
   });
 });

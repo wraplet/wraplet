@@ -29,11 +29,15 @@ export abstract class AbstractWraplet<
       }
     }
 
-    const initializeCallback = isOverridden(this, "onInitialize")
+    const initializeCallback = isOverridden(
+      this,
+      "onInitialize",
+      AbstractWraplet,
+    )
       ? this.onInitialize.bind(this)
       : undefined;
 
-    const destroyCallback = isOverridden(this, "onDestroy")
+    const destroyCallback = isOverridden(this, "onDestroy", AbstractWraplet)
       ? this.onDestroy.bind(this)
       : undefined;
 

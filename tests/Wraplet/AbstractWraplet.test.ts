@@ -21,4 +21,26 @@ describe("AbstractWraplet", () => {
     // Second access returns the same instance
     expect(wraplet.getNodeManager()).toBe(manager);
   });
+
+  it("handles method overrides when only parent overrides", async () => {
+    const funcInit = jest.fn();
+    const funcDestroy = jest.fn();
+    class LevelOne extends AbstractWraplet {
+      protected async onInitialize() {
+        funcInit();
+      }
+
+      protected async onDestroy() {
+        funcDestroy();
+      }
+    }
+    class LevelTwo extends LevelOne {}
+
+    const wraplet = new LevelTwo(document.createElement("div"));
+    await wraplet.wraplet.initialize();
+    await wraplet.wraplet.destroy();
+
+    expect(funcInit).toHaveBeenCalledTimes(1);
+    expect(funcDestroy).toHaveBeenCalledTimes(1);
+  });
 });

@@ -23,33 +23,35 @@ export const createWrapletApi = <N extends Node>(
 ): WrapletApi<N> & WrapletApiDebug<N> => {
   const nodeAccessors: ((node: N) => void)[] = [];
 
-  const originalInitCallback = args.initializeCallback;
+  const newArgs = { ...args };
 
-  args.initializeCallback = async () => {
-    addWrapletToNode(args.wraplet, args.node);
+  const originalInitCallback = newArgs.initializeCallback;
+  newArgs.initializeCallback = async () => {
+    addWrapletToNode(newArgs.wraplet, newArgs.node);
     if (originalInitCallback) {
       await originalInitCallback();
     }
   };
 
-  const originalDestroyCallback = args.destroyCallback;
-  args.destroyCallback = async () => {
+  const originalDestroyCallback = newArgs.destroyCallback;
+  newArgs.destroyCallback = async () => {
     if (originalDestroyCallback) {
       await originalDestroyCallback();
     }
-    removeWrapletFromNode(args.wraplet, args.node);
+    removeWrapletFromNode(newArgs.wraplet, newArgs.node);
     nodeAccessors.length = 0;
   };
 
-  const nodelessWrapletApi = createNodelessWrapletApi(args);
-  validateNodeWrapletApiFactoryArgs(args);
+  const nodelessWrapletApi = createNodelessWrapletApi(newArgs);
+  validateNodeWrapletApiFactoryArgs(newArgs);
   return Object.assign(nodelessWrapletApi, {
     [WrapletApiSymbol]: true as const,
     __nodeAccessors: nodeAccessors,
-    addDestroyListener: nodelessWrapletApi.addDestroyListener,
+    addDestroyListener:
+      nodelessWrapletApi.addDestroyListener as WrapletApi<N>["addDestroyListener"],
     accessNode: (callback: (node: N) => void) => {
       nodeAccessors.push(callback);
-      callback(args.node);
+      callback(newArgs.node);
     },
   });
 };
