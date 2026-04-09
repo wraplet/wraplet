@@ -5,8 +5,8 @@ import {
   WrapletDependencyMap,
   createWrapletApi,
   WrapletApi,
-  NodelessWrapletApi,
-  createNodelessWrapletApi,
+  DependencyApi,
+  createDependencyApi,
 } from "../src";
 import {
   DependenciesAreNotAvailableError,
@@ -15,8 +15,8 @@ import {
 } from "../src";
 import { DependencyManager } from "../src/DependencyManager/types/DependencyManager";
 import {
-  NodelessWraplet,
-  NodelessWrapletSymbol,
+  Dependency,
+  DependencySymbol,
   Wraplet,
   WrapletSymbol,
 } from "../src/Wraplet/types/Wraplet";
@@ -1400,13 +1400,13 @@ describe("Test Core", () => {
     ).toThrow("Invalid map argument.");
   });
 
-  it("handles nodeless wraplets", async () => {
-    class TestNodelessWraplet implements NodelessWraplet {
-      [NodelessWrapletSymbol]: true = true;
-      public wraplet: NodelessWrapletApi;
+  it("handles dependencies that are not wraplets", async () => {
+    class TestDependency implements Dependency {
+      [DependencySymbol]: true = true;
+      public wraplet: DependencyApi;
 
       constructor() {
-        this.wraplet = createNodelessWrapletApi({
+        this.wraplet = createDependencyApi({
           wraplet: this,
         });
       }
@@ -1414,7 +1414,7 @@ describe("Test Core", () => {
 
     const map = {
       dep: {
-        Class: TestNodelessWraplet,
+        Class: TestDependency,
         required: true,
         multiple: false,
       },
@@ -1422,7 +1422,7 @@ describe("Test Core", () => {
 
     const core = new Core(document.createElement("div"), map);
 
-    const instance = new TestNodelessWraplet();
+    const instance = new TestDependency();
 
     core.setExistingInstance("dep", instance);
 

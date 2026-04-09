@@ -1,17 +1,17 @@
 import {
-  isNodelessWrapletApi,
-  NodelessWrapletApiSymbol,
-} from "../../src/Wraplet/types/NodelessWrapletApi";
+  isDependencyApi,
+  DependencyApiSymbol,
+} from "../../src/Wraplet/types/DependencyApi";
 
-describe("isNodelessWrapletApi", () => {
-  it("returns false for non-NodelessWrapletApi objects", () => {
-    expect(isNodelessWrapletApi(null)).toBe(false);
-    expect(isNodelessWrapletApi({})).toBe(false);
-    expect(isNodelessWrapletApi("string")).toBe(false);
+describe("isDependencyApi", () => {
+  it("returns false for non-DependencyApi objects", () => {
+    expect(isDependencyApi(null)).toBe(false);
+    expect(isDependencyApi({})).toBe(false);
+    expect(isDependencyApi("string")).toBe(false);
   });
 
-  it("returns true for objects with NodelessWrapletApiSymbol", () => {
-    const obj = { [NodelessWrapletApiSymbol]: true };
-    expect(isNodelessWrapletApi(obj)).toBe(true);
+  it("returns true for objects with DependencyApiSymbol", () => {
+    const obj = { [DependencyApiSymbol]: true };
+    expect(isDependencyApi(obj)).toBe(true);
   });
 });

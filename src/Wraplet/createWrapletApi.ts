@@ -2,7 +2,7 @@ import {
   addWrapletToNode,
   removeWrapletFromNode,
 } from "../NodeTreeManager/utils";
-import { createNodelessWrapletApi } from "./createNodelessWrapletApi";
+import { createDependencyApi } from "./createDependencyApi";
 import { WrapletApiFactoryArgs } from "./types/WrapletApiFactoryArgs";
 import {
   WrapletApi,
@@ -47,13 +47,13 @@ export const createWrapletApi = <N extends Node>(
     nodeAccessors.length = 0;
   };
 
-  const nodelessWrapletApi = createNodelessWrapletApi(newArgs);
+  const dependencyApi = createDependencyApi(newArgs);
   validateNodeWrapletApiFactoryArgs(newArgs);
-  return Object.assign(nodelessWrapletApi, {
+  return Object.assign(dependencyApi, {
     [WrapletApiSymbol]: true as const,
     __nodeAccessors: nodeAccessors,
     addDestroyListener:
-      nodelessWrapletApi.addDestroyListener as WrapletApi<N>["addDestroyListener"],
+      dependencyApi.addDestroyListener as WrapletApi<N>["addDestroyListener"],
     accessNode: (callback: (node: N) => void) => {
       nodeAccessors.push(callback);
       callback(newArgs.node);

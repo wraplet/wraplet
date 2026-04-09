@@ -1,5 +1,5 @@
 import { is } from "../../utils/is";
-import { BaseWrapletApi, NodelessWrapletApiDebug } from "./NodelessWrapletApi";
+import { BaseWrapletApi, DependencyApiDebug } from "./DependencyApi";
 import { DestroyListener } from "../../DependencyManager/types/DestroyListener";
 import { Wraplet } from "./Wraplet";
 
@@ -19,8 +19,6 @@ export function isWrapletApi<N extends Node>(
   return is(object, WrapletApiSymbol);
 }
 
-export interface WrapletApiDebug<
-  N extends Node,
-> extends NodelessWrapletApiDebug {
+export interface WrapletApiDebug<N extends Node> extends DependencyApiDebug {
   __nodeAccessors: ((node: N) => void)[];
 }

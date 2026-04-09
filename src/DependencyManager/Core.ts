@@ -11,10 +11,10 @@ import {
   RequiredDependencyDestroyedError,
 } from "../errors";
 import {
-  isAnyWraplet,
   isWraplet,
   Wraplet,
-  Wraplets,
+  Dependencies,
+  isDependency,
 } from "../Wraplet/types/Wraplet";
 import {
   isWrapletDependencyMap,
@@ -467,8 +467,8 @@ export class Core<
       throw new MapError(`Dependency is already set.`);
     }
 
-    if (!isAnyWraplet(wraplet)) {
-      throw new MapError(`Provided instance is not a valid wraplet.`);
+    if (!isDependency(wraplet)) {
+      throw new MapError(`Provided instance is not a valid dependency.`);
     }
 
     this.prepareIndividualWraplet(id, wraplet);
@@ -501,7 +501,7 @@ export class Core<
 
   private prepareIndividualWraplet<K extends Extract<keyof M, string>>(
     id: K,
-    wraplet: Wraplets,
+    wraplet: Dependencies,
   ) {
     // Listen for the dependency's destruction.
     wraplet.wraplet.addDestroyListener(
@@ -705,7 +705,7 @@ export class Core<
           return;
         }
 
-        const wraplets: Wraplets[] = [];
+        const wraplets: Dependencies[] = [];
 
         if (isWrapletSet(dependency)) {
           for (const item of dependency) {

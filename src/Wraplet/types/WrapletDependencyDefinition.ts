@@ -1,4 +1,4 @@
-import { NodelessWraplet, Wraplet } from "./Wraplet";
+import { Dependency, Wraplet } from "./Wraplet";
 import { Constructable } from "../../utils/types/Utils";
 import { Injector } from "../../Injector/types/Injector";
 
@@ -8,7 +8,7 @@ export type SelectorCallback<N extends ParentNode = ParentNode> = (
 
 export type WrapletDependencyDefinition = {
   selector?: string | SelectorCallback;
-  Class: Constructable<Wraplet<any> | NodelessWraplet>;
+  Class: Constructable<Wraplet<any> | Dependency>;
   injector?: Injector;
   required: boolean;
   multiple: boolean;

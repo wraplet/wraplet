@@ -1,12 +1,12 @@
-import { createNodelessWrapletApi } from "../../src/Wraplet/createNodelessWrapletApi";
+import { createDependencyApi } from "../../src/Wraplet/createDependencyApi";
 import {
-  NodelessWrapletSymbol,
+  DependencySymbol,
   Wraplet,
   WrapletSymbol,
 } from "../../src/Wraplet/types/Wraplet";
 import { WrapletApi } from "../../src";
 
-describe("createNodelessWrapletApi", () => {
+describe("createDependencyApi", () => {
   class MockWraplet implements Wraplet {
     wraplet: WrapletApi;
     [WrapletSymbol]: true = true;
@@ -19,9 +19,9 @@ describe("createNodelessWrapletApi", () => {
   const mockWraplet = new MockWraplet();
 
   it("destroys without error when no destroyCallback is provided", async () => {
-    const mockWraplet = { [NodelessWrapletSymbol]: true } as any;
+    const mockWraplet = { [DependencySymbol]: true } as any;
 
-    const api = createNodelessWrapletApi({
+    const api = createDependencyApi({
       wraplet: mockWraplet,
     });
 
@@ -30,10 +30,10 @@ describe("createNodelessWrapletApi", () => {
     expect(api.status.isDestroyed).toBe(true);
   });
 
-  describe("createNodelessWrapletApi arguments validation", () => {
+  describe("createDependencyApi arguments validation", () => {
     it("should throw when wraplet is not a valid wraplet instance", () => {
       expect(() =>
-        createNodelessWrapletApi({
+        createDependencyApi({
           wraplet: {} as any,
         }),
       ).toThrow("Correct wraplet instance has to be provided.");
@@ -41,7 +41,7 @@ describe("createNodelessWrapletApi", () => {
 
     it("should throw when initializeCallback is not a function", () => {
       expect(() =>
-        createNodelessWrapletApi({
+        createDependencyApi({
           wraplet: mockWraplet,
           initializeCallback: "not-a-function" as any,
         }),
@@ -50,7 +50,7 @@ describe("createNodelessWrapletApi", () => {
 
     it("should throw when destroyCallback is not a function", () => {
       expect(() =>
-        createNodelessWrapletApi({
+        createDependencyApi({
           wraplet: mockWraplet,
           destroyCallback: "not-a-function" as any,
         }),

@@ -1,6 +1,6 @@
 import {
   createWrapletApi,
-  NodelessWrapletSymbol,
+  DependencySymbol,
   WrapletApi,
   WrapletSymbol,
 } from "../../src";
@@ -119,7 +119,7 @@ describe("createWrapletApi", () => {
         createWrapletApi({
           node: document.createElement("div"),
           wraplet: {
-            [NodelessWrapletSymbol]: true,
+            [DependencySymbol]: true,
           } as any,
         }),
       ).toThrow("Correct wraplet instance has to be provided.");

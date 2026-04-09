@@ -1,16 +1,16 @@
 import { is } from "../../utils/is";
-import { NodelessWrapletApi } from "./NodelessWrapletApi";
+import { DependencyApi } from "./DependencyApi";
 import { WrapletApi } from "./WrapletApi";
 
-export const NodelessWrapletSymbol = Symbol("NodelessWraplet");
+export const DependencySymbol = Symbol("Dependency");
 
-export interface NodelessWraplet {
-  [NodelessWrapletSymbol]: true;
-  wraplet: NodelessWrapletApi;
+export interface Dependency {
+  [DependencySymbol]: true;
+  wraplet: DependencyApi;
 }
 
-export function isNodelessWraplet(object: unknown): object is NodelessWraplet {
-  return is(object, NodelessWrapletSymbol);
+export function isDependency(object: unknown): object is Dependency {
+  return is(object, DependencySymbol) || is(object, WrapletSymbol);
 }
 
 export const WrapletSymbol = Symbol("Wraplet");
@@ -26,10 +26,4 @@ export function isWraplet<N extends Node>(
   return is(object, WrapletSymbol);
 }
 
-export function isAnyWraplet(
-  object: unknown,
-): object is Wraplet | NodelessWraplet {
-  return isWraplet(object) || isNodelessWraplet(object);
-}
-
-export type Wraplets = Wraplet | NodelessWraplet;
+export type Dependencies = Wraplet | Dependency;

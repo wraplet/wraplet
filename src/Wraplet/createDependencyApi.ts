@@ -1,18 +1,18 @@
 import { DestroyListener } from "../DependencyManager/types/DestroyListener";
-import { NodelessWrapletApiFactoryArgs } from "./types/NodelessWrapletApiFactoryArgs";
+import { DependencyApiFactoryArgs } from "./types/DependencyApiFactoryArgs";
 import {
-  NodelessWrapletApi,
-  NodelessWrapletApiDebug,
-  NodelessWrapletApiSymbol,
-} from "./types/NodelessWrapletApi";
+  DependencyApi,
+  DependencyApiDebug,
+  DependencyApiSymbol,
+} from "./types/DependencyApi";
 import { createOuterInitializeCallback } from "./createOuterInitializeCallback";
 import { createOuterDestroyCallback } from "./createOuterDestroyCallback";
-import { isAnyWraplet } from "./types/Wraplet";
+import { isDependency } from "./types/Wraplet";
 
-function validateNodelessWrapletApiFactoryArgs(
-  args: NodelessWrapletApiFactoryArgs,
+function validateDependencyApiFactoryArgs(
+  args: DependencyApiFactoryArgs,
 ): void {
-  if (!isAnyWraplet(args.wraplet)) {
+  if (!isDependency(args.wraplet)) {
     throw new Error("Correct wraplet instance has to be provided.");
   }
 
@@ -28,10 +28,10 @@ function validateNodelessWrapletApiFactoryArgs(
   }
 }
 
-export const createNodelessWrapletApi = (
-  args: NodelessWrapletApiFactoryArgs,
-): NodelessWrapletApi & NodelessWrapletApiDebug => {
-  validateNodelessWrapletApiFactoryArgs(args);
+export const createDependencyApi = (
+  args: DependencyApiFactoryArgs,
+): DependencyApi & DependencyApiDebug => {
+  validateDependencyApiFactoryArgs(args);
 
   const defaultStatus = {
     isGettingInitialized: false,
@@ -40,7 +40,7 @@ export const createNodelessWrapletApi = (
     isGettingDestroyed: false,
   };
 
-  const api: Partial<NodelessWrapletApi & NodelessWrapletApiDebug> = {};
+  const api: Partial<DependencyApi & DependencyApiDebug> = {};
 
   const destroyListeners: DestroyListener[] = [];
 
@@ -71,7 +71,7 @@ export const createNodelessWrapletApi = (
   ).bind(api);
 
   return Object.assign(api, {
-    [NodelessWrapletApiSymbol]: true,
+    [DependencyApiSymbol]: true,
     __destroyListeners: destroyListeners,
     status: defaultStatus,
     addDestroyListener: (callback: DestroyListener) => {
