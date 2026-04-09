@@ -1,14 +1,11 @@
 import { is } from "../../utils/is";
-import {
-  NodelessWrapletApi,
-  NodelessWrapletApiDebug,
-} from "./NodelessWrapletApi";
+import { BaseWrapletApi, NodelessWrapletApiDebug } from "./NodelessWrapletApi";
 import { DestroyListener } from "../../DependencyManager/types/DestroyListener";
 import { Wraplet } from "./Wraplet";
 
 export const WrapletApiSymbol = Symbol("WrapletApi");
 
-export interface WrapletApi<N extends Node = Node> extends NodelessWrapletApi {
+export interface WrapletApi<N extends Node = Node> extends BaseWrapletApi {
   [WrapletApiSymbol]: true;
 
   accessNode(callback: (node: N) => void): void;

@@ -7,12 +7,12 @@ import {
 } from "./types/NodelessWrapletApi";
 import { createOuterInitializeCallback } from "./createOuterInitializeCallback";
 import { createOuterDestroyCallback } from "./createOuterDestroyCallback";
-import { isNodelessWraplet } from "./types/Wraplet";
+import { isAnyWraplet } from "./types/Wraplet";
 
 function validateNodelessWrapletApiFactoryArgs(
   args: NodelessWrapletApiFactoryArgs,
 ): void {
-  if (!isNodelessWraplet(args.wraplet)) {
+  if (!isAnyWraplet(args.wraplet)) {
     throw new Error("Correct wraplet instance has to be provided.");
   }
 

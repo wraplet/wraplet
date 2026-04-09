@@ -1,8 +1,8 @@
 import { WrapletApiFactoryBasicCallback } from "./WrapletApiFactoryCallbacks";
-import { NodelessWraplet } from "./Wraplet";
+import { Wraplets } from "./Wraplet";
 
 export type NodelessWrapletApiFactoryArgs = {
-  wraplet: NodelessWraplet;
+  wraplet: Wraplets;
   destroyCallback?: WrapletApiFactoryBasicCallback;
   initializeCallback?: WrapletApiFactoryBasicCallback;
 };

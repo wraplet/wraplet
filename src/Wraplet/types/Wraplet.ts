@@ -15,7 +15,7 @@ export function isNodelessWraplet(object: unknown): object is NodelessWraplet {
 
 export const WrapletSymbol = Symbol("Wraplet");
 
-export interface Wraplet<N extends Node = Node> extends NodelessWraplet {
+export interface Wraplet<N extends Node = Node> {
   [WrapletSymbol]: true;
   wraplet: WrapletApi<N>;
 }
@@ -25,3 +25,11 @@ export function isWraplet<N extends Node>(
 ): object is Wraplet<N> {
   return is(object, WrapletSymbol);
 }
+
+export function isAnyWraplet(
+  object: unknown,
+): object is Wraplet | NodelessWraplet {
+  return isWraplet(object) || isNodelessWraplet(object);
+}
+
+export type Wraplets = Wraplet | NodelessWraplet;

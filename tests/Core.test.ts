@@ -25,7 +25,6 @@ import { fillMapWithDefaults } from "../src/Map/utils";
 
 describe("Test Core", () => {
   class TestWrapletClass implements Wraplet {
-    [NodelessWrapletSymbol]: true = true;
     [WrapletSymbol]: true = true;
     public wraplet: WrapletApi;
 
@@ -38,7 +37,6 @@ describe("Test Core", () => {
   }
 
   class TestWrapletClassWithDependencies implements Wraplet {
-    [NodelessWrapletSymbol]: true = true;
     [WrapletSymbol]: true = true;
     public wraplet: WrapletApi;
 
@@ -685,7 +683,6 @@ describe("Test Core", () => {
     const depApiDestroy = jest.fn();
 
     class TestWrapletChild1 implements Wraplet {
-      [NodelessWrapletSymbol]: true = true;
       [WrapletSymbol]: true = true;
       public wraplet: WrapletApi;
 
@@ -708,7 +705,6 @@ describe("Test Core", () => {
     }
 
     class TestWrapletChild2 implements Wraplet {
-      [NodelessWrapletSymbol]: true = true;
       [WrapletSymbol]: true = true;
 
       constructor(node: Node) {
@@ -868,7 +864,6 @@ describe("Test Core", () => {
     const constructorFn = jest.fn();
 
     class ChildWraplet implements Wraplet {
-      [NodelessWrapletSymbol]: true = true;
       [WrapletSymbol]: true = true;
       public wraplet: WrapletApi;
 
@@ -916,7 +911,6 @@ describe("Test Core", () => {
       const constructorFn = jest.fn();
 
       class ChildWraplet implements Wraplet {
-        [NodelessWrapletSymbol]: true = true;
         [WrapletSymbol]: true = true;
         public wraplet: WrapletApi;
 
@@ -958,7 +952,6 @@ describe("Test Core", () => {
       const constructorFn = jest.fn();
 
       class ChildWraplet implements Wraplet {
-        [NodelessWrapletSymbol]: true = true;
         [WrapletSymbol]: true = true;
         public wraplet: WrapletApi;
 
@@ -1002,7 +995,6 @@ describe("Test Core", () => {
       node.innerHTML = "<div data-child></div>";
 
       class ChildWraplet implements Wraplet {
-        [NodelessWrapletSymbol]: true = true;
         [WrapletSymbol]: true = true;
         public wraplet: WrapletApi;
 
@@ -1046,7 +1038,6 @@ describe("Test Core", () => {
       node.innerHTML = "<div data-child></div>";
 
       class ChildWraplet implements Wraplet {
-        [NodelessWrapletSymbol]: true = true;
         [WrapletSymbol]: true = true;
         public wraplet: WrapletApi;
 
@@ -1117,7 +1108,6 @@ describe("Test Core", () => {
       const node = document.createElement("div");
 
       class ChildWraplet implements Wraplet {
-        [NodelessWrapletSymbol]: true = true;
         [WrapletSymbol]: true = true;
         public wraplet: WrapletApi;
 
@@ -1233,7 +1223,6 @@ describe("Test Core", () => {
     const constructorFn = jest.fn();
 
     class ChildWraplet implements Wraplet {
-      [NodelessWrapletSymbol]: true = true;
       [WrapletSymbol]: true = true;
       public wraplet: WrapletApi;
 
@@ -1281,7 +1270,6 @@ describe("Test Core", () => {
     const fn = jest.fn();
 
     class WrapletClass implements Wraplet {
-      [NodelessWrapletSymbol]: true = true;
       [WrapletSymbol]: true = true;
       public wraplet: WrapletApi;
 
@@ -1354,7 +1342,6 @@ describe("Test Core", () => {
 
   it("allows for coreless leaf-dependencies", async () => {
     class CorelessWraplet implements Wraplet {
-      [NodelessWrapletSymbol]: true = true;
       [WrapletSymbol]: true = true;
       public wraplet: WrapletApi;
 

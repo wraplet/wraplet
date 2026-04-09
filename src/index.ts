@@ -34,6 +34,10 @@ export type { WrapletApiFactoryArgs } from "./Wraplet/types/WrapletApiFactoryArg
 export type { Status } from "./Wraplet/types/Status";
 
 export { isWraplet, WrapletSymbol } from "./Wraplet/types/Wraplet";
+export {
+  isNodelessWraplet,
+  NodelessWrapletSymbol,
+} from "./Wraplet/types/Wraplet";
 
 export * from "./Wraplet/createNodelessWrapletApi";
 export * from "./Wraplet/createWrapletApi";

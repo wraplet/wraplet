@@ -1,6 +1,6 @@
 import { StatusWritable } from "../Wraplet/types/Status";
 import { DestroyListener } from "../DependencyManager/types/DestroyListener";
-import { NodelessWraplet } from "../Wraplet/types/Wraplet";
+import { Wraplets } from "../Wraplet/types/Wraplet";
 import { LifecycleError } from "../errors";
 
 export function initializationStarted(status: StatusWritable): boolean {
@@ -56,7 +56,7 @@ export function destructionStarted(status: StatusWritable): boolean {
 
 export async function destructionCompleted(
   status: StatusWritable,
-  wraplet: NodelessWraplet,
+  wraplet: Wraplets,
   destroyListeners: DestroyListener[],
 ): Promise<void> {
   status.isGettingDestroyed = false;

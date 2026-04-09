@@ -5,8 +5,7 @@ import { is } from "../../utils/is";
 
 export const NodelessWrapletApiSymbol = Symbol("NodelessWrapletApi");
 
-export interface NodelessWrapletApi {
-  [NodelessWrapletApiSymbol]: true;
+export interface BaseWrapletApi {
   status: Status;
 
   destroy(): Promise<void>;
@@ -14,6 +13,10 @@ export interface NodelessWrapletApi {
   initialize(): Promise<void>;
 
   addDestroyListener(callback: DestroyListener): void;
+}
+
+export interface NodelessWrapletApi extends BaseWrapletApi {
+  [NodelessWrapletApiSymbol]: true;
 }
 
 export function isNodelessWrapletApi(

@@ -1,4 +1,4 @@
-import { NodelessWrapletSymbol, Wraplet, WrapletSymbol } from "./types/Wraplet";
+import { Wraplet, WrapletSymbol } from "./types/Wraplet";
 import { Constructable } from "../utils/types/Utils";
 import { UnsupportedNodeTypeError } from "../errors";
 import { isOverridden } from "./utils";
@@ -10,7 +10,6 @@ import { WrapletApiFactoryBasicCallback } from "./types/WrapletApiFactoryCallbac
 export abstract class AbstractWraplet<
   N extends Node = Node,
 > implements Wraplet<N> {
-  public [NodelessWrapletSymbol]: true = true;
   public [WrapletSymbol]: true = true;
 
   public wraplet: WrapletApi<N>;

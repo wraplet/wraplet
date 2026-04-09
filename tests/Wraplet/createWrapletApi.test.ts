@@ -1,14 +1,12 @@
-import { createWrapletApi, WrapletApi, WrapletSymbol } from "../../src";
-import { createNodelessWrapletApi } from "../../src/Wraplet/createNodelessWrapletApi";
 import {
-  NodelessWrapletSymbol,
-  Wraplet,
-} from "../../src/Wraplet/types/Wraplet";
+  createWrapletApi,
+  NodelessWrapletSymbol, WrapletApi, WrapletSymbol
+} from "../../src";
+import { Wraplet } from "../../src/Wraplet/types/Wraplet";
 
 describe("createWrapletApi", () => {
   class MockWraplet implements Wraplet {
     wraplet: WrapletApi;
-    [NodelessWrapletSymbol]: true = true;
     [WrapletSymbol]: true = true;
 
     constructor() {
@@ -105,34 +103,6 @@ describe("createWrapletApi", () => {
   });
 
   describe("createWrapletApi arguments validation", () => {
-    it("should throw when wraplet is not a valid wraplet instance", () => {
-      expect(() =>
-        createNodelessWrapletApi({
-          wraplet: {} as any,
-        }),
-      ).toThrow("Correct wraplet instance has to be provided.");
-    });
-
-    it("should throw when initializeCallback is not a function", () => {
-      expect(() =>
-        createNodelessWrapletApi({
-          wraplet: mockWraplet,
-          initializeCallback: "not-a-function" as any,
-        }),
-      ).toThrow("initializeCallback has to be a function.");
-    });
-
-    it("should throw when destroyCallback is not a function", () => {
-      expect(() =>
-        createNodelessWrapletApi({
-          wraplet: mockWraplet,
-          destroyCallback: "not-a-function" as any,
-        }),
-      ).toThrow("destroyCallback has to be a function.");
-    });
-  });
-
-  describe("createWrapletApi arguments validation", () => {
     it("should throw when node is not a valid Node instance", () => {
       expect(() =>
         createWrapletApi({
@@ -140,6 +110,17 @@ describe("createWrapletApi", () => {
           wraplet: mockWraplet,
         }),
       ).toThrow("Correct node has to be provided.");
+    });
+
+    it("should throw when wraplet is not a valid instance in createWrapletApi", () => {
+      expect(() =>
+        createWrapletApi({
+          node: document.createElement("div"),
+          wraplet: {
+            [NodelessWrapletSymbol]: true,
+          } as any,
+        }),
+      ).toThrow("Correct wraplet instance has to be provided.");
     });
   });
 });

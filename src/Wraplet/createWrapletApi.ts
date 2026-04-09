@@ -9,10 +9,15 @@ import {
   WrapletApiDebug,
   WrapletApiSymbol,
 } from "./types/WrapletApi";
+import { isWraplet } from "./types/Wraplet";
 
 function validateNodeWrapletApiFactoryArgs<N extends Node>(
   args: WrapletApiFactoryArgs<N>,
 ): void {
+  if (!isWraplet(args.wraplet)) {
+    throw new Error("Correct wraplet instance has to be provided.");
+  }
+
   if (!(args.node instanceof Node)) {
     throw new Error("Correct node has to be provided.");
   }
