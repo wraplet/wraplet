@@ -1,6 +1,8 @@
 import {
   createWrapletApi,
-  NodelessWrapletSymbol, WrapletApi, WrapletSymbol
+  NodelessWrapletSymbol,
+  WrapletApi,
+  WrapletSymbol,
 } from "../../src";
 import { Wraplet } from "../../src/Wraplet/types/Wraplet";
 
