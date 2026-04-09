@@ -7,7 +7,7 @@ import {
 } from "../../src";
 import { BaseElementTestWraplet } from "../resources/BaseElementTestWraplet";
 import { DependencyInstance } from "../../src/Wraplet/types/DependencyInstance";
-import { DependencyManager } from "../../src";
+import { DependencyManager } from "../../src/DependencyManager/types/DependencyManager";
 
 import { isWrapletApi } from "../../src/Wraplet/types/WrapletApi";
 

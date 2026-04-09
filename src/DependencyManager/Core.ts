@@ -26,7 +26,10 @@ import {
 import { isParentNode } from "../NodeTreeManager/utils";
 import { DependencyInstance } from "../Wraplet/types/DependencyInstance";
 import { CoreOptions } from "./types/CoreOptions";
-import { DependencyManager, CoreSymbol } from "./types/DependencyManager";
+import {
+  DependencyManager,
+  DependencyManagerSymbol,
+} from "./types/DependencyManager";
 import { DestroyListener } from "./types/DestroyListener";
 import { isWrapletSet, WrapletSet } from "../Set/types/WrapletSet";
 import { DefaultWrapletSet } from "../Set/DefaultWrapletSet";
@@ -47,7 +50,7 @@ export class Core<
   N extends Node = Node,
   M extends WrapletDependencyMap = {},
 > implements DependencyManager<N, M> {
-  public [CoreSymbol]: true = true;
+  public [DependencyManagerSymbol]: true = true;
 
   private logger: Logger;
   private dependenciesAreInstantiated: boolean = false;

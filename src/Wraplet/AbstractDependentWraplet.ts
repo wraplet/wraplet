@@ -4,7 +4,7 @@ import { Wraplet } from "./types/Wraplet";
 import { DependencyInstance } from "./types/DependencyInstance";
 import {
   DependencyManager,
-  isCore,
+  isDependencyManager,
 } from "../DependencyManager/types/DependencyManager";
 import { Core } from "../DependencyManager/Core";
 import { Constructable } from "../utils/types/Utils";
@@ -19,17 +19,19 @@ export abstract class AbstractDependentWraplet<
   extends AbstractWraplet<N>
   implements Wraplet<N>
 {
-  constructor(protected core: DependencyManager<N, M>) {
-    if (!isCore(core)) {
-      throw new Error("AbstractDependentWraplet requires a Core instance.");
+  constructor(protected dm: DependencyManager<N, M>) {
+    if (!isDependencyManager<N, M>(dm)) {
+      throw new Error(
+        "AbstractDependentWraplet requires an instance implementing DependencyManager and NodeManager interfaces.",
+      );
     }
 
-    super(core.node);
+    super(dm.node);
 
     if (
       isOverridden(this, "onDependencyInitialized", AbstractDependentWraplet)
     ) {
-      core.addDependencyInitializedListener(
+      dm.addDependencyInitializedListener(
         this.onDependencyInitialized.bind(this),
       );
     }
@@ -37,18 +39,16 @@ export abstract class AbstractDependentWraplet<
     if (
       isOverridden(this, "onDependencyInstantiated", AbstractDependentWraplet)
     ) {
-      core.addDependencyInstantiatedListener(
+      dm.addDependencyInstantiatedListener(
         this.onDependencyInstantiated.bind(this),
       );
     }
 
     if (isOverridden(this, "onDependencyDestroyed", AbstractDependentWraplet)) {
-      core.addDependencyDestroyedListener(
-        this.onDependencyDestroyed.bind(this),
-      );
+      dm.addDependencyDestroyedListener(this.onDependencyDestroyed.bind(this));
     }
 
-    core.instantiateDependencies();
+    dm.instantiateDependencies();
   }
 
   /**
@@ -64,18 +64,18 @@ export abstract class AbstractDependentWraplet<
   }
 
   protected async onDestroy(): Promise<void> {
-    await this.core.destroy();
+    await this.dm.destroy();
   }
 
   protected async onInitialize(): Promise<void> {
-    await this.core.initializeDependencies();
+    await this.dm.initializeDependencies();
   }
 
   /**
    * Dependencies.
    */
   protected get d(): WrapletDependencies<M> {
-    return this.core.dependencies;
+    return this.dm.dependencies;
   }
 
   /**

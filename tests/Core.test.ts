@@ -13,7 +13,7 @@ import {
   TooManyChildrenFoundError,
   MapError,
 } from "../src";
-import { DependencyManager } from "../src";
+import { DependencyManager } from "../src/DependencyManager/types/DependencyManager";
 import {
   NodelessWraplet,
   NodelessWrapletSymbol,

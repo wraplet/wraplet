@@ -10,8 +10,7 @@ import { DependencyLifecycleAsyncListener } from "./DependencyLifecycleAsyncList
 import { DependencyLifecycleListener } from "./DependencyLifecycleListener";
 import { DependencyInstance } from "../../Wraplet/types/DependencyInstance";
 
-const CoreSymbol = Symbol("Core");
-export { CoreSymbol };
+export const DependencyManagerSymbol = Symbol("DependencyManager");
 
 /**
  * Dependency manager interface that defines the public API for managing wraplet relationships
@@ -21,7 +20,7 @@ export interface DependencyManager<
   N extends Node = Node,
   M extends WrapletDependencyMap = {},
 > {
-  [CoreSymbol]: true;
+  [DependencyManagerSymbol]: true;
 
   /**
    * The node that the manager is managing.
@@ -96,8 +95,9 @@ export interface DependencyManager<
   destroy(): Promise<void>;
 }
 
-export function isCore<N extends Node, M extends WrapletDependencyMap>(
-  object: unknown,
-): object is DependencyManager<N, M> {
-  return is(object, CoreSymbol);
+export function isDependencyManager<
+  N extends Node,
+  M extends WrapletDependencyMap,
+>(object: unknown): object is DependencyManager<N, M> {
+  return is(object, DependencyManagerSymbol);
 }

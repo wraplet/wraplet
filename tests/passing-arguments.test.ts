@@ -28,12 +28,10 @@ describe("Test passing arguments", () => {
     },
   } as const satisfies WrapletDependencyMap;
 
-  class TestWraplet<E extends Element = Element> extends BaseElementTestWraplet<
-    typeof childrenMap
-  > {
+  class TestWraplet extends BaseElementTestWraplet<typeof childrenMap> {
     private readonly someString: string;
     constructor(
-      dm: DependencyManager<E, typeof childrenMap>,
+      dm: DependencyManager<Element, typeof childrenMap>,
       stringArgument: string,
     ) {
       super(dm);

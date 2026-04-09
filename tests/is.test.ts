@@ -4,8 +4,8 @@ import { is } from "../src/utils/is";
 
 // Type guards using the shared `is` helper
 import {
-  CoreSymbol,
-  isCore,
+  DependencyManagerSymbol,
+  isDependencyManager,
 } from "../src/DependencyManager/types/DependencyManager";
 import { WrapletSymbol, isWraplet } from "../src/Wraplet/types/Wraplet";
 import { WrapletSetSymbol, isWrapletSet } from "../src/Set/types/WrapletSet";
@@ -20,8 +20,8 @@ describe("utils/is and related type guards (positive cases)", () => {
   });
 
   it("isCore returns true when object has CoreSymbol", () => {
-    const obj: unknown = { [CoreSymbol]: true };
-    expect(isCore(obj)).toBe(true);
+    const obj: unknown = { [DependencyManagerSymbol]: true };
+    expect(isDependencyManager(obj)).toBe(true);
   });
 
   it("isWraplet returns true when object has WrapletSymbol", () => {

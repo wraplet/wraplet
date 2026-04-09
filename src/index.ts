@@ -1,4 +1,4 @@
-// Core
+// DependencyManager
 export type { DependencyManager } from "./DependencyManager/types/DependencyManager";
 export type { WrapletCreator } from "./DependencyManager/types/WrapletCreator";
 export type { DependencyLifecycleAsyncListener } from "./DependencyManager/types/DependencyLifecycleAsyncListener";
