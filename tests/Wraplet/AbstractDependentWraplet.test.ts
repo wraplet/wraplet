@@ -93,7 +93,11 @@ describe("AbstractDependentWraplet", () => {
           public static createAndInit(
             node: ParentNode,
           ): Promise<TestWraplet[]> {
-            return this.createAndInitializeWraplets(node, {}, attribute);
+            return this.createAndInitializeDependentWraplets(
+              node,
+              {},
+              attribute,
+            );
           }
         }
 
@@ -130,7 +134,11 @@ describe("AbstractDependentWraplet", () => {
           public static async createAndInit(
             node: ParentNode,
           ): Promise<TestWraplet[]> {
-            return this.createAndInitializeWraplets(node, map, attribute);
+            return this.createAndInitializeDependentWraplets(
+              node,
+              map,
+              attribute,
+            );
           }
 
           public getDep() {
@@ -156,7 +164,11 @@ describe("AbstractDependentWraplet", () => {
           public static async createAndInit(
             node: ParentNode,
           ): Promise<TestWraplet[]> {
-            return this.createAndInitializeWraplets(node, {}, attribute);
+            return this.createAndInitializeDependentWraplets(
+              node,
+              {},
+              attribute,
+            );
           }
         }
 
@@ -179,9 +191,12 @@ describe("AbstractDependentWraplet", () => {
           public static async createAndInit(
             node: ParentNode,
           ): Promise<TestWraplet[]> {
-            return this.createAndInitializeWraplets(node, {}, attribute, [
-              "hello",
-            ]);
+            return this.createAndInitializeDependentWraplets(
+              node,
+              {},
+              attribute,
+              ["hello"],
+            );
           }
         }
 
@@ -625,6 +640,17 @@ describe("AbstractDependentWraplet", () => {
     class TestDependentWraplet extends AbstractDependentWraplet {
       public static create() {
         return this.createWraplets();
+      }
+    }
+    expect(() => TestDependentWraplet.create()).toThrow(
+      "This method is not supported for AbstractDependentWraplet.",
+    );
+  });
+
+  it("throws when calling createAndInitializeWraplets on AbstractDependentWraplet", () => {
+    class TestDependentWraplet extends AbstractDependentWraplet {
+      public static create() {
+        return this.createAndInitializeWraplets();
       }
     }
     expect(() => TestDependentWraplet.create()).toThrow(

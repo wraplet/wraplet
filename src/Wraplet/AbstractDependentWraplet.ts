@@ -131,6 +131,14 @@ export abstract class AbstractDependentWraplet<
     );
   }
 
+  protected static override createAndInitializeWraplets(): Promise<
+    InstanceType<abstract new (...args: any) => any>
+  > {
+    throw new Error(
+      "This method is not supported for AbstractDependentWraplet.",
+    );
+  }
+
   /**
    * Instantiates wraplets on a given ParentNode.
    */
@@ -172,7 +180,7 @@ export abstract class AbstractDependentWraplet<
   /**
    * Instantiates and initializes wraplets on a given ParentNode.
    */
-  protected static async createAndInitializeWraplets<
+  protected static async createAndInitializeDependentWraplets<
     T extends {
       new (core: any, ...args: any[]): AbstractDependentWraplet<any, any>;
     },

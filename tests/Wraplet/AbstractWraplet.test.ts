@@ -96,4 +96,31 @@ describe("AbstractWraplet", () => {
     // only the child, top element has no attribute
     expect(wraplets).toHaveLength(1);
   });
+
+  it("createAndInitializeWraplets creates and initializes wraplets", async () => {
+    const initFn = jest.fn();
+    class InitWraplet extends AbstractWraplet<HTMLElement> {
+      public static createAndInit(
+        node: ParentNode,
+        attribute: string,
+      ): Promise<InitWraplet[]> {
+        return this.createAndInitializeWraplets(node, attribute);
+      }
+
+      protected async onInitialize() {
+        initFn();
+      }
+    }
+
+    const container = document.createElement("div");
+    container.setAttribute("data-w", "");
+    const child = document.createElement("span");
+    child.setAttribute("data-w", "");
+    container.appendChild(child);
+
+    const wraplets = await InitWraplet.createAndInit(container, "data-w");
+    expect(wraplets).toHaveLength(2);
+    expect(initFn).toHaveBeenCalledTimes(2);
+    wraplets.forEach((w) => expect(w).toBeInstanceOf(InitWraplet));
+  });
 });

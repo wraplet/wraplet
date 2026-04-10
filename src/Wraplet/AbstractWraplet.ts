@@ -146,4 +146,30 @@ export abstract class AbstractWraplet<
 
     return result;
   }
+
+  /**
+   * Instantiates and initializes wraplets on a given ParentNode.
+   */
+  protected static async createAndInitializeWraplets<
+    T extends {
+      new (core: any, ...args: any[]): AbstractWraplet<any>;
+    },
+  >(
+    this: T,
+    node: ParentNode,
+    attribute: string,
+    additional_args: unknown[] = [],
+  ): Promise<InstanceType<T>[]> {
+    const self = this as T & typeof AbstractWraplet;
+
+    const wraplets: InstanceType<T>[] = self.createWraplets(
+      node,
+      attribute,
+      additional_args,
+    );
+    for (const wraplet of wraplets) {
+      await wraplet.wraplet.initialize();
+    }
+    return wraplets;
+  }
 }
