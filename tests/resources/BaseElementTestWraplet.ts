@@ -22,7 +22,12 @@ export abstract class BaseElementTestWraplet<
     element: ParentNode = document,
     args: unknown[] = [],
   ): C | null {
-    const wraplets = this.createWraplets(element, map, selectorAttribute, args);
+    const wraplets = this.createDependentWraplets(
+      element,
+      map,
+      selectorAttribute,
+      args,
+    );
     if (wraplets.length === 0) {
       return null;
     }
@@ -35,7 +40,7 @@ export abstract class BaseElementTestWraplet<
     map: WrapletDependencyMap = {},
     node: ParentNode = document,
   ): C[] {
-    return this.createWraplets(
+    return this.createDependentWraplets(
       node,
       map,
       selectorAttribute,

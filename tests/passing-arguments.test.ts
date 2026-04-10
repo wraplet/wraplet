@@ -46,7 +46,7 @@ describe("Test passing arguments", () => {
       selectorAttribute: string,
       someString: string,
     ) {
-      const wraplets = this.createWraplets(
+      const wraplets = this.createDependentWraplets(
         document,
         childrenMap,
         selectorAttribute,

@@ -7,7 +7,6 @@ import {
   isDependencyManager,
 } from "../DependencyManager/types/DependencyManager";
 import { Core } from "../DependencyManager/Core";
-import { Constructable } from "../utils/types/Utils";
 import { isOverridden } from "./utils";
 import { AbstractWraplet } from "./AbstractWraplet";
 import { WrapletApi } from "./types/WrapletApi";
@@ -56,18 +55,18 @@ export abstract class AbstractDependentWraplet<
    * instead of the base class's version — this avoids creating two WrapletApi
    * instances.
    */
-  protected createWrapletApi(): WrapletApi<N> {
+  protected override createWrapletApi(): WrapletApi<N> {
     return this.buildWrapletApi(
       this.onInitialize.bind(this),
       this.onDestroy.bind(this),
     );
   }
 
-  protected async onDestroy(): Promise<void> {
+  protected override async onDestroy(): Promise<void> {
     await this.dm.destroy();
   }
 
-  protected async onInitialize(): Promise<void> {
+  protected override async onInitialize(): Promise<void> {
     await this.dm.initializeDependencies();
   }
 
@@ -117,26 +116,25 @@ export abstract class AbstractDependentWraplet<
     throw new Error("Method has to be implemented by subclass.");
   }
 
-  /**
-   * Subclasses must return an array of constructors covering all types in union N.
-   * Wrap the result in the `supportedTypeCheck` helper to make sure that the array contains all
-   * and only classes that extend the given type.
-   */
-  protected supportedNodeTypes(): readonly Constructable<N>[] | null {
-    return null;
+  protected static createDependencyManager<
+    N extends Node,
+    M extends WrapletDependencyMap,
+  >(node: N, map: M): DependencyManager<N, M> {
+    return new Core(node, map);
   }
 
-  protected static createCore<N extends Node, M extends WrapletDependencyMap>(
-    node: N,
-    map: M,
-  ): DependencyManager<N, M> {
-    return new Core(node, map);
+  protected static override createWraplets(): InstanceType<
+    abstract new (...args: any) => any
+  > {
+    throw new Error(
+      "This method is not supported for AbstractDependentWraplet.",
+    );
   }
 
   /**
    * Instantiates wraplets on a given ParentNode.
    */
-  protected static createWraplets<
+  protected static createDependentWraplets<
     T extends abstract new (
       core: any,
       ...args: any[]
@@ -158,14 +156,14 @@ export abstract class AbstractDependentWraplet<
     const result: InstanceType<T>[] = [];
 
     if (node instanceof Element && node.hasAttribute(attribute)) {
-      const core = self.createCore(node, map);
-      result.push(new (this as any)(core, ...additional_args));
+      const dm = self.createDependencyManager(node, map);
+      result.push(new (this as any)(dm, ...additional_args));
     }
 
     const foundElements = node.querySelectorAll(`[${attribute}]`);
     for (const element of foundElements) {
-      const core = self.createCore(element, map);
-      result.push(new (this as any)(core, ...additional_args));
+      const dm = self.createDependencyManager(element, map);
+      result.push(new (this as any)(dm, ...additional_args));
     }
 
     return result;
@@ -187,7 +185,7 @@ export abstract class AbstractDependentWraplet<
   ): Promise<InstanceType<T>[]> {
     const self = this as T & typeof AbstractDependentWraplet;
 
-    const wraplets: InstanceType<T>[] = self.createWraplets(
+    const wraplets: InstanceType<T>[] = self.createDependentWraplets(
       node,
       map,
       attribute,

@@ -116,4 +116,34 @@ export abstract class AbstractWraplet<
   protected async onDestroy(): Promise<void> {
     throw new Error("Method has to be implemented by subclass.");
   }
+
+  /**
+   * Instantiates wraplets on a given ParentNode.
+   */
+  protected static createWraplets<
+    T extends abstract new (core: any, ...args: any[]) => AbstractWraplet<any>,
+  >(
+    this: T,
+    node: ParentNode,
+    attribute: string,
+    additional_args: unknown[] = [],
+  ): InstanceType<T>[] {
+    // @ts-expect-error TypeScript doesn't like this, but we still do this check.
+    if (this === AbstractWraplet) {
+      throw new Error("You cannot instantiate an abstract class.");
+    }
+
+    const result: InstanceType<T>[] = [];
+
+    if (node instanceof Element && node.hasAttribute(attribute)) {
+      result.push(new (this as any)(node, ...additional_args));
+    }
+
+    const foundElements = node.querySelectorAll(`[${attribute}]`);
+    for (const element of foundElements) {
+      result.push(new (this as any)(element, ...additional_args));
+    }
+
+    return result;
+  }
 }

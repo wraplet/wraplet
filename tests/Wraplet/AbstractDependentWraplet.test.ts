@@ -44,9 +44,12 @@ describe("AbstractDependentWraplet", () => {
 
     it("should prohibit direct AbstractDependentWraplet instantiation", () => {
       const func = () => {
-        (AbstractDependentWraplet as any).createWraplets(undefined, undefined);
+        (AbstractDependentWraplet as any).createDependentWraplets(
+          undefined,
+          undefined,
+        );
       };
-      expect(func).toThrow(Error);
+      expect(func).toThrow("You cannot instantiate an abstract class.");
     });
 
     it("should initialize a wraplet successfully", () => {
@@ -69,7 +72,7 @@ describe("AbstractDependentWraplet", () => {
 
       class TestWraplet extends AbstractDependentWraplet {
         public static create(node: ParentNode): TestWraplet {
-          const wraplets = this.createWraplets(node, {}, attribute);
+          const wraplets = this.createDependentWraplets(node, {}, attribute);
           expect(wraplets.length).toEqual(1);
 
           return wraplets[0];
@@ -616,5 +619,16 @@ describe("AbstractDependentWraplet", () => {
     expect(funcOnDependencyDestroyed).not.toHaveBeenCalledTimes(1);
     expect(funcOnDependencyInstantiated).not.toHaveBeenCalledTimes(1);
     expect(funcOnDependencyInitialized).not.toHaveBeenCalledTimes(1);
+  });
+
+  it("throws when calling createWraplets on AbstractDependentWraplet", () => {
+    class TestDependentWraplet extends AbstractDependentWraplet {
+      public static create() {
+        return this.createWraplets();
+      }
+    }
+    expect(() => TestDependentWraplet.create()).toThrow(
+      "This method is not supported for AbstractDependentWraplet.",
+    );
   });
 });
