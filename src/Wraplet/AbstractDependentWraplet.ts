@@ -63,7 +63,7 @@ export abstract class AbstractDependentWraplet<
   }
 
   protected override async onDestroy(): Promise<void> {
-    await this.dm.destroy();
+    await this.dm.destroyDependencies();
   }
 
   protected override async onInitialize(): Promise<void> {

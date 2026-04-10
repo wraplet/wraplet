@@ -189,7 +189,7 @@ export class Core<
     // If destruction has been invoked in the meantime, we can finally do it when initialization
     // is finished.
     if (this.statusWritable.isGettingDestroyed) {
-      await this.destroy();
+      await this.destroyDependencies();
     }
   }
 
@@ -552,7 +552,7 @@ export class Core<
   /**
    * This method removes from nodes references to this wraplet and its dependencies recursively.
    */
-  public async destroy(): Promise<void> {
+  public async destroyDependencies(): Promise<void> {
     if (this.statusWritable.isDestroyed) {
       throw new LifecycleError("Dependencies are already destroyed.");
     }
@@ -573,7 +573,7 @@ export class Core<
       return;
     }
 
-    await this.destroyDependencies();
+    await this.destroyDeps();
 
     this.statusWritable.isInitialized = false;
     this.statusWritable.isDestroyed = true;
@@ -698,7 +698,7 @@ export class Core<
     };
   }
 
-  private async destroyDependencies(): Promise<void> {
+  private async destroyDeps(): Promise<void> {
     const results = await Promise.allSettled(
       Object.entries(this.directDependencies).map(async ([id, dependency]) => {
         if (!dependency || !this.map[id]["destructible"]) {

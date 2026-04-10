@@ -273,8 +273,8 @@ describe("Test Core", () => {
     await core.initializeDependencies();
 
     const func = async () => {
-      await core.destroy();
-      await core.destroy();
+      await core.destroyDependencies();
+      await core.destroyDependencies();
     };
 
     await expect(func).rejects.toThrow("Dependencies are already destroyed.");
@@ -379,7 +379,7 @@ describe("Test Core", () => {
     core.instantiateDependencies();
 
     const initPromise = core.initializeDependencies();
-    const destroyPromise = core.destroy();
+    const destroyPromise = core.destroyDependencies();
 
     await Promise.all([initPromise, destroyPromise]);
 
@@ -392,7 +392,7 @@ describe("Test Core", () => {
     const core = new Core(node, {});
 
     expect(core.status.isInitialized).toBe(false);
-    await core.destroy();
+    await core.destroyDependencies();
 
     expect(core.status.isDestroyed).toBe(true);
     expect(core.status.isGettingDestroyed).toBe(false);
@@ -440,7 +440,7 @@ describe("Test Core", () => {
     core.instantiateDependencies();
     await core.initializeDependencies();
 
-    await core.destroy();
+    await core.destroyDependencies();
 
     expect(funcInstantiate).toHaveBeenCalledTimes(1);
     expect(funcInitialized).toHaveBeenCalledTimes(1);
@@ -791,7 +791,7 @@ describe("Test Core", () => {
       });
       core.instantiateDependencies();
       await core.initializeDependencies();
-      await core.destroy();
+      await core.destroyDependencies();
     };
 
     await expect(runDestroyWithErrorInListener).rejects.toThrow();
@@ -872,7 +872,7 @@ describe("Test Core", () => {
           node: dm.node,
           wraplet: this,
           initializeCallback: dm.initializeDependencies,
-          destroyCallback: dm.destroy,
+          destroyCallback: dm.destroyDependencies,
         });
         constructorFn();
       }
@@ -960,7 +960,7 @@ describe("Test Core", () => {
             node: dm.node,
             wraplet: this,
             initializeCallback: dm.initializeDependencies,
-            destroyCallback: dm.destroy,
+            destroyCallback: dm.destroyDependencies,
           });
           constructorFn();
         }
@@ -1003,7 +1003,7 @@ describe("Test Core", () => {
             node: dm.node,
             wraplet: this,
             initializeCallback: core.initializeDependencies,
-            destroyCallback: core.destroy,
+            destroyCallback: core.destroyDependencies,
           });
         }
       }
@@ -1046,7 +1046,7 @@ describe("Test Core", () => {
             node: dm.node,
             wraplet: this,
             initializeCallback: dm.initializeDependencies,
-            destroyCallback: dm.destroy,
+            destroyCallback: dm.destroyDependencies,
           });
         }
       }
@@ -1116,7 +1116,7 @@ describe("Test Core", () => {
             node: dm.node,
             wraplet: this,
             initializeCallback: dm.initializeDependencies,
-            destroyCallback: dm.destroy,
+            destroyCallback: dm.destroyDependencies,
           });
         }
       }
@@ -1231,7 +1231,7 @@ describe("Test Core", () => {
           node: dm.node,
           wraplet: this,
           initializeCallback: dm.initializeDependencies,
-          destroyCallback: dm.destroy,
+          destroyCallback: dm.destroyDependencies,
         });
         constructorFn();
       }
@@ -1334,7 +1334,7 @@ describe("Test Core", () => {
     // destroyed by the core.
     (dep2.wraplet.status as StatusWritable).isGettingDestroyed = true;
 
-    await core.destroy();
+    await core.destroyDependencies();
 
     // `fn` should run only once: for dep1.
     expect(fn).toHaveBeenCalledTimes(1);

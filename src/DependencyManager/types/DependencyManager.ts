@@ -43,6 +43,11 @@ export interface DependencyManager<
   initializeDependencies(): Promise<void>;
 
   /**
+   * Destroy all dependencies.
+   */
+  destroyDependencies(): Promise<void>;
+
+  /**
    * Add a listener that will be called when a dependency is initialized.
    */
   addDependencyInitializedListener(
@@ -88,11 +93,6 @@ export interface DependencyManager<
    * Get the available dependencies.
    */
   readonly dependencies: WrapletDependencies<M>;
-
-  /**
-   * Destroy all dependencies.
-   */
-  destroy(): Promise<void>;
 }
 
 export function isDependencyManager<
