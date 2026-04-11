@@ -1,5 +1,5 @@
-import { Dependencies } from "../../Wraplet/types/Wraplet";
+import { Wraplet } from "../../Wraplet/types/Wraplet";
 
-export type DestroyListener<W extends Dependencies = Dependencies> = (
+export type DestroyListener<W extends Wraplet = Wraplet> = (
   wraplet: W,
 ) => Promise<void>;

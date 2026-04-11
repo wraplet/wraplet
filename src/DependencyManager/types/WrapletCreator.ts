@@ -7,4 +7,4 @@ export type WrapletCreator<N extends Node, M extends WrapletDependencyMap> = (
   node: N,
   definition: WrapletDependencyDefinitionWithDefaults,
   map: MapTreeBuilder<M>,
-) => Wraplet<N>;
+) => Wraplet;

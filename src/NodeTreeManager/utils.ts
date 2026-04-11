@@ -10,12 +10,11 @@ export function isParentNode(node: Node): node is ParentNode {
   );
 }
 
-export function getWrapletsFromNode<
-  N extends Node = Node,
-  W extends Wraplet<N> = Wraplet<N>,
->(node: N): WrapletSet<W> | null {
+export function getWrapletsFromNode<N extends Node = Node>(
+  node: N,
+): WrapletSet | null {
   const wraplets = node.wraplets;
-  if (isWrapletSet<W>(wraplets)) {
+  if (isWrapletSet(wraplets)) {
     return wraplets;
   }
 
@@ -23,7 +22,7 @@ export function getWrapletsFromNode<
 }
 
 export function removeWrapletFromNode<N extends Node>(
-  wraplet: Wraplet<N>,
+  wraplet: Wraplet,
   node: N,
 ): boolean {
   const wraplets = getWrapletsFromNode(node);
@@ -34,7 +33,7 @@ export function removeWrapletFromNode<N extends Node>(
 }
 
 export function addWrapletToNode<N extends Node>(
-  wraplet: Wraplet<N>,
+  wraplet: Wraplet,
   node: N,
 ): void {
   if (!node.wraplets) {

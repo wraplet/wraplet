@@ -16,7 +16,7 @@ export abstract class AbstractDependentWraplet<
   M extends WrapletDependencyMap = {},
 >
   extends AbstractWraplet<N>
-  implements Wraplet<N>
+  implements Wraplet
 {
   constructor(protected dm: DependencyManager<N, M>) {
     if (!isDependencyManager<N, M>(dm)) {
@@ -55,7 +55,7 @@ export abstract class AbstractDependentWraplet<
    * instead of the base class's version — this avoids creating two WrapletApi
    * instances.
    */
-  protected override createWrapletApi(): WrapletApi<N> {
+  protected override createWrapletApi(): WrapletApi {
     return this.buildWrapletApi(
       this.onInitialize.bind(this),
       this.onDestroy.bind(this),

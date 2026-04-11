@@ -2,7 +2,6 @@ import {
   addWrapletToNode,
   removeWrapletFromNode,
 } from "../NodeTreeManager/utils";
-import { createDependencyApi } from "./createDependencyApi";
 import { WrapletApiFactoryArgs } from "./types/WrapletApiFactoryArgs";
 import {
   WrapletApi,
@@ -10,6 +9,9 @@ import {
   WrapletApiSymbol,
 } from "./types/WrapletApi";
 import { isWraplet } from "./types/Wraplet";
+import { DestroyListener } from "../DependencyManager/types/DestroyListener";
+import { createOuterDestroyCallback } from "./createOuterDestroyCallback";
+import { createOuterInitializeCallback } from "./createOuterInitializeCallback";
 
 function validateNodeWrapletApiFactoryArgs<N extends Node>(
   args: WrapletApiFactoryArgs<N>,
@@ -18,45 +20,82 @@ function validateNodeWrapletApiFactoryArgs<N extends Node>(
     throw new Error("Correct wraplet instance has to be provided.");
   }
 
-  if (!(args.node instanceof Node)) {
+  if (args.node && !(args.node instanceof Node)) {
     throw new Error("Correct node has to be provided.");
+  }
+
+  if (
+    args.initializeCallback &&
+    typeof args.initializeCallback !== "function"
+  ) {
+    throw new Error("initializeCallback has to be a function.");
+  }
+
+  if (args.destroyCallback && typeof args.destroyCallback !== "function") {
+    throw new Error("destroyCallback has to be a function.");
   }
 }
 
-export const createWrapletApi = <N extends Node>(
-  args: WrapletApiFactoryArgs<N>,
-): WrapletApi<N> & WrapletApiDebug<N> => {
-  const nodeAccessors: ((node: N) => void)[] = [];
+export const createWrapletApi = (
+  args: WrapletApiFactoryArgs,
+): WrapletApi & WrapletApiDebug => {
+  validateNodeWrapletApiFactoryArgs(args);
 
   const newArgs = { ...args };
 
-  const originalInitCallback = newArgs.initializeCallback;
-  newArgs.initializeCallback = async () => {
-    addWrapletToNode(newArgs.wraplet, newArgs.node);
-    if (originalInitCallback) {
-      await originalInitCallback();
-    }
+  const defaultStatus = {
+    isGettingInitialized: false,
+    isDestroyed: false,
+    isInitialized: false,
+    isGettingDestroyed: false,
   };
 
-  const originalDestroyCallback = newArgs.destroyCallback;
-  newArgs.destroyCallback = async () => {
-    if (originalDestroyCallback) {
-      await originalDestroyCallback();
-    }
-    removeWrapletFromNode(newArgs.wraplet, newArgs.node);
-    nodeAccessors.length = 0;
-  };
+  const api: Partial<WrapletApi & WrapletApiDebug> = {};
 
-  const dependencyApi = createDependencyApi(newArgs);
-  validateNodeWrapletApiFactoryArgs(newArgs);
-  return Object.assign(dependencyApi, {
-    [WrapletApiSymbol]: true as const,
-    __nodeAccessors: nodeAccessors,
-    addDestroyListener:
-      dependencyApi.addDestroyListener as WrapletApi<N>["addDestroyListener"],
-    accessNode: (callback: (node: N) => void) => {
-      nodeAccessors.push(callback);
-      callback(newArgs.node);
+  const destroyListeners: DestroyListener[] = [];
+
+  const destroyCallback = createOuterDestroyCallback(
+    {
+      status: defaultStatus,
+      wraplet: newArgs.wraplet,
+      destroyListeners: destroyListeners,
     },
+    async () => {
+      if (newArgs.destroyCallback) {
+        await newArgs.destroyCallback();
+      }
+      if (newArgs.node) {
+        removeWrapletFromNode(newArgs.wraplet, newArgs.node);
+      }
+    },
+  ).bind(api);
+
+  const initializeCallback = createOuterInitializeCallback(
+    {
+      status: defaultStatus,
+      destroyCallback: destroyCallback,
+      wraplet: newArgs.wraplet,
+    },
+    async () => {
+      if (newArgs.node) {
+        addWrapletToNode(newArgs.wraplet, newArgs.node);
+      }
+      if (newArgs.initializeCallback) {
+        await newArgs.initializeCallback();
+      }
+    },
+  ).bind(api);
+
+  return Object.assign(api, {
+    [WrapletApiSymbol]: true as const,
+    __destroyListeners: destroyListeners,
+    status: defaultStatus,
+    addDestroyListener: (callback: DestroyListener) => {
+      destroyListeners.push(callback);
+    },
+
+    initialize: initializeCallback,
+
+    destroy: destroyCallback,
   });
 };

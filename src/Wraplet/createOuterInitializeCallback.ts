@@ -3,11 +3,11 @@ import {
   initializationCompleted,
   initializationStarted,
 } from "../Wraplet/statusActions";
-import { Dependencies } from "./types/Wraplet";
+import { Wraplet } from "./types/Wraplet";
 import { WrapletApiFactoryBasicCallback } from "./types/WrapletApiFactoryCallbacks";
 
 export type OuterInitializeCallbackArgs = {
-  wraplet: Dependencies;
+  wraplet: Wraplet;
   destroyCallback: () => Promise<void>;
   status: Status;
 };

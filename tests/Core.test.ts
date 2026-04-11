@@ -5,8 +5,6 @@ import {
   WrapletDependencyMap,
   createWrapletApi,
   WrapletApi,
-  DependencyApi,
-  createDependencyApi,
 } from "../src";
 import {
   DependenciesAreNotAvailableError,
@@ -14,12 +12,7 @@ import {
   MapError,
 } from "../src";
 import { DependencyManager } from "../src/DependencyManager/types/DependencyManager";
-import {
-  Dependency,
-  DependencySymbol,
-  Wraplet,
-  WrapletSymbol,
-} from "../src/Wraplet/types/Wraplet";
+import { Wraplet, WrapletSymbol } from "../src/Wraplet/types/Wraplet";
 import { StatusWritable } from "../src/Wraplet/types/Status";
 import { fillMapWithDefaults } from "../src/Map/utils";
 
@@ -30,7 +23,7 @@ describe("Test Core", () => {
 
     constructor(private node: Node) {
       this.wraplet = createWrapletApi({
-        node: node,
+        node,
         wraplet: this,
       });
     }
@@ -867,38 +860,39 @@ describe("Test Core", () => {
       [WrapletSymbol]: true = true;
       public wraplet: WrapletApi;
 
-      constructor(dm: DependencyManager) {
+      constructor(node: Node) {
         this.wraplet = createWrapletApi({
-          node: dm.node,
+          node,
           wraplet: this,
-          initializeCallback: dm.initializeDependencies,
-          destroyCallback: dm.destroyDependencies,
         });
         constructorFn();
       }
     }
 
     const map = {
-      child: {
+      children: {
         selector: "[data-child]",
         Class: ChildWraplet,
         multiple: true,
         required: false,
       },
-    } as const satisfies WrapletDependencyMap;
+    } satisfies WrapletDependencyMap;
 
     const core = new Core(node, map);
 
     // First, add an existing instance for the same element
     const childElement = node.querySelector("[data-child]")!;
-    const existingCore = new Core(childElement, {});
-    const existingWraplet = new ChildWraplet(existingCore);
-    core.addExistingInstance("child", existingWraplet as any);
+    const existingWraplet = new ChildWraplet(childElement);
+    await existingWraplet.wraplet.initialize();
+
+    core.addExistingInstance("children", existingWraplet);
 
     // Now instantiate — findExistingWraplet should find the existing one and reuse it
     core.instantiateDependencies();
 
-    expect(core.dependencies["child"].size).toBe(1);
+    await core.initializeDependencies();
+
+    expect(core.dependencies["children"].size).toBe(1);
     // Constructor called once for the manual instance, not again during instantiation
     expect(constructorFn).toHaveBeenCalledTimes(1);
   });
@@ -945,7 +939,7 @@ describe("Test Core", () => {
       expect(constructorFn).toHaveBeenCalledTimes(3);
     });
 
-    it("findExistingWraplet for single dependency reuses matching wraplet", () => {
+    it("findExistingWraplet for single dependency reuses matching wraplet", async () => {
       const node = document.createElement("div");
       node.innerHTML = "<div data-child></div>";
 
@@ -955,12 +949,10 @@ describe("Test Core", () => {
         [WrapletSymbol]: true = true;
         public wraplet: WrapletApi;
 
-        constructor(dm: DependencyManager) {
+        constructor(node: Node) {
           this.wraplet = createWrapletApi({
-            node: dm.node,
+            node,
             wraplet: this,
-            initializeCallback: dm.initializeDependencies,
-            destroyCallback: dm.destroyDependencies,
           });
           constructorFn();
         }
@@ -979,8 +971,9 @@ describe("Test Core", () => {
       const core = new Core(node, map);
 
       // Manually set up an existing wraplet for the same element via private access
-      const existingCore = new Core(childElement, {});
-      const existingWraplet = new ChildWraplet(existingCore);
+      const existingWraplet = new ChildWraplet(childElement);
+      await existingWraplet.wraplet.initialize();
+
       const coreAny = core as any;
       coreAny.directDependencies["child"] = existingWraplet;
       coreAny.dependenciesAreInstantiated = true;
@@ -1033,7 +1026,7 @@ describe("Test Core", () => {
       expect(result).toBeNull();
     });
 
-    it("findExistingWraplet throws for multiple instances wrapping same element", () => {
+    it("findExistingWraplet throws for multiple instances wrapping same element", async () => {
       const node = document.createElement("div");
       node.innerHTML = "<div data-child></div>";
 
@@ -1041,12 +1034,10 @@ describe("Test Core", () => {
         [WrapletSymbol]: true = true;
         public wraplet: WrapletApi;
 
-        constructor(dm: DependencyManager) {
+        constructor(node: Node) {
           this.wraplet = createWrapletApi({
-            node: dm.node,
+            node,
             wraplet: this,
-            initializeCallback: dm.initializeDependencies,
-            destroyCallback: dm.destroyDependencies,
           });
         }
       }
@@ -1064,10 +1055,11 @@ describe("Test Core", () => {
       const core = new Core(node, map);
 
       // Create two wraplets wrapping the same element
-      const core1 = new Core(childElement, {});
-      const wraplet1 = new ChildWraplet(core1);
-      const core2 = new Core(childElement, {});
-      const wraplet2 = new ChildWraplet(core2);
+      const wraplet1 = new ChildWraplet(childElement);
+      await wraplet1.wraplet.initialize();
+
+      const wraplet2 = new ChildWraplet(childElement);
+      await wraplet2.wraplet.initialize();
 
       const set = new DefaultWrapletSet();
       set.add(wraplet1);
@@ -1140,6 +1132,36 @@ describe("Test Core", () => {
       expect(() =>
         coreAny.findExistingWraplet("children", document.createElement("div")),
       ).toThrow("Internal logic error. Expected a WrapletSet.");
+    });
+
+    it("findExistingWraplet returns null when child element has wraplets but not the existing dependency", () => {
+      const node = document.createElement("div");
+
+      const map = {
+        child: {
+          selector: "[data-child]",
+          Class: TestWrapletClass,
+          multiple: false,
+          required: false,
+        },
+      } satisfies WrapletDependencyMap;
+
+      const core = new Core(node, map);
+      const coreAny = core as any;
+
+      // Create the existing dependency wraplet
+      coreAny.directDependencies["child"] = new TestWrapletClass(
+        document.createElement("div"),
+      );
+
+      // Create a child element that has a wraplets set with a different wraplet
+      const childElement = document.createElement("div");
+      const otherWraplet = new TestWrapletClass(document.createElement("span"));
+      childElement.wraplets = new DefaultWrapletSet();
+      childElement.wraplets.add(otherWraplet);
+
+      const result = coreAny.findExistingWraplet("child", childElement);
+      expect(result).toBeNull();
     });
   });
 
@@ -1216,7 +1238,7 @@ describe("Test Core", () => {
     expect(coreAny.directDependencies).toBe(originalDeps);
   });
 
-  it("instantiateWrapletItem reuses existing wraplet", () => {
+  it("instantiateWrapletItem reuses existing wraplet", async () => {
     const node = document.createElement("div");
     node.innerHTML = "<div data-child></div>";
 
@@ -1226,12 +1248,10 @@ describe("Test Core", () => {
       [WrapletSymbol]: true = true;
       public wraplet: WrapletApi;
 
-      constructor(dm: DependencyManager) {
+      constructor(node: Node) {
         this.wraplet = createWrapletApi({
-          node: dm.node,
+          node,
           wraplet: this,
-          initializeCallback: dm.initializeDependencies,
-          destroyCallback: dm.destroyDependencies,
         });
         constructorFn();
       }
@@ -1250,8 +1270,8 @@ describe("Test Core", () => {
     const core = new Core(node, map);
 
     // Set up existing wraplet
-    const existingCore = new Core(childElement, {});
-    const existingWraplet = new ChildWraplet(existingCore);
+    const existingWraplet = new ChildWraplet(childElement);
+    await existingWraplet.wraplet.initialize();
     const coreAny = core as any;
     coreAny.directDependencies["child"] = existingWraplet;
 
@@ -1401,12 +1421,12 @@ describe("Test Core", () => {
   });
 
   it("handles dependencies that are not wraplets", async () => {
-    class TestDependency implements Dependency {
-      [DependencySymbol]: true = true;
-      public wraplet: DependencyApi;
+    class TestDependency implements Wraplet {
+      [WrapletSymbol]: true = true;
+      public wraplet: WrapletApi;
 
       constructor() {
-        this.wraplet = createDependencyApi({
+        this.wraplet = createWrapletApi({
           wraplet: this,
         });
       }

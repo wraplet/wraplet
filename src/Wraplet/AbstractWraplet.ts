@@ -9,10 +9,10 @@ import { WrapletApiFactoryBasicCallback } from "./types/WrapletApiFactoryCallbac
 
 export abstract class AbstractWraplet<
   N extends Node = Node,
-> implements Wraplet<N> {
+> implements Wraplet {
   public [WrapletSymbol]: true = true;
 
-  public wraplet: WrapletApi<N>;
+  public wraplet: WrapletApi;
   private _nodeManager: NodeManager<N> | undefined;
 
   constructor(protected node: N) {
@@ -37,7 +37,7 @@ export abstract class AbstractWraplet<
    * can override this to supply their own lifecycle callbacks without causing a
    * double-creation of WrapletApi.
    */
-  protected createWrapletApi(): WrapletApi<N> {
+  protected createWrapletApi(): WrapletApi {
     const initializeCallback = isOverridden(
       this,
       "onInitialize",
@@ -60,8 +60,8 @@ export abstract class AbstractWraplet<
   protected buildWrapletApi(
     initializeCallback?: WrapletApiFactoryBasicCallback,
     destroyCallback?: WrapletApiFactoryBasicCallback,
-  ): WrapletApi<N> {
-    return createWrapletApi<N>({
+  ): WrapletApi {
+    return createWrapletApi({
       node: this.node,
       wraplet: this,
       initializeCallback,

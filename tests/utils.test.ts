@@ -15,7 +15,7 @@ import {
 
 it("Test removing and adding wraplets to nodes", () => {
   const node = document.createElement("div");
-  const mock = jest.fn() as unknown as Wraplet<HTMLDivElement>;
+  const mock = jest.fn() as unknown as Wraplet;
 
   const removed = removeWrapletFromNode(mock, node);
   // Wasn't added, so it cannot be removed.

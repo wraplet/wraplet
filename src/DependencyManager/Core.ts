@@ -10,12 +10,7 @@ import {
   LifecycleError,
   RequiredDependencyDestroyedError,
 } from "../errors";
-import {
-  isWraplet,
-  Wraplet,
-  Dependencies,
-  isDependency,
-} from "../Wraplet/types/Wraplet";
+import { isWraplet, Wraplet } from "../Wraplet/types/Wraplet";
 import {
   isWrapletDependencyMap,
   MultipleDependencyKeys,
@@ -135,7 +130,7 @@ export class Core<
     this.statusWritable.isGettingInitialized = true;
 
     const results = await Promise.allSettled(
-      Object.entries(this.wrappedDependencies).map(async ([id, dependency]) => {
+      Object.entries(this.directDependencies).map(async ([id, dependency]) => {
         if (!dependency) return;
 
         const wraplets: Wraplet[] = isWrapletSet(dependency)
@@ -262,35 +257,31 @@ export class Core<
     const existingDependency = this.directDependencies[id];
     // Handle multiple.
     if (this.map[id]["multiple"]) {
-      if (!isWrapletSet<Wraplet<N>>(existingDependency)) {
+      if (!isWrapletSet(existingDependency)) {
         throw new InternalLogicError(
           "Internal logic error. Expected a WrapletSet.",
         );
       }
 
-      const existingWraplets = existingDependency.find((wraplet) => {
-        let result = false;
+      const childElementWraplets = childElement.wraplets;
 
-        wraplet.wraplet.accessNode((node) => {
-          if (node === childElement) {
-            result = true;
-          }
-        });
-
-        return result;
-      });
-
-      if (existingWraplets.length === 0) {
+      if (!childElementWraplets) {
         return null;
       }
 
-      if (existingWraplets.length > 1) {
+      const existingDependencies = existingDependency.find(
+        (wraplet: Wraplet) => {
+          return childElementWraplets.has(wraplet);
+        },
+      );
+
+      if (existingDependencies.length > 1) {
         throw new InternalLogicError(
           "Internal logic error. Multiple instances wrapping the same element found in the core.",
         );
       }
 
-      return existingWraplets[0];
+      return existingDependencies[0];
     } else {
       if (!isWraplet(existingDependency)) {
         throw new InternalLogicError(
@@ -298,20 +289,17 @@ export class Core<
         );
       }
 
-      let isSame = false;
-      existingDependency.wraplet.accessNode((node) => {
-        if (node === childElement) {
-          isSame = true;
-        }
-      });
+      if (!childElement.wraplets) {
+        return null;
+      }
 
-      if (!isSame) {
+      if (!childElement.wraplets.has(existingDependency)) {
         return null;
       }
     }
 
     // Handle single.
-    return existingDependency as Wraplet<N>;
+    return existingDependency as Wraplet;
   }
 
   private instantiateSingleWrapletDependency<T extends keyof M>(
@@ -408,14 +396,14 @@ export class Core<
   ): WrapletSet {
     const selector = dependencyDefinition.selector;
     if (!selector) {
-      return new DefaultWrapletSet<Wraplet<N>>();
+      return new DefaultWrapletSet<Wraplet>();
     }
 
     // Find children elements based on the map.
     const childElements = this.findChildrenElements(selector, node);
     this.validateElements(id, childElements, dependencyDefinition);
 
-    const items: WrapletSet = new DefaultWrapletSet<Wraplet<N>>();
+    const items: WrapletSet = new DefaultWrapletSet<Wraplet>();
     for (const childElement of childElements) {
       let wraplet = this.findExistingWraplet(id, childElement);
       if (!wraplet) {
@@ -467,7 +455,7 @@ export class Core<
       throw new MapError(`Dependency is already set.`);
     }
 
-    if (!isDependency(wraplet)) {
+    if (!isWraplet(wraplet)) {
       throw new MapError(`Provided instance is not a valid dependency.`);
     }
 
@@ -491,8 +479,8 @@ export class Core<
 
     const items: WrapletSet =
       this.directDependencies && this.directDependencies[id]
-        ? (this.directDependencies[id] as WrapletSet<Wraplet<N>>)
-        : new DefaultWrapletSet<Wraplet<N>>();
+        ? (this.directDependencies[id] as WrapletSet)
+        : new DefaultWrapletSet<Wraplet>();
 
     items.add(wraplet);
 
@@ -501,7 +489,7 @@ export class Core<
 
   private prepareIndividualWraplet<K extends Extract<keyof M, string>>(
     id: K,
-    wraplet: Dependencies,
+    wraplet: Wraplet,
   ) {
     // Listen for the dependency's destruction.
     wraplet.wraplet.addDestroyListener(
@@ -705,7 +693,7 @@ export class Core<
           return;
         }
 
-        const wraplets: Dependencies[] = [];
+        const wraplets: Wraplet[] = [];
 
         if (isWrapletSet(dependency)) {
           for (const item of dependency) {

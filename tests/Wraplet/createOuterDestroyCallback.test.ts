@@ -4,7 +4,7 @@ import type { Status } from "../../src/Wraplet/types/Status";
 
 describe("createOuterDestroyCallback", () => {
   it("should handle destroy when __nodeAccessors is not an array", async () => {
-    const mockWraplet = {} as Wraplet<any>;
+    const mockWraplet = {} as Wraplet;
     const destroyListeners: any[] = [];
     const status: Status = {
       isGettingInitialized: false,

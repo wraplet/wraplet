@@ -1,5 +1,5 @@
 import { Status } from "./types/Status";
-import { Dependencies } from "./types/Wraplet";
+import { Wraplet } from "./types/Wraplet";
 import { DestroyListener } from "../DependencyManager/types/DestroyListener";
 import {
   destructionCompleted,
@@ -8,7 +8,7 @@ import {
 import { WrapletApiFactoryBasicCallback } from "./types/WrapletApiFactoryCallbacks";
 
 export type OuterDestroyCallbackArgs = {
-  wraplet: Dependencies;
+  wraplet: Wraplet;
   destroyListeners: DestroyListener[];
   status: Status;
 };

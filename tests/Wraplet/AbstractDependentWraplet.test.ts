@@ -9,8 +9,6 @@ import { BaseElementTestWraplet } from "../resources/BaseElementTestWraplet";
 import { DependencyInstance } from "../../src/Wraplet/types/DependencyInstance";
 import { DependencyManager } from "../../src/DependencyManager/types/DependencyManager";
 
-import { isWrapletApi } from "../../src/Wraplet/types/WrapletApi";
-
 const testWrapletSelectorAttribute = "data-test-selector";
 const testWrapletDependencySelectorAttribute = `${testWrapletSelectorAttribute}-dependency`;
 
@@ -222,28 +220,6 @@ describe("AbstractDependentWraplet", () => {
         throw Error("Wraplet not initialized.");
       }
       expect(wraplet.hasNode()).toBeTruthy();
-    });
-
-    it("should allow access to the wraplet's element", () => {
-      document.body.innerHTML = `<div ${testWrapletSelectorAttribute}></div>`;
-      const wraplet = TestWraplet.create(
-        testWrapletSelectorAttribute,
-        dependenciesMap,
-      );
-      if (!wraplet) {
-        throw Error("Wraplet not initialized.");
-      }
-      const callback = jest.fn((element: Element) => element);
-
-      if (!isWrapletApi<Element>(wraplet.wraplet)) {
-        throw new Error("Wraplet API is not a valid WrapletApi instance.");
-      }
-
-      wraplet.wraplet.accessNode((element) => {
-        callback(element);
-      });
-
-      expect(callback).toHaveBeenCalledTimes(1);
     });
   });
 
