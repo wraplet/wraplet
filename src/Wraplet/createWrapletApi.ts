@@ -77,14 +77,16 @@ export const createWrapletApi = (
       wraplet: newArgs.wraplet,
     },
     async () => {
-      if (newArgs.node) {
-        addWrapletToNode(newArgs.wraplet, newArgs.node);
-      }
       if (newArgs.initializeCallback) {
         await newArgs.initializeCallback();
       }
     },
   ).bind(api);
+
+  // Note that it's added immediately without initialization required.
+  if (newArgs.node) {
+    addWrapletToNode(newArgs.wraplet, newArgs.node);
+  }
 
   return Object.assign(api, {
     [WrapletApiSymbol]: true as const,

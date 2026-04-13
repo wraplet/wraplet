@@ -166,4 +166,23 @@ describe("createWrapletApi", () => {
       expect(isWrapletApi(undefined)).toBe(false);
     });
   });
+
+  it("should add wraplet to the node's `wraplets` property immidiately", () => {
+    class TestWraplet implements Wraplet {
+      [WrapletSymbol]: true = true;
+      wraplet: WrapletApi;
+      constructor(node: Node) {
+        this.wraplet = createWrapletApi({
+          node,
+          wraplet: this,
+        });
+      }
+    }
+
+    const node = document.createElement("div");
+    new TestWraplet(node);
+
+    expect(node.wraplets).toBeDefined();
+    expect(node.wraplets?.size).toBe(1);
+  });
 });
