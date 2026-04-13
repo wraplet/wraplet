@@ -121,7 +121,7 @@ export abstract class AbstractWraplet<
    * Instantiates wraplets on a given ParentNode.
    */
   protected static createWraplets<
-    T extends abstract new (core: any, ...args: any[]) => AbstractWraplet<any>,
+    T extends abstract new (ddm: any, ...args: any[]) => AbstractWraplet<any>,
   >(
     this: T,
     node: ParentNode,
@@ -152,7 +152,7 @@ export abstract class AbstractWraplet<
    */
   protected static async createAndInitializeWraplets<
     T extends {
-      new (core: any, ...args: any[]): AbstractWraplet<any>;
+      new (ddm: any, ...args: any[]): AbstractWraplet<any>;
     },
   >(
     this: T,

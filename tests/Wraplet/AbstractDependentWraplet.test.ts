@@ -2,7 +2,7 @@ import "../setup";
 import {
   AbstractDependentWraplet,
   AbstractWraplet,
-  Core,
+  DDM,
   WrapletDependencyMap,
 } from "../../src";
 import { BaseElementTestWraplet } from "../resources/BaseElementTestWraplet";
@@ -20,7 +20,7 @@ const dependenciesMap = {
     Class: TestWrapletDependency,
     multiple: false,
     required: false,
-    injector: Core.createInjector({}),
+    injector: DDM.createInjector({}),
   },
 } satisfies WrapletDependencyMap;
 
@@ -181,8 +181,8 @@ describe("AbstractDependentWraplet", () => {
 
         class TestWraplet extends AbstractDependentWraplet {
           public extraArg: string;
-          constructor(core: DependencyManager, extraArg: string) {
-            super(core);
+          constructor(ddm: DependencyManager, extraArg: string) {
+            super(ddm);
             this.extraArg = extraArg;
           }
 
@@ -391,8 +391,8 @@ describe("AbstractDependentWraplet", () => {
 
       const element = document.createElement("div");
 
-      const core = new Core(element, {});
-      const wraplet = new TestWraplet(core);
+      const ddm = new DDM(element, {});
+      const wraplet = new TestWraplet(ddm);
 
       const func = jest.fn();
 
@@ -426,8 +426,8 @@ describe("AbstractDependentWraplet", () => {
       }
 
       const element = document.createElement("div");
-      const core = new Core(element, {});
-      const wraplet = new TestWraplet(core);
+      const ddm = new DDM(element, {});
+      const wraplet = new TestWraplet(ddm);
 
       await wraplet.wraplet.initialize();
 
@@ -438,8 +438,8 @@ describe("AbstractDependentWraplet", () => {
       class TestWraplet extends AbstractDependentWraplet {}
 
       const element = document.createElement("div");
-      const core = new Core(element, {});
-      const wraplet = new TestWraplet(core);
+      const ddm = new DDM(element, {});
+      const wraplet = new TestWraplet(ddm);
 
       await expect(wraplet.wraplet.initialize()).resolves.not.toThrow();
     });
@@ -454,8 +454,8 @@ describe("AbstractDependentWraplet", () => {
       }
 
       const element = document.createElement("div");
-      const core = new Core(element, {});
-      const wraplet = new TestWraplet(core);
+      const ddm = new DDM(element, {});
+      const wraplet = new TestWraplet(ddm);
 
       await wraplet.wraplet.initialize();
       await wraplet.wraplet.destroy();
@@ -599,9 +599,9 @@ describe("AbstractDependentWraplet", () => {
     }
     class LevelTwo extends LevelOne {}
 
-    const core = new Core(document.createElement("div"), {});
+    const ddm = new DDM(document.createElement("div"), {});
 
-    const wraplet = new LevelTwo(core);
+    const wraplet = new LevelTwo(ddm);
     await wraplet.wraplet.initialize();
     await wraplet.wraplet.destroy();
 

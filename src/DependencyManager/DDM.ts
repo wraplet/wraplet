@@ -20,7 +20,7 @@ import {
 } from "../Wraplet/types/WrapletDependencyMap";
 import { isParentNode } from "../NodeTreeManager/utils";
 import { DependencyInstance } from "../Wraplet/types/DependencyInstance";
-import { CoreOptions } from "./types/CoreOptions";
+import { DDMOptions } from "./types/DDMOptions";
 import {
   DependencyManager,
   DependencyManagerSymbol,
@@ -41,7 +41,7 @@ import { createLifecycleAsyncError } from "../utils/createLifecycleAsyncError";
 import { isMapTreeBuilder, MapTreeBuilder } from "../Map/MapTreeBuilder";
 import { Injector } from "../Injector/types/Injector";
 
-export class Core<
+export class DDM<
   N extends Node = Node,
   M extends WrapletDependencyMap = {},
 > implements DependencyManager<N, M> {
@@ -80,10 +80,10 @@ export class Core<
   constructor(
     public node: N,
     map: M | MapTreeBuilder<M>,
-    options: Partial<CoreOptions<M>> = {},
+    options: Partial<DDMOptions<M>> = {},
   ) {
     if (!(node instanceof Node)) {
-      throw new Error("The node provided to the Core is not a valid node.");
+      throw new Error("The node provided to the DDM is not a valid node.");
     }
     if (isWrapletDependencyMap(map)) {
       this.mapTree = new MapTreeBuilder<M>();
@@ -91,11 +91,11 @@ export class Core<
     } else if (isMapTreeBuilder(map)) {
       this.mapTree = map;
     } else {
-      throw new MapError("The map provided to the Core is not a valid map.");
+      throw new MapError("The map provided to the DDM is not a valid map.");
     }
 
     // Process init options.
-    const optionsWithDefaults: Required<CoreOptions<M>> = Object.assign(
+    const optionsWithDefaults: Required<DDMOptions<M>> = Object.assign(
       this.defaultOptions(),
       options,
     );
@@ -116,11 +116,7 @@ export class Core<
   }
 
   /**
-   * Initialize core.
-   *
-   * We couldn't put this step in the constructor, because during initialization some wraplet
-   * processing occurs (instantiate dependency listeners) that needs access to the Core,
-   * so the Core has to exist already.
+   * Initialize DDM.
    */
   public async initializeDependencies() {
     if (this.status.isInitialized) {
@@ -155,7 +151,7 @@ export class Core<
             );
 
             createLifecycleAsyncError(
-              `Errors in the core's dependency "${id}" initialize listeners.`,
+              `Errors in the DDM's dependency "${id}" initialize listeners.`,
               listenerResults,
             );
           }),
@@ -169,7 +165,7 @@ export class Core<
     );
 
     const error = createLifecycleAsyncError(
-      `Error at Core's initialization.`,
+      `Error at DDM's initialization.`,
       results,
       false,
     );
@@ -277,7 +273,7 @@ export class Core<
 
       if (existingDependencies.length > 1) {
         throw new InternalLogicError(
-          "Internal logic error. Multiple instances wrapping the same element found in the core.",
+          "Internal logic error. Multiple instances wrapping the same element found in the DDM.",
         );
       }
 
@@ -522,7 +518,7 @@ export class Core<
   }
 
   /**
-   * Checks whether a required dependency has been removed while the core
+   * Checks whether a required dependency has been removed while the DDM
    * is NOT being destroyed itself. Returns the error instance instead of
    * throwing, so the caller can route it through the lifecycle error pipeline.
    */
@@ -677,7 +673,7 @@ export class Core<
     });
   }
 
-  private defaultOptions(): Required<CoreOptions<M>> {
+  private defaultOptions(): Required<DDMOptions<M>> {
     return {
       dependencyInstantiatedListeners: [],
       dependencyInitializedListeners: [],
@@ -747,8 +743,8 @@ export class Core<
    */
   public static createInjector<N extends Node, M extends WrapletDependencyMap>(
     map_or_position: WrapletDependencyMap | number,
-    options?: CoreOptions,
-  ): Injector<N, M, CoreOptions> {
+    options?: DDMOptions,
+  ): Injector<N, M, DDMOptions> {
     return {
       data: options || {},
       callback: (node, map, data) => {
@@ -767,7 +763,7 @@ export class Core<
           throw new Error(`Invalid map argument.`);
         }
 
-        return new Core(node, currentMap, data);
+        return new DDM(node, currentMap, data);
       },
     };
   }

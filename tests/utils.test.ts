@@ -1,7 +1,7 @@
 import "./setup";
 import {
   AbstractDependentWraplet,
-  Core,
+  DDM,
   DefaultWrapletSet,
   destroyWrapletsRecursively,
   getWrapletsFromNode,
@@ -47,8 +47,8 @@ it("addWrapletToNode", () => {
   const element = document.createElement("div");
   class TestWraplet extends AbstractDependentWraplet {}
 
-  const core = new Core(element, {});
-  const wraplet = new TestWraplet(core);
+  const ddm = new DDM(element, {});
+  const wraplet = new TestWraplet(ddm);
 
   addWrapletToNode(wraplet, element);
 
@@ -71,8 +71,8 @@ it("destroyWrapletsRecursively", async () => {
     }
   }
 
-  const core = new Core(element, {});
-  const wraplet = new TestWraplet(core);
+  const ddm = new DDM(element, {});
+  const wraplet = new TestWraplet(ddm);
   await wraplet.wraplet.initialize();
 
   expect((element.wraplets as WrapletSet).size).toBe(1);

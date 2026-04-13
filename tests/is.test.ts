@@ -19,7 +19,7 @@ describe("utils/is and related type guards (positive cases)", () => {
     expect(is(obj, SomeSymbol)).toBe(true);
   });
 
-  it("isCore returns true when object has CoreSymbol", () => {
+  it("isDependencyManager returns true when object has DependencyManagerSymbol", () => {
     const obj: unknown = { [DependencyManagerSymbol]: true };
     expect(isDependencyManager(obj)).toBe(true);
   });

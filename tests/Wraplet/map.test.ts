@@ -1,9 +1,5 @@
 import "../setup";
-import {
-  AbstractDependentWraplet,
-  Core,
-  WrapletDependencyMap,
-} from "../../src";
+import { AbstractDependentWraplet, DDM, WrapletDependencyMap } from "../../src";
 import { BaseElementTestWraplet } from "../resources/BaseElementTestWraplet";
 import { MapError } from "../../src/errors";
 
@@ -27,7 +23,7 @@ describe("Test wraplet map", () => {
     typeof childrenMap
   > {
     constructor(node: Node) {
-      super(new Core(node, childrenMap));
+      super(new DDM(node, childrenMap));
     }
   }
 

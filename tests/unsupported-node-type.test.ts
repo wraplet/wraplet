@@ -1,7 +1,7 @@
 import {
   AbstractDependentWraplet,
   AbstractWraplet,
-  Core,
+  DDM,
   UnsupportedNodeTypeError,
 } from "../src";
 
@@ -14,12 +14,10 @@ describe("Unsupported node type", () => {
     }
 
     const span = document.createElement("span");
-    const core = new Core(span, {});
+    const ddm = new DDM(span, {});
 
-    expect(() => new TestWraplet(core as any)).toThrow(
-      UnsupportedNodeTypeError,
-    );
-    expect(() => new TestWraplet(core as any)).toThrow(
+    expect(() => new TestWraplet(ddm as any)).toThrow(UnsupportedNodeTypeError);
+    expect(() => new TestWraplet(ddm as any)).toThrow(
       "Node type HTMLSpanElement is not supported by the TestWraplet wraplet.",
     );
   });
@@ -32,9 +30,9 @@ describe("Unsupported node type", () => {
     }
 
     const div = document.createElement("div");
-    const core = new Core(div, {});
+    const ddm = new DDM(div, {});
 
-    expect(() => new TestWraplet(core as any)).not.toThrow();
+    expect(() => new TestWraplet(ddm as any)).not.toThrow();
   });
 
   it("should skip multiple children instantiation and warn if some child node types are not supported", async () => {
@@ -61,7 +59,7 @@ describe("Unsupported node type", () => {
     const div = document.createElement("div");
     div.innerHTML = "<span></span><div></div>";
 
-    const core = new Core(div, {
+    const ddm = new DDM(div, {
       children: {
         Class: UnsupportedChildWraplet,
         selector: "span, div",
@@ -70,7 +68,7 @@ describe("Unsupported node type", () => {
       },
     });
 
-    const parent = new ParentWraplet(core as any);
+    const parent = new ParentWraplet(ddm as any);
     await parent.wraplet.initialize();
 
     expect(consoleSpy).toHaveBeenCalledWith(
@@ -103,7 +101,7 @@ describe("Unsupported node type", () => {
     const span = document.createElement("span");
     span.innerHTML = "<div data-child></div>";
 
-    const core = new Core(span, {
+    const ddm = new DDM(span, {
       child: {
         Class: ErrorChildWraplet,
         selector: "div",
@@ -113,7 +111,7 @@ describe("Unsupported node type", () => {
     });
 
     const throwFunc = async () => {
-      new ParentWraplet(core as any);
+      new ParentWraplet(ddm as any);
     };
 
     await expect(throwFunc).rejects.toThrow("Some other error");
@@ -141,7 +139,7 @@ describe("Unsupported node type", () => {
     const div = document.createElement("div");
     div.innerHTML = "<div></div>";
 
-    const core = new Core(div, {
+    const ddm = new DDM(div, {
       child: {
         Class: UnsupportedChildWraplet,
         selector: "div",
@@ -151,7 +149,7 @@ describe("Unsupported node type", () => {
     });
 
     const throwFunc = async () => {
-      new ParentWraplet(core as any);
+      new ParentWraplet(ddm as any);
     };
 
     await expect(throwFunc).rejects.toThrow(UnsupportedNodeTypeError);
@@ -165,8 +163,8 @@ describe("Unsupported node type", () => {
     }
 
     const div = document.createElement("div");
-    const core = new Core(div, {});
+    const ddm = new DDM(div, {});
 
-    expect(() => new TestWraplet(core)).not.toThrow();
+    expect(() => new TestWraplet(ddm)).not.toThrow();
   });
 });

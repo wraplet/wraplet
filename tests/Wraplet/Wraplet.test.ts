@@ -1,6 +1,6 @@
 import "../setup";
 import {
-  Core,
+  DDM,
   isWraplet,
   Wraplet,
   WrapletDependencyMap,
@@ -9,7 +9,7 @@ import {
 import { WrapletSymbol } from "../../src";
 import { BaseElementTestWraplet } from "../resources/BaseElementTestWraplet";
 import { Injector } from "../../src/Injector/types/Injector";
-import { CoreOptions } from "../../src/DependencyManager/types/CoreOptions";
+import { DDMOptions } from "../../src/DependencyManager/types/DDMOptions";
 import { WrapletApiSymbol } from "../../src/Wraplet/types/WrapletApi";
 
 it("Test isWraplet", () => {
@@ -55,7 +55,7 @@ describe("Test recursive wraplets", () => {
         readonly selector: (node: ParentNode) => Element[];
         readonly Class: typeof TestWraplet;
         readonly multiple: false;
-        readonly injector: Injector<Node, WrapletDependencyMap, CoreOptions>;
+        readonly injector: Injector<Node, WrapletDependencyMap, DDMOptions>;
         readonly required: false;
       };
     } = {
@@ -66,7 +66,7 @@ describe("Test recursive wraplets", () => {
           );
         },
         Class: TestWraplet,
-        injector: Core.createInjector(1),
+        injector: DDM.createInjector(1),
         multiple: false,
         required: false,
       },
@@ -130,7 +130,7 @@ describe("Test recursive wraplets", () => {
         Class: TestWrapletDependency,
         multiple: false,
         required: false,
-        injector: Core.createInjector({
+        injector: DDM.createInjector({
           dependencyParent: {
             selector: (node) => {
               return Array.from(node.children).filter((dependency) =>
@@ -140,7 +140,7 @@ describe("Test recursive wraplets", () => {
             Class: TestWraplet,
             multiple: false,
             required: false,
-            injector: Core.createInjector(2),
+            injector: DDM.createInjector(2),
           },
         }),
       },
@@ -197,8 +197,8 @@ describe("Test recursive wraplets", () => {
     // We make sure that we start from a single instance of the TestWraplet. If we used the
     // "create" method here, then the TestWraplet would be created multiple times – once for each
     // element with the ${attribute}.
-    const core = new Core(mainElement, map);
-    const parent1 = new TestWraplet(core);
+    const ddm = new DDM(mainElement, map);
+    const parent1 = new TestWraplet(ddm);
 
     if (!parent1) {
       throw new Error("Wraplet not created.");

@@ -1,6 +1,6 @@
 import "./setup";
 import {
-  Core,
+  DDM,
   DefaultWrapletSet,
   WrapletDependencyMap,
   createWrapletApi,
@@ -16,7 +16,7 @@ import { Wraplet, WrapletSymbol } from "../src/Wraplet/types/Wraplet";
 import { StatusWritable } from "../src/Wraplet/types/Status";
 import { fillMapWithDefaults } from "../src/Map/utils";
 
-describe("Test Core", () => {
+describe("Test DDM", () => {
   class TestWrapletClass implements Wraplet {
     [WrapletSymbol]: true = true;
     public wraplet: WrapletApi;
@@ -41,7 +41,7 @@ describe("Test Core", () => {
     }
   }
 
-  it("Test Core not allowing required children if provided node is not a ParentNode", () => {
+  it("Test DDM not allowing required children if provided node is not a ParentNode", () => {
     const map = {
       children: {
         selector: "[data-something]",
@@ -54,21 +54,21 @@ describe("Test Core", () => {
     const node = document.createTextNode("test");
 
     const func1 = () => {
-      const childrenManager = new Core(node, map);
+      const childrenManager = new DDM(node, map);
       childrenManager.instantiateDependencies();
     };
 
     expect(func1).toThrow(MapError);
 
     const func2 = () => {
-      const childrenManager = new Core(node, {});
+      const childrenManager = new DDM(node, {});
       childrenManager.instantiateDependencies();
     };
 
     expect(func2).not.toThrow(MapError);
   });
 
-  it("Test Core allowing non-required children if provided node is not a ParentNode", () => {
+  it("Test DDM allowing non-required children if provided node is not a ParentNode", () => {
     const map = {
       children: {
         selector: "[data-something]",
@@ -80,24 +80,24 @@ describe("Test Core", () => {
 
     const node = document.createTextNode("test");
 
-    const core = new Core(node, map);
+    const ddm = new DDM(node, map);
     expect(() => {
-      core.instantiateDependencies();
+      ddm.instantiateDependencies();
     }).not.toThrow();
   });
 
   it("should throw ChildrenAreNotAvailableError when accessing children before they are instantiated", () => {
     const node = document.createElement("div");
     const map = {} as const satisfies WrapletDependencyMap;
-    const core = new Core(node, map);
+    const ddm = new DDM(node, map);
 
-    expect(() => core.dependencies).toThrow(DependenciesAreNotAvailableError);
-    expect(() => core.dependencies).toThrow(
+    expect(() => ddm.dependencies).toThrow(DependenciesAreNotAvailableError);
+    expect(() => ddm.dependencies).toThrow(
       "Wraplet is not yet fully initialized.",
     );
   });
 
-  it("Test Core child without selector", async () => {
+  it("Test DDM child without selector", async () => {
     const node = document.createElement("div");
     node.innerHTML = "<div></div>";
 
@@ -109,18 +109,18 @@ describe("Test Core", () => {
       },
     } as const satisfies WrapletDependencyMap;
 
-    const core: DependencyManager<Node, typeof map> = new Core(node, map);
+    const ddm: DependencyManager<Node, typeof map> = new DDM(node, map);
 
     const func = async () => {
-      core.instantiateDependencies();
-      await core.initializeDependencies();
+      ddm.instantiateDependencies();
+      await ddm.initializeDependencies();
     };
 
     await expect(func).resolves.not.toThrow();
-    expect(core.dependencies["children"]).toBeNull();
+    expect(ddm.dependencies["children"]).toBeNull();
   });
 
-  it("Test Core too many elements found", async () => {
+  it("Test DDM too many elements found", async () => {
     const node = document.createElement("div");
     node.innerHTML = "<div data-something></div><div data-something></div>";
 
@@ -133,17 +133,17 @@ describe("Test Core", () => {
       },
     } as const satisfies WrapletDependencyMap;
 
-    const core: DependencyManager<Node, typeof map> = new Core(node, map);
+    const ddm: DependencyManager<Node, typeof map> = new DDM(node, map);
 
     const func = async () => {
-      core.instantiateDependencies();
-      await core.initializeDependencies();
+      ddm.instantiateDependencies();
+      await ddm.initializeDependencies();
     };
 
     await expect(func).rejects.toThrow(TooManyChildrenFoundError);
   });
 
-  it("Test Core multiple without selector", async () => {
+  it("Test DDM multiple without selector", async () => {
     const node = document.createElement("div");
     node.innerHTML = "<div data-something></div><div data-something></div>";
 
@@ -155,15 +155,15 @@ describe("Test Core", () => {
       },
     } as const satisfies WrapletDependencyMap;
 
-    const core: DependencyManager<Node, typeof map> = new Core(node, map);
+    const ddm: DependencyManager<Node, typeof map> = new DDM(node, map);
 
-    core.instantiateDependencies();
-    await core.initializeDependencies();
+    ddm.instantiateDependencies();
+    await ddm.initializeDependencies();
 
-    expect(core.dependencies["children"]).toBeInstanceOf(DefaultWrapletSet);
+    expect(ddm.dependencies["children"]).toBeInstanceOf(DefaultWrapletSet);
   });
 
-  it("Test Core destroy children listeners", async () => {
+  it("Test DDM destroy children listeners", async () => {
     const node = document.createElement("div");
     node.innerHTML =
       "<div data-children></div><div data-children><div data-child></div>";
@@ -183,26 +183,26 @@ describe("Test Core", () => {
       },
     } as const satisfies WrapletDependencyMap;
 
-    const core: DependencyManager<Node, typeof map> = new Core(node, map);
+    const ddm: DependencyManager<Node, typeof map> = new DDM(node, map);
 
     const func = jest.fn();
-    core.addDependencyDestroyedListener(async () => {
+    ddm.addDependencyDestroyedListener(async () => {
       func();
     });
 
-    core.instantiateDependencies();
-    await core.initializeDependencies();
+    ddm.instantiateDependencies();
+    await ddm.initializeDependencies();
 
-    for (const child of core.dependencies.children.values()) {
+    for (const child of ddm.dependencies.children.values()) {
       await child.wraplet.destroy();
     }
 
-    await core.dependencies.child?.wraplet.destroy();
+    await ddm.dependencies.child?.wraplet.destroy();
 
     expect(func).toHaveBeenCalledTimes(3);
   });
 
-  it("Test Core instantiate children listeners", async () => {
+  it("Test DDM instantiate children listeners", async () => {
     const node = document.createElement("div");
     node.innerHTML = "<div data-children></div><div data-children></div>";
 
@@ -223,24 +223,24 @@ describe("Test Core", () => {
 
     const func = jest.fn();
 
-    const core: DependencyManager<Node, typeof map> = new Core(node, map);
+    const ddm: DependencyManager<Node, typeof map> = new DDM(node, map);
     const funcInitialized = jest.fn();
 
-    core.addDependencyInstantiatedListener(async () => {
+    ddm.addDependencyInstantiatedListener(async () => {
       func();
     });
 
-    core.addDependencyInitializedListener(async () => {
+    ddm.addDependencyInitializedListener(async () => {
       funcInitialized();
     });
 
-    core.instantiateDependencies();
-    await core.initializeDependencies();
+    ddm.instantiateDependencies();
+    await ddm.initializeDependencies();
     expect(func).toHaveBeenCalledTimes(2);
     expect(funcInitialized).toHaveBeenCalledTimes(2);
   });
 
-  it("Test Core cannot be destroyed twice", async () => {
+  it("Test DDM cannot be destroyed twice", async () => {
     const node = document.createElement("div");
     node.innerHTML =
       "<div data-children></div><div data-children></div><div data-child></div>";
@@ -260,60 +260,60 @@ describe("Test Core", () => {
       },
     } as const satisfies WrapletDependencyMap;
 
-    const core: DependencyManager<Node, typeof map> = new Core(node, map);
+    const ddm: DependencyManager<Node, typeof map> = new DDM(node, map);
 
-    core.instantiateDependencies();
-    await core.initializeDependencies();
+    ddm.instantiateDependencies();
+    await ddm.initializeDependencies();
 
     const func = async () => {
-      await core.destroyDependencies();
-      await core.destroyDependencies();
+      await ddm.destroyDependencies();
+      await ddm.destroyDependencies();
     };
 
     await expect(func).rejects.toThrow("Dependencies are already destroyed.");
   });
 
-  it("Test Core user accessing non-existing children", async () => {
+  it("Test DDM user accessing non-existing children", async () => {
     const node = document.createElement("div");
 
     const map = {} as const satisfies WrapletDependencyMap;
 
-    const core: DependencyManager<Node, typeof map> = new Core(node, map);
+    const ddm: DependencyManager<Node, typeof map> = new DDM(node, map);
 
-    core.instantiateDependencies();
-    await core.initializeDependencies();
+    ddm.instantiateDependencies();
+    await ddm.initializeDependencies();
 
     const func = () => {
       // eslint-disable-next-line @typescript-eslint/no-unused-expressions
-      (core.dependencies as any)["child"];
+      (ddm.dependencies as any)["child"];
     };
 
     expect(func).toThrow("Dependency 'child' has not been found.");
   });
-  it("Test Core user accessing dependencies with symbol key", async () => {
+  it("Test DDM user accessing dependencies with symbol key", async () => {
     const node = document.createElement("div");
     const map = {} as const satisfies WrapletDependencyMap;
-    const core: DependencyManager<Node, typeof map> = new Core(node, map);
-    core.instantiateDependencies();
-    await core.initializeDependencies();
+    const ddm: DependencyManager<Node, typeof map> = new DDM(node, map);
+    ddm.instantiateDependencies();
+    await ddm.initializeDependencies();
     const func = () => {
       // eslint-disable-next-line @typescript-eslint/no-unused-expressions
-      (core.dependencies as any)[Symbol("test")];
+      (ddm.dependencies as any)[Symbol("test")];
     };
     expect(func).toThrow("Symbol access is not supported for dependencies.");
   });
-  it("Test Core user setting dependencies directly", async () => {
+  it("Test DDM user setting dependencies directly", async () => {
     const node = document.createElement("div");
 
     const map = {} satisfies WrapletDependencyMap;
 
-    const core: DependencyManager<Node, typeof map> = new Core(node, map);
+    const ddm: DependencyManager<Node, typeof map> = new DDM(node, map);
 
-    core.instantiateDependencies();
-    await core.initializeDependencies();
+    ddm.instantiateDependencies();
+    await ddm.initializeDependencies();
 
     const func = () => {
-      (core.dependencies as any)["child"] = "test";
+      (ddm.dependencies as any)["child"] = "test";
     };
 
     expect(func).toThrow(
@@ -321,7 +321,7 @@ describe("Test Core", () => {
     );
   });
 
-  it("Test Core with selector callback", async () => {
+  it("Test DDM with selector callback", async () => {
     const attribute = "data-test-selector";
     const node = document.createElement("div");
     node.innerHTML = `<div ${attribute}></div><div ${attribute}></div>`;
@@ -337,18 +337,18 @@ describe("Test Core", () => {
       },
     } as const satisfies WrapletDependencyMap;
 
-    const core: DependencyManager<Node, typeof map> = new Core(node, map);
+    const ddm: DependencyManager<Node, typeof map> = new DDM(node, map);
 
-    core.instantiateDependencies();
-    await core.initializeDependencies();
+    ddm.instantiateDependencies();
+    await ddm.initializeDependencies();
 
-    expect(core.dependencies["children"].size).toBe(2);
+    expect(ddm.dependencies["children"].size).toBe(2);
   });
 
-  it("Test Core status getter", () => {
+  it("Test DDM status getter", () => {
     const node = document.createElement("div");
-    const core = new Core(node, {});
-    expect(core.status).toEqual({
+    const ddm = new DDM(node, {});
+    expect(ddm.status).toEqual({
       isDestroyed: false,
       isGettingDestroyed: false,
       isInitialized: false,
@@ -356,7 +356,7 @@ describe("Test Core", () => {
     });
   });
 
-  it("Test Core postponed destruction during initialization", async () => {
+  it("Test DDM postponed destruction during initialization", async () => {
     const node = document.createElement("div");
     node.innerHTML = "<div data-child></div>";
     const map = {
@@ -368,30 +368,30 @@ describe("Test Core", () => {
       },
     } as const satisfies WrapletDependencyMap;
 
-    const core = new Core(node, map);
-    core.instantiateDependencies();
+    const ddm = new DDM(node, map);
+    ddm.instantiateDependencies();
 
-    const initPromise = core.initializeDependencies();
-    const destroyPromise = core.destroyDependencies();
+    const initPromise = ddm.initializeDependencies();
+    const destroyPromise = ddm.destroyDependencies();
 
     await Promise.all([initPromise, destroyPromise]);
 
-    expect(core.status.isInitialized).toBe(false);
-    expect(core.status.isDestroyed).toBe(true);
+    expect(ddm.status.isInitialized).toBe(false);
+    expect(ddm.status.isDestroyed).toBe(true);
   });
 
-  it("Test Core destruction of uninitialized core", async () => {
+  it("Test DDM destruction of uninitialized DDM", async () => {
     const node = document.createElement("div");
-    const core = new Core(node, {});
+    const ddm = new DDM(node, {});
 
-    expect(core.status.isInitialized).toBe(false);
-    await core.destroyDependencies();
+    expect(ddm.status.isInitialized).toBe(false);
+    await ddm.destroyDependencies();
 
-    expect(core.status.isDestroyed).toBe(true);
-    expect(core.status.isGettingDestroyed).toBe(false);
+    expect(ddm.status.isDestroyed).toBe(true);
+    expect(ddm.status.isGettingDestroyed).toBe(false);
   });
 
-  it("Test Core initOptions", async () => {
+  it("Test DDM initOptions", async () => {
     const attribute = "data-test-selector";
     const node = document.createElement("div");
     node.innerHTML = `<div ${attribute}></div>`;
@@ -410,7 +410,7 @@ describe("Test Core", () => {
     const funcInstantiate = jest.fn();
     const funcDestroy = jest.fn();
     const funcInitialized = jest.fn();
-    const core: DependencyManager<Node, typeof map> = new Core(node, map, {
+    const ddm: DependencyManager<Node, typeof map> = new DDM(node, map, {
       dependencyInstantiatedListeners: [
         async (child) => {
           funcInstantiate();
@@ -430,32 +430,32 @@ describe("Test Core", () => {
         },
       ],
     });
-    core.instantiateDependencies();
-    await core.initializeDependencies();
+    ddm.instantiateDependencies();
+    await ddm.initializeDependencies();
 
-    await core.destroyDependencies();
+    await ddm.destroyDependencies();
 
     expect(funcInstantiate).toHaveBeenCalledTimes(1);
     expect(funcInitialized).toHaveBeenCalledTimes(1);
     expect(funcDestroy).toHaveBeenCalledTimes(1);
   });
 
-  it("Test Core invalid map error", () => {
+  it("Test DDM invalid map error", () => {
     class SomeClass {}
     const node = document.createElement("div");
     const classInstance = new SomeClass() as any;
     const func = () => {
-      new Core(node, classInstance);
+      new DDM(node, classInstance);
     };
-    expect(func).toThrow("The map provided to the Core is not a valid map.");
+    expect(func).toThrow("The map provided to the DDM is not a valid map.");
   });
 
-  it("should throw error if the node provided to the Core is not a valid node", () => {
+  it("should throw error if the node provided to the DDM is not a valid node", () => {
     const invalidNode = {} as any;
     const map = {} as const satisfies WrapletDependencyMap;
 
-    expect(() => new Core(invalidNode, map)).toThrow(
-      "The node provided to the Core is not a valid node.",
+    expect(() => new DDM(invalidNode, map)).toThrow(
+      "The node provided to the DDM is not a valid node.",
     );
   });
 
@@ -470,15 +470,15 @@ describe("Test Core", () => {
         },
       } satisfies WrapletDependencyMap;
 
-      const core = new Core(element, map);
+      const ddm = new DDM(element, map);
 
-      const childCore = new Core(document.createElement("div"), {});
-      const instance = new TestWrapletClassWithDependencies(childCore);
+      const childDDM = new DDM(document.createElement("div"), {});
+      const instance = new TestWrapletClassWithDependencies(childDDM);
 
       expect(() =>
         // @ts-expect-error We test a runtime error when a wrong input has been provided
         // even if TS protested.
-        core.setExistingInstance("children", instance),
+        ddm.setExistingInstance("children", instance),
       ).toThrow(MapError);
     });
 
@@ -492,14 +492,14 @@ describe("Test Core", () => {
         },
       } satisfies WrapletDependencyMap;
 
-      const core = new Core(element, map);
+      const ddm = new DDM(element, map);
 
       const instance1 = new TestWrapletClass(document.createElement("div"));
       const instance2 = new TestWrapletClass(document.createElement("div"));
 
-      core.setExistingInstance("child", instance1);
+      ddm.setExistingInstance("child", instance1);
 
-      expect(() => core.setExistingInstance("child", instance2)).toThrow(
+      expect(() => ddm.setExistingInstance("child", instance2)).toThrow(
         MapError,
       );
     });
@@ -514,9 +514,9 @@ describe("Test Core", () => {
         },
       } satisfies WrapletDependencyMap;
 
-      const core = new Core(element, map);
+      const ddm = new DDM(element, map);
 
-      expect(() => core.setExistingInstance("child", {} as any)).toThrow(
+      expect(() => ddm.setExistingInstance("child", {} as any)).toThrow(
         MapError,
       );
     });
@@ -532,19 +532,19 @@ describe("Test Core", () => {
         },
       } satisfies WrapletDependencyMap;
 
-      const core = new Core(element, map);
+      const ddm = new DDM(element, map);
 
       const elementChild1 = document.createElement("div");
       const instance1 = new TestWrapletClass(elementChild1);
-      core.addExistingInstance("children", instance1);
+      ddm.addExistingInstance("children", instance1);
 
       const elementChild2 = document.createElement("div");
       const instance2 = new TestWrapletClass(elementChild2);
-      core.addExistingInstance("children", instance2);
+      ddm.addExistingInstance("children", instance2);
 
-      core.instantiateDependencies();
+      ddm.instantiateDependencies();
 
-      expect(core.dependencies.children.size).toBe(2);
+      expect(ddm.dependencies.children.size).toBe(2);
     });
 
     it("should throw when addExistingInstance is called on a single dependency", () => {
@@ -557,12 +557,12 @@ describe("Test Core", () => {
         },
       } satisfies WrapletDependencyMap;
 
-      const core = new Core(element, map);
+      const ddm = new DDM(element, map);
 
       const instance = new TestWrapletClass(document.createElement("div"));
 
       // @ts-expect-error We test runtime error when a wrong input has been provided, even if TS protested.
-      expect(() => core.addExistingInstance("child", instance)).toThrow(
+      expect(() => ddm.addExistingInstance("child", instance)).toThrow(
         MapError,
       );
     });
@@ -580,17 +580,17 @@ describe("Test Core", () => {
         },
       } satisfies WrapletDependencyMap;
 
-      const core = new Core(element, map);
+      const ddm = new DDM(element, map);
 
       const instance = new TestWrapletClass(document.createElement("div"));
 
-      core.setExistingInstance("child", instance);
+      ddm.setExistingInstance("child", instance);
 
-      expect(() => core.instantiateDependencies()).toThrow(MapError);
+      expect(() => ddm.instantiateDependencies()).toThrow(MapError);
     });
   });
 
-  describe("Test Core required dependencies without selector", () => {
+  describe("Test DDM required dependencies without selector", () => {
     const map = {
       child: {
         Class: TestWrapletClass,
@@ -606,21 +606,21 @@ describe("Test Core", () => {
 
     it("has manually provided required dependencies", async () => {
       const element = document.createElement("div");
-      const core = new Core(element, map);
+      const ddm = new DDM(element, map);
 
       const childInstance = new TestWrapletClass(document.createElement("div"));
       const childrenInstance = new TestWrapletClass(
         document.createElement("div"),
       );
 
-      core.setExistingInstance("child", childInstance);
-      core.addExistingInstance("children", childrenInstance);
+      ddm.setExistingInstance("child", childInstance);
+      ddm.addExistingInstance("children", childrenInstance);
 
-      core.instantiateDependencies();
+      ddm.instantiateDependencies();
 
-      expect(core.dependencies.child).toBe(childInstance);
-      expect(core.dependencies.children.size).toBe(1);
-      expect(core.dependencies.children.values()).toContain(childrenInstance);
+      expect(ddm.dependencies.child).toBe(childInstance);
+      expect(ddm.dependencies.children.size).toBe(1);
+      expect(ddm.dependencies.children.values()).toContain(childrenInstance);
     });
 
     it("doesn't have manually provided required dependencies when single", async () => {
@@ -633,10 +633,10 @@ describe("Test Core", () => {
       } satisfies WrapletDependencyMap;
 
       const element = document.createElement("div");
-      const core = new Core(element, map);
+      const ddm = new DDM(element, map);
 
       const func = () => {
-        core.instantiateDependencies();
+        ddm.instantiateDependencies();
       };
 
       expect(func).toThrow(
@@ -654,10 +654,10 @@ describe("Test Core", () => {
       } satisfies WrapletDependencyMap;
 
       const element = document.createElement("div");
-      const core = new Core(element, map);
+      const ddm = new DDM(element, map);
 
       const func = () => {
-        core.instantiateDependencies();
+        ddm.instantiateDependencies();
       };
 
       expect(func).toThrow(
@@ -736,15 +736,15 @@ describe("Test Core", () => {
     if (!element) throw new Error("Element not found");
 
     const runInstantiateWithErrorInListener = () => {
-      const core = new Core(element, map);
-      core.addDependencyInstantiatedListener(() => {
+      const ddm = new DDM(element, map);
+      ddm.addDependencyInstantiatedListener(() => {
         throw new Error("Test error in a listener");
       });
-      core.addDependencyInstantiatedListener(() => {
+      ddm.addDependencyInstantiatedListener(() => {
         depListInst();
       });
 
-      core.instantiateDependencies();
+      ddm.instantiateDependencies();
     };
 
     // If there is an error during the instantiation phase,
@@ -758,16 +758,16 @@ describe("Test Core", () => {
     expect(depListInst).toHaveBeenCalledTimes(0);
 
     const runIntializeWithErrorInListener = async () => {
-      const core = new Core(element, map);
-      core.addDependencyInitializedListener(async () => {
+      const ddm = new DDM(element, map);
+      ddm.addDependencyInitializedListener(async () => {
         throw new Error("Test error in a listener");
       });
-      core.addDependencyInitializedListener(async () => {
+      ddm.addDependencyInitializedListener(async () => {
         depListInit();
       });
 
-      core.instantiateDependencies();
-      await core.initializeDependencies();
+      ddm.instantiateDependencies();
+      await ddm.initializeDependencies();
     };
     await expect(runIntializeWithErrorInListener).rejects.toThrow();
 
@@ -775,16 +775,16 @@ describe("Test Core", () => {
     expect(consoleDirSpy).toHaveBeenCalledTimes(1);
 
     const runDestroyWithErrorInListener = async () => {
-      const core = new Core(element, map);
-      core.addDependencyDestroyedListener(async () => {
+      const ddm = new DDM(element, map);
+      ddm.addDependencyDestroyedListener(async () => {
         throw new Error("Test error in a listener");
       });
-      core.addDependencyDestroyedListener(async () => {
+      ddm.addDependencyDestroyedListener(async () => {
         depListDestroy();
       });
-      core.instantiateDependencies();
-      await core.initializeDependencies();
-      await core.destroyDependencies();
+      ddm.instantiateDependencies();
+      await ddm.initializeDependencies();
+      await ddm.destroyDependencies();
     };
 
     await expect(runDestroyWithErrorInListener).rejects.toThrow();
@@ -800,28 +800,28 @@ describe("Test Core", () => {
     consoleDirSpy.mockRestore();
   });
 
-  it("Test Core throws when initializeDependencies is called twice", async () => {
+  it("Test DDM throws when initializeDependencies is called twice", async () => {
     const node = document.createElement("div");
-    const core = new Core(node, {});
-    core.instantiateDependencies();
-    await core.initializeDependencies();
+    const ddm = new DDM(node, {});
+    ddm.instantiateDependencies();
+    await ddm.initializeDependencies();
 
-    await expect(core.initializeDependencies()).rejects.toThrow(
+    await expect(ddm.initializeDependencies()).rejects.toThrow(
       "Dependencies are already initialized.",
     );
   });
 
-  it("Test Core throws when instantiateDependencies is called twice", () => {
+  it("Test DDM throws when instantiateDependencies is called twice", () => {
     const node = document.createElement("div");
-    const core = new Core(node, {});
-    core.instantiateDependencies();
+    const ddm = new DDM(node, {});
+    ddm.instantiateDependencies();
 
-    expect(() => core.instantiateDependencies()).toThrow(
+    expect(() => ddm.instantiateDependencies()).toThrow(
       "Dependencies are already instantiated.",
     );
   });
 
-  it("Test Core skips already initialized wraplet during initializeDependencies", async () => {
+  it("Test DDM skips already initialized wraplet during initializeDependencies", async () => {
     const node = document.createElement("div");
     node.innerHTML = "<div data-child></div>";
 
@@ -834,23 +834,23 @@ describe("Test Core", () => {
       },
     } as const satisfies WrapletDependencyMap;
 
-    const core = new Core(node, map);
-    core.instantiateDependencies();
+    const ddm = new DDM(node, map);
+    ddm.instantiateDependencies();
 
-    // Fully initialize the child before core init
-    const child = core.dependencies["child"];
+    // Fully initialize the child before ddm init
+    const child = ddm.dependencies["child"];
     expect(child).not.toBeNull();
     if (child) {
       await child.wraplet.initialize();
       expect(child.wraplet.status.isInitialized).toBe(true);
 
-      // Now core.initializeDependencies should skip this already-initialized child (line 137)
-      await core.initializeDependencies();
-      expect(core.status.isInitialized).toBe(true);
+      // Now ddm.initializeDependencies should skip this already-initialized child (line 137)
+      await ddm.initializeDependencies();
+      expect(ddm.status.isInitialized).toBe(true);
     }
   });
 
-  it("Test Core findExistingWraplet reuses existing multiple wraplet", async () => {
+  it("Test DDM findExistingWraplet reuses existing multiple wraplet", async () => {
     const node = document.createElement("div");
     node.innerHTML = "<div data-child></div>";
 
@@ -878,21 +878,21 @@ describe("Test Core", () => {
       },
     } satisfies WrapletDependencyMap;
 
-    const core = new Core(node, map);
+    const ddm = new DDM(node, map);
 
     // First, add an existing instance for the same element
     const childElement = node.querySelector("[data-child]")!;
     const existingWraplet = new ChildWraplet(childElement);
     await existingWraplet.wraplet.initialize();
 
-    core.addExistingInstance("children", existingWraplet);
+    ddm.addExistingInstance("children", existingWraplet);
 
     // Now instantiate — findExistingWraplet should find the existing one and reuse it
-    core.instantiateDependencies();
+    ddm.instantiateDependencies();
 
-    await core.initializeDependencies();
+    await ddm.initializeDependencies();
 
-    expect(core.dependencies["children"].size).toBe(1);
+    expect(ddm.dependencies["children"].size).toBe(1);
     // Constructor called once for the manual instance, not again during instantiation
     expect(constructorFn).toHaveBeenCalledTimes(1);
   });
@@ -923,18 +923,18 @@ describe("Test Core", () => {
         },
       } satisfies WrapletDependencyMap;
 
-      const core = new Core(node, map);
+      const ddm = new DDM(node, map);
 
       // Add an existing instance for a different element (not matched by selector)
       const externalElement = document.createElement("div");
       const existingWraplet = new ChildWraplet(externalElement);
-      core.addExistingInstance("child", existingWraplet);
+      ddm.addExistingInstance("child", existingWraplet);
 
       // Instantiate — findExistingWraplet won't match the external element to any selector result,
       // so new wraplets will be created for the two [data-child] elements
-      core.instantiateDependencies();
+      ddm.instantiateDependencies();
 
-      expect(core.dependencies["child"].size).toBe(3);
+      expect(ddm.dependencies["child"].size).toBe(3);
       // 1 from addExistingInstance + 2 new from instantiation
       expect(constructorFn).toHaveBeenCalledTimes(3);
     });
@@ -968,18 +968,18 @@ describe("Test Core", () => {
       } satisfies WrapletDependencyMap;
 
       const childElement = node.querySelector("[data-child]")!;
-      const core = new Core(node, map);
+      const ddm = new DDM(node, map);
 
       // Manually set up an existing wraplet for the same element via private access
       const existingWraplet = new ChildWraplet(childElement);
       await existingWraplet.wraplet.initialize();
 
-      const coreAny = core as any;
-      coreAny.directDependencies["child"] = existingWraplet;
-      coreAny.dependenciesAreInstantiated = true;
+      const ddmAny = ddm as any;
+      ddmAny.directDependencies["child"] = existingWraplet;
+      ddmAny.dependenciesAreInstantiated = true;
 
       // Call findExistingWraplet via instantiateWrapletItem (private)
-      const result = coreAny.findExistingWraplet("child", childElement);
+      const result = ddmAny.findExistingWraplet("child", childElement);
       expect(result).toBe(existingWraplet);
     });
 
@@ -995,8 +995,8 @@ describe("Test Core", () => {
           this.wraplet = createWrapletApi({
             node: dm.node,
             wraplet: this,
-            initializeCallback: core.initializeDependencies,
-            destroyCallback: core.destroyDependencies,
+            initializeCallback: ddm.initializeDependencies,
+            destroyCallback: ddm.destroyDependencies,
           });
         }
       }
@@ -1010,16 +1010,16 @@ describe("Test Core", () => {
         },
       } satisfies WrapletDependencyMap;
 
-      const core = new Core(node, map);
+      const ddm = new DDM(node, map);
 
       // Set up an existing wraplet for a DIFFERENT element
       const differentElement = document.createElement("span");
-      const existingCore = new Core(differentElement, {});
-      const existingWraplet = new ChildWraplet(existingCore);
-      const coreAny = core as any;
-      coreAny.directDependencies["child"] = existingWraplet;
+      const existingDDM = new DDM(differentElement, {});
+      const existingWraplet = new ChildWraplet(existingDDM);
+      const ddmAny = ddm as any;
+      ddmAny.directDependencies["child"] = existingWraplet;
 
-      const result = coreAny.findExistingWraplet(
+      const result = ddmAny.findExistingWraplet(
         "child",
         document.createElement("div"),
       );
@@ -1052,7 +1052,7 @@ describe("Test Core", () => {
       } satisfies WrapletDependencyMap;
 
       const childElement = node.querySelector("[data-child]")!;
-      const core = new Core(node, map);
+      const ddm = new DDM(node, map);
 
       // Create two wraplets wrapping the same element
       const wraplet1 = new ChildWraplet(childElement);
@@ -1065,11 +1065,11 @@ describe("Test Core", () => {
       set.add(wraplet1);
       set.add(wraplet2);
 
-      const coreAny = core as any;
-      coreAny.directDependencies["child"] = set;
+      const ddmAny = ddm as any;
+      ddmAny.directDependencies["child"] = set;
 
-      expect(() => coreAny.findExistingWraplet("child", childElement)).toThrow(
-        "Internal logic error. Multiple instances wrapping the same element found in the core.",
+      expect(() => ddmAny.findExistingWraplet("child", childElement)).toThrow(
+        "Internal logic error. Multiple instances wrapping the same element found in the DDM.",
       );
     });
 
@@ -1085,14 +1085,14 @@ describe("Test Core", () => {
         },
       } as const satisfies WrapletDependencyMap;
 
-      const core = new Core(node, map);
+      const ddm = new DDM(node, map);
 
       // Set directDependencies to a non-Wraplet value for a single dep
-      const coreAny = core as any;
-      coreAny.directDependencies["child"] = { notAWraplet: true };
+      const ddmAny = ddm as any;
+      ddmAny.directDependencies["child"] = { notAWraplet: true };
 
       expect(() =>
-        coreAny.findExistingWraplet("child", document.createElement("div")),
+        ddmAny.findExistingWraplet("child", document.createElement("div")),
       ).toThrow("Internal logic error. Expected a Wraplet.");
     });
 
@@ -1122,15 +1122,15 @@ describe("Test Core", () => {
         },
       } satisfies WrapletDependencyMap;
 
-      const core = new Core(node, map);
+      const ddm = new DDM(node, map);
 
       // Set directDependencies to a non-WrapletSet value for a multiple dep
-      const coreAny = core as any;
-      const fakeCore = new Core(document.createElement("div"), {});
-      coreAny.directDependencies["children"] = new ChildWraplet(fakeCore);
+      const ddmAny = ddm as any;
+      const fakeDDM = new DDM(document.createElement("div"), {});
+      ddmAny.directDependencies["children"] = new ChildWraplet(fakeDDM);
 
       expect(() =>
-        coreAny.findExistingWraplet("children", document.createElement("div")),
+        ddmAny.findExistingWraplet("children", document.createElement("div")),
       ).toThrow("Internal logic error. Expected a WrapletSet.");
     });
 
@@ -1146,11 +1146,11 @@ describe("Test Core", () => {
         },
       } satisfies WrapletDependencyMap;
 
-      const core = new Core(node, map);
-      const coreAny = core as any;
+      const ddm = new DDM(node, map);
+      const ddmAny = ddm as any;
 
       // Create the existing dependency wraplet
-      coreAny.directDependencies["child"] = new TestWrapletClass(
+      ddmAny.directDependencies["child"] = new TestWrapletClass(
         document.createElement("div"),
       );
 
@@ -1160,12 +1160,12 @@ describe("Test Core", () => {
       childElement.wraplets = new DefaultWrapletSet();
       childElement.wraplets.add(otherWraplet);
 
-      const result = coreAny.findExistingWraplet("child", childElement);
+      const result = ddmAny.findExistingWraplet("child", childElement);
       expect(result).toBeNull();
     });
   });
 
-  it("Test Core removeDependency skips nullification when wraplet is different", async () => {
+  it("Test DDM removeDependency skips nullification when wraplet is different", async () => {
     const node = document.createElement("div");
     node.innerHTML = "<div data-child></div>";
 
@@ -1178,28 +1178,28 @@ describe("Test Core", () => {
       },
     } satisfies WrapletDependencyMap;
 
-    const core = new Core(node, map);
-    core.instantiateDependencies();
-    await core.initializeDependencies();
+    const ddm = new DDM(node, map);
+    ddm.instantiateDependencies();
+    await ddm.initializeDependencies();
 
-    const originalChild = core.dependencies["child"];
+    const originalChild = ddm.dependencies["child"];
     expect(originalChild).not.toBeNull();
 
     // Replace the dependency with a different wraplet instance
     const differentElement = document.createElement("div");
     const differentWraplet = new TestWrapletClass(differentElement);
-    const coreAny = core as any;
-    coreAny.directDependencies["child"] = differentWraplet;
+    const ddmAny = ddm as any;
+    ddmAny.directDependencies["child"] = differentWraplet;
 
     // Destroy the original child — removeDependency should NOT nullify
     // because directDependencies["child"] !== originalChild anymore
     await originalChild!.wraplet.destroy();
 
     // The dependency should still be the different wraplet (not nullified)
-    expect(coreAny.directDependencies["child"]).toBe(differentWraplet);
+    expect(ddmAny.directDependencies["child"]).toBe(differentWraplet);
   });
 
-  it("Test Core instantiateDependencies skips assignment when already instantiated", () => {
+  it("Test DDM instantiateDependencies skips assignment when already instantiated", () => {
     const node = document.createElement("div");
     node.innerHTML = "<div data-child></div>";
 
@@ -1212,30 +1212,30 @@ describe("Test Core", () => {
       },
     } as const satisfies WrapletDependencyMap;
 
-    const core = new Core(node, map);
-    const coreAny = core as any;
+    const ddm = new DDM(node, map);
+    const ddmAny = ddm as any;
 
     // First instantiate normally
-    core.instantiateDependencies();
-    const originalDeps = coreAny.directDependencies;
+    ddm.instantiateDependencies();
+    const originalDeps = ddmAny.directDependencies;
 
     // Now bypass the guard and call again with dependenciesAreInstantiated=true
     // to cover the else branch at line 230
-    coreAny.dependenciesAreInstantiated = false;
+    ddmAny.dependenciesAreInstantiated = false;
     // Set it back to true right before the if check via a getter override
     const origInstantiateSingle =
-      coreAny.instantiateSingleWrapletDependency.bind(coreAny);
-    coreAny.instantiateSingleWrapletDependency = (
+      ddmAny.instantiateSingleWrapletDependency.bind(ddmAny);
+    ddmAny.instantiateSingleWrapletDependency = (
       ...args: Parameters<typeof origInstantiateSingle>
     ) => {
-      coreAny.dependenciesAreInstantiated = true;
+      ddmAny.dependenciesAreInstantiated = true;
       return origInstantiateSingle(...args);
     };
 
-    core.instantiateDependencies();
+    ddm.instantiateDependencies();
 
     // directDependencies should NOT have been reassigned (else branch)
-    expect(coreAny.directDependencies).toBe(originalDeps);
+    expect(ddmAny.directDependencies).toBe(originalDeps);
   });
 
   it("instantiateWrapletItem reuses existing wraplet", async () => {
@@ -1267,16 +1267,16 @@ describe("Test Core", () => {
     } satisfies WrapletDependencyMap;
 
     const childElement = node.querySelector("[data-child]")!;
-    const core = new Core(node, map);
+    const ddm = new DDM(node, map);
 
     // Set up existing wraplet
     const existingWraplet = new ChildWraplet(childElement);
     await existingWraplet.wraplet.initialize();
-    const coreAny = core as any;
-    coreAny.directDependencies["child"] = existingWraplet;
+    const ddmAny = ddm as any;
+    ddmAny.directDependencies["child"] = existingWraplet;
 
     // Call instantiateWrapletItem — it should find and reuse the existing wraplet
-    const result = coreAny.instantiateWrapletItem(
+    const result = ddmAny.instantiateWrapletItem(
       "child",
       fillMapWithDefaults(map)["child"],
       childElement,
@@ -1321,47 +1321,47 @@ describe("Test Core", () => {
 
     const element = document.createElement("div");
     element.innerHTML = `<div data-dep1></div><div data-dep2></div>`;
-    const core = new Core(element, map);
+    const ddm = new DDM(element, map);
 
-    core.instantiateDependencies();
+    ddm.instantiateDependencies();
 
-    await core.initializeDependencies();
+    await ddm.initializeDependencies();
 
-    if (!core.dependencies.dep1) {
+    if (!ddm.dependencies.dep1) {
       throw new Error("dep1 not found");
     }
 
-    if (!core.dependencies.dep2) {
+    if (!ddm.dependencies.dep2) {
       throw new Error("dep2 not found");
     }
 
-    const dep1 = core.dependencies.dep1;
+    const dep1 = ddm.dependencies.dep1;
 
     // We remove the wraplet's default destroy listener that removes it from
-    // the core's dependencies to achieve an incorrect state, but the one
+    // the ddm's dependencies to achieve an incorrect state, but the one
     // we want to test.
     (dep1.wraplet as any).__destroyListeners.length = 0;
 
     // Now we can destroy it.
     await dep1.wraplet.destroy();
 
-    const dep2 = core.dependencies.dep2;
+    const dep2 = ddm.dependencies.dep2;
 
     // We fake the situation when the wraplet is still during the
     // destruction process. In reality, it has been NOT destroyed,
     // so the `fn` shouldn't run for it. But because it's marked
     // as `isGettingDestroyed` it will be skipped and not
-    // destroyed by the core.
+    // destroyed by the ddm.
     (dep2.wraplet.status as StatusWritable).isGettingDestroyed = true;
 
-    await core.destroyDependencies();
+    await ddm.destroyDependencies();
 
     // `fn` should run only once: for dep1.
     expect(fn).toHaveBeenCalledTimes(1);
   });
 
-  it("allows for coreless leaf-dependencies", async () => {
-    class CorelessWraplet implements Wraplet {
+  it("allows for non-dependent leaf-dependencies", async () => {
+    class DDMlessWraplet implements Wraplet {
       [WrapletSymbol]: true = true;
       public wraplet: WrapletApi;
 
@@ -1380,7 +1380,7 @@ describe("Test Core", () => {
     const map = {
       child: {
         selector: "[data-something]",
-        Class: CorelessWraplet,
+        Class: DDMlessWraplet,
         multiple: false,
         required: true,
       },
@@ -1391,18 +1391,18 @@ describe("Test Core", () => {
     childNode.setAttribute("data-something", "");
     node.appendChild(childNode);
 
-    const core = new Core(node, map);
-    core.instantiateDependencies();
-    await core.initializeDependencies();
+    const ddm = new DDM(node, map);
+    ddm.instantiateDependencies();
+    await ddm.initializeDependencies();
 
-    const child = core.dependencies.child;
+    const child = ddm.dependencies.child;
 
-    expect(child).toBeInstanceOf(CorelessWraplet);
+    expect(child).toBeInstanceOf(DDMlessWraplet);
     expect(child.getNode()).toBe(childNode);
   });
 
   it("throws on invalid map argument in createInjector", () => {
-    const injector = Core.createInjector(
+    const injector = DDM.createInjector(
       "invalid" as unknown as WrapletDependencyMap,
     );
 
@@ -1440,17 +1440,17 @@ describe("Test Core", () => {
       },
     } satisfies WrapletDependencyMap;
 
-    const core = new Core(document.createElement("div"), map);
+    const ddm = new DDM(document.createElement("div"), map);
 
     const instance = new TestDependency();
 
-    core.setExistingInstance("dep", instance);
+    ddm.setExistingInstance("dep", instance);
 
-    core.instantiateDependencies();
+    ddm.instantiateDependencies();
 
-    await core.initializeDependencies();
+    await ddm.initializeDependencies();
 
-    const child = core.dependencies.dep;
+    const child = ddm.dependencies.dep;
 
     expect(child).toBe(instance);
   });
@@ -1472,9 +1472,9 @@ describe("Test Core", () => {
     child.setAttribute("data-broken", "");
     node.appendChild(child);
 
-    const core = new Core(node, map);
+    const ddm = new DDM(node, map);
 
-    expect(() => core.instantiateDependencies()).toThrow(
+    expect(() => ddm.instantiateDependencies()).toThrow(
       "Created dependency is not a Wraplet instance.",
     );
   });

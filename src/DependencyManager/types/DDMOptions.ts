@@ -3,7 +3,7 @@ import { DependencyLifecycleAsyncListener } from "./DependencyLifecycleAsyncList
 import { DependencyLifecycleListener } from "./DependencyLifecycleListener";
 import { Logger } from "../../Logger/types/Logger";
 
-export type CoreOptions<M extends WrapletDependencyMap = WrapletDependencyMap> =
+export type DDMOptions<M extends WrapletDependencyMap = WrapletDependencyMap> =
   {
     dependencyInstantiatedListeners?: DependencyLifecycleListener<M, keyof M>[];
     dependencyInitializedListeners?: DependencyLifecycleAsyncListener<

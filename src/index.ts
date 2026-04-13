@@ -3,7 +3,7 @@ export type { DependencyManager } from "./DependencyManager/types/DependencyMana
 export type { WrapletCreator } from "./DependencyManager/types/WrapletCreator";
 export type { DependencyLifecycleAsyncListener } from "./DependencyManager/types/DependencyLifecycleAsyncListener";
 export type { DependencyLifecycleListener } from "./DependencyManager/types/DependencyLifecycleListener";
-export { Core } from "./DependencyManager/Core";
+export { DDM } from "./DependencyManager/DDM";
 
 export { AbstractWraplet } from "./Wraplet/AbstractWraplet";
 export { AbstractDependentWraplet } from "./Wraplet/AbstractDependentWraplet";

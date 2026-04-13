@@ -1,5 +1,5 @@
 import "./setup";
-import { AbstractDependentWraplet, Core, WrapletDependencyMap } from "../src";
+import { AbstractDependentWraplet, DDM, WrapletDependencyMap } from "../src";
 import { BaseElementTestWraplet } from "./resources/BaseElementTestWraplet";
 import { DependencyManager } from "../src/DependencyManager/types/DependencyManager";
 
@@ -10,7 +10,7 @@ describe("Test passing arguments", () => {
   class TestWrapletChild extends AbstractDependentWraplet<any> {
     private someString: string;
     constructor(element: Element, stringArgument: string) {
-      super(new Core(element, {}));
+      super(new DDM(element, {}));
       this.someString = stringArgument;
     }
     public getSomeString(): string {

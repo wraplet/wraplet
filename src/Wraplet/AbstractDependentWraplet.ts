@@ -6,7 +6,7 @@ import {
   DependencyManager,
   isDependencyManager,
 } from "../DependencyManager/types/DependencyManager";
-import { Core } from "../DependencyManager/Core";
+import { DDM } from "../DependencyManager/DDM";
 import { isOverridden } from "./utils";
 import { AbstractWraplet } from "./AbstractWraplet";
 import { WrapletApi } from "./types/WrapletApi";
@@ -51,7 +51,7 @@ export abstract class AbstractDependentWraplet<
   }
 
   /**
-   * Override createWrapletApi to provide Core-aware lifecycle callbacks
+   * Override createWrapletApi to provide DependencyManager-aware lifecycle callbacks
    * instead of the base class's version — this avoids creating two WrapletApi
    * instances.
    */
@@ -120,7 +120,7 @@ export abstract class AbstractDependentWraplet<
     N extends Node,
     M extends WrapletDependencyMap,
   >(node: N, map: M): DependencyManager<N, M> {
-    return new Core(node, map);
+    return new DDM(node, map);
   }
 
   protected static override createWraplets(): InstanceType<
@@ -144,7 +144,7 @@ export abstract class AbstractDependentWraplet<
    */
   protected static createDependentWraplets<
     T extends abstract new (
-      core: any,
+      ddm: any,
       ...args: any[]
     ) => AbstractDependentWraplet<any, any>,
   >(
@@ -182,7 +182,7 @@ export abstract class AbstractDependentWraplet<
    */
   protected static async createAndInitializeDependentWraplets<
     T extends {
-      new (core: any, ...args: any[]): AbstractDependentWraplet<any, any>;
+      new (ddm: any, ...args: any[]): AbstractDependentWraplet<any, any>;
     },
   >(
     this: T,

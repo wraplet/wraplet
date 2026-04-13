@@ -3,7 +3,7 @@ import "./setup";
 import {
   AbstractDependentWraplet,
   AbstractWraplet,
-  Core,
+  DDM,
   LifecycleAsyncErrors,
   WrapletDependencyMap,
 } from "../src";
@@ -316,8 +316,8 @@ it("Test order of invoked destroy listeners is reversed", async () => {
   class TestWraplet extends AbstractDependentWraplet {}
 
   const element = document.createElement("div");
-  const core = new Core(element, {});
-  const wraplet = new TestWraplet(core);
+  const ddm = new DDM(element, {});
+  const wraplet = new TestWraplet(ddm);
 
   await wraplet.wraplet.initialize();
 
