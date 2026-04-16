@@ -57,18 +57,20 @@ export abstract class AbstractDependentWraplet<
    */
   protected override createWrapletApi(): WrapletApi {
     return this.buildWrapletApi(
-      this.onInitialize.bind(this),
-      this.onDestroy.bind(this),
+      async () => {
+        await this.dm.initializeDependencies();
+        await this.onInitialize.bind(this)();
+      },
+      async () => {
+        await this.onDestroy.bind(this)();
+        await this.dm.destroyDependencies();
+      },
     );
   }
 
-  protected override async onDestroy(): Promise<void> {
-    await this.dm.destroyDependencies();
-  }
+  protected override async onDestroy(): Promise<void> {}
 
-  protected override async onInitialize(): Promise<void> {
-    await this.dm.initializeDependencies();
-  }
+  protected override async onInitialize(): Promise<void> {}
 
   /**
    * Dependencies.

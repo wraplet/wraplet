@@ -633,4 +633,50 @@ describe("AbstractDependentWraplet", () => {
       "This method is not supported for AbstractDependentWraplet.",
     );
   });
+
+  it("runs childrens' lifecycle even if the parent does not invoke `super` methods", async () => {
+    const childInitFunc = jest.fn();
+    const childDestroyFunc = jest.fn();
+
+    class TestDependentWraplet extends AbstractDependentWraplet<
+      Element,
+      typeof map
+    > {
+      protected override async onInitialize() {}
+
+      protected override async onDestroy() {}
+    }
+
+    class TestChildWraplet extends AbstractWraplet {
+      protected override async onInitialize() {
+        childInitFunc();
+      }
+
+      protected override async onDestroy() {
+        childDestroyFunc();
+      }
+    }
+
+    const map = {
+      child: {
+        selector: "[data-js-child]",
+        Class: TestChildWraplet,
+        required: true,
+        multiple: false,
+      },
+    } satisfies WrapletDependencyMap;
+
+    const node = document.createElement("div");
+    node.innerHTML = `
+      <div data-js-child></div>
+    `;
+
+    const dm = new DDM(node, map);
+    const wraplet = new TestDependentWraplet(dm);
+    await wraplet.wraplet.initialize();
+    await wraplet.wraplet.destroy();
+
+    expect(childInitFunc).toHaveBeenCalledTimes(1);
+    expect(childDestroyFunc).toHaveBeenCalledTimes(1);
+  });
 });
