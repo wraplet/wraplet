@@ -447,10 +447,6 @@ export class DDM<
       );
     }
 
-    if (this.directDependencies[id]) {
-      throw new MapError(`Dependency is already set.`);
-    }
-
     if (!isWraplet(wraplet)) {
       throw new MapError(`Provided instance is not a valid dependency.`);
     }

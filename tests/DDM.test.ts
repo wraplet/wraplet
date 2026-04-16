@@ -482,7 +482,7 @@ describe("Test DDM", () => {
       ).toThrow(MapError);
     });
 
-    it("should throw when setExistingInstance is called twice for the same dependency", () => {
+    it("should not throw when setExistingInstance is called twice for the same dependency", () => {
       const element = document.createElement("div");
       const map = {
         child: {
@@ -499,7 +499,7 @@ describe("Test DDM", () => {
 
       ddm.setExistingInstance("child", instance1);
 
-      expect(() => ddm.setExistingInstance("child", instance2)).toThrow(
+      expect(() => ddm.setExistingInstance("child", instance2)).not.toThrow(
         MapError,
       );
     });
