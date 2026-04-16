@@ -24,8 +24,8 @@ export abstract class BaseElementTestWraplet<
   ): C | null {
     const wraplets = this.createDependentWraplets(
       element,
-      map,
       selectorAttribute,
+      map,
       args,
     );
     if (wraplets.length === 0) {
@@ -42,8 +42,8 @@ export abstract class BaseElementTestWraplet<
   ): C[] {
     return this.createDependentWraplets(
       node,
-      map,
       selectorAttribute,
+      map,
       [],
     ) as unknown as C[];
   }

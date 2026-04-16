@@ -521,7 +521,13 @@ export class DDM<
   private validateRequiredDependencyAfterRemoval<
     K extends Extract<keyof M, string>,
   >(id: K): RequiredDependencyDestroyedError | null {
-    if (this.map[id].required && !this.status.isGettingDestroyed) {
+    if (
+      this.map[id].required &&
+      !this.status.isGettingDestroyed &&
+      // Don't allow removing a required dependency only if there is no
+      // replacement in place.
+      this.directDependencies[id] === null
+    ) {
       return new RequiredDependencyDestroyedError(
         `Required dependency "${id}" has been destroyed.`,
       );

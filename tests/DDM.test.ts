@@ -504,6 +504,56 @@ describe("Test DDM", () => {
       );
     });
 
+    it("should not throw when setExistingInstance is called twice for the same required dependency that is already initialized", async () => {
+      const element = document.createElement("div");
+      const map = {
+        child: {
+          Class: TestWrapletClass,
+          multiple: false,
+          required: true,
+        },
+      } satisfies WrapletDependencyMap;
+
+      const ddm = new DDM(element, map);
+
+      const instance1 = new TestWrapletClass(document.createElement("div"));
+      const instance2 = new TestWrapletClass(document.createElement("div"));
+
+      ddm.setExistingInstance("child", instance1);
+
+      await ddm.initializeDependencies();
+
+      expect(() => ddm.setExistingInstance("child", instance2)).not.toThrow();
+    });
+
+    it("should not throw when destroying replaced required dependency", async () => {
+      const element = document.createElement("div");
+      const map = {
+        child: {
+          Class: TestWrapletClass,
+          multiple: false,
+          required: true,
+        },
+      } satisfies WrapletDependencyMap;
+
+      const ddm = new DDM(element, map);
+
+      const instance1 = new TestWrapletClass(document.createElement("div"));
+      const instance2 = new TestWrapletClass(document.createElement("div"));
+
+      ddm.setExistingInstance("child", instance1);
+
+      await ddm.initializeDependencies();
+
+      // Replace required dependency.
+      ddm.setExistingInstance("child", instance2);
+
+      await expect(instance1.wraplet.destroy).resolves.not.toThrow();
+
+      // But destroying the current required dependency should throw.
+      await expect(instance2.wraplet.destroy).rejects.toThrow();
+    });
+
     it("should throw when setExistingInstance is called with a non-wraplet", () => {
       const element = document.createElement("div");
       const map = {

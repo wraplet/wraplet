@@ -48,8 +48,8 @@ describe("Test passing arguments", () => {
     ) {
       const wraplets = this.createDependentWraplets(
         document,
-        childrenMap,
         selectorAttribute,
+        childrenMap,
         [someString],
       );
 

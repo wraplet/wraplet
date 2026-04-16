@@ -70,7 +70,7 @@ describe("AbstractDependentWraplet", () => {
 
       class TestWraplet extends AbstractDependentWraplet {
         public static create(node: ParentNode): TestWraplet {
-          const wraplets = this.createDependentWraplets(node, {}, attribute);
+          const wraplets = this.createDependentWraplets(node, attribute, {});
           expect(wraplets.length).toEqual(1);
 
           return wraplets[0];
@@ -93,8 +93,8 @@ describe("AbstractDependentWraplet", () => {
           ): Promise<TestWraplet[]> {
             return this.createAndInitializeDependentWraplets(
               node,
-              {},
               attribute,
+              {},
             );
           }
         }
@@ -134,8 +134,8 @@ describe("AbstractDependentWraplet", () => {
           ): Promise<TestWraplet[]> {
             return this.createAndInitializeDependentWraplets(
               node,
-              map,
               attribute,
+              map,
             );
           }
 
@@ -164,8 +164,8 @@ describe("AbstractDependentWraplet", () => {
           ): Promise<TestWraplet[]> {
             return this.createAndInitializeDependentWraplets(
               node,
-              {},
               attribute,
+              {},
             );
           }
         }
@@ -191,8 +191,8 @@ describe("AbstractDependentWraplet", () => {
           ): Promise<TestWraplet[]> {
             return this.createAndInitializeDependentWraplets(
               node,
-              {},
               attribute,
+              {},
               ["hello"],
             );
           }

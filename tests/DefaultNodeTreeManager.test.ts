@@ -110,7 +110,7 @@ it("Test wraplet tree manager initialization performance", async () => {
 
   class TestWraplet extends AbstractDependentWraplet<Node, typeof map> {
     public static create(node: ParentNode, attribute: string): TestWraplet[] {
-      return TestWraplet.createDependentWraplets(node, map, attribute);
+      return TestWraplet.createDependentWraplets(node, attribute, map);
     }
   }
 

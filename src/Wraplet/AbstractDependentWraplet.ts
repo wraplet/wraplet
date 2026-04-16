@@ -152,8 +152,8 @@ export abstract class AbstractDependentWraplet<
   >(
     this: T,
     node: ParentNode,
-    map: WrapletDependencyMap,
     attribute: string,
+    map: WrapletDependencyMap,
     additional_args: unknown[] = [],
   ): InstanceType<T>[] {
     // @ts-expect-error TypeScript doesn't like this, but we still do this check.
@@ -189,16 +189,16 @@ export abstract class AbstractDependentWraplet<
   >(
     this: T,
     node: ParentNode,
-    map: WrapletDependencyMap,
     attribute: string,
+    map: WrapletDependencyMap,
     additional_args: unknown[] = [],
   ): Promise<InstanceType<T>[]> {
     const self = this as T & typeof AbstractDependentWraplet;
 
     const wraplets: InstanceType<T>[] = self.createDependentWraplets(
       node,
-      map,
       attribute,
+      map,
       additional_args,
     );
     for (const wraplet of wraplets) {
