@@ -80,7 +80,7 @@ export abstract class AbstractDependentWraplet<
   }
 
   /**
-   *  his method will be invoked if one of the wraplet's dependencies has been instantiated.
+   *  This method will be invoked if one of the wraplet's dependencies has been instantiated.
    */
   /* istanbul ignore next -- Base method; only called when overridden by subclass. */
   protected onDependencyInstantiated(
@@ -93,7 +93,7 @@ export abstract class AbstractDependentWraplet<
   }
 
   /**
-   *  his method will be invoked if one of the wraplet's dependencies has been initialized.
+   *  This method will be invoked if one of the wraplet's dependencies has been initialized.
    */
   /* istanbul ignore next -- Base method; only called when overridden by subclass. */
   protected async onDependencyInitialized(

@@ -85,7 +85,7 @@ export abstract class AbstractWraplet<
 
   /**
    * Subclasses must return an array of constructors covering all types in union N.
-   * Wrap the result in the `supportedTypeCheck` helper to make sure that the array contains all
+   * Wrap the result in the `supportedTypeGuard` helper to make sure that the array contains all
    * and only classes that extend the given type.
    */
   protected supportedNodeTypes(): readonly Constructable<N>[] | null {
