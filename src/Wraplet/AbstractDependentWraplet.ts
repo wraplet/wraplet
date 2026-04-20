@@ -21,7 +21,7 @@ export abstract class AbstractDependentWraplet<
   constructor(protected dm: DependencyManager<N, M>) {
     if (!isDependencyManager<N, M>(dm)) {
       throw new Error(
-        "AbstractDependentWraplet requires an instance implementing DependencyManager and NodeManager interfaces.",
+        "AbstractDependentWraplet requires an instance implementing the DependencyManager interface.",
       );
     }
 

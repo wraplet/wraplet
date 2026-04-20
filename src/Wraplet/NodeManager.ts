@@ -20,7 +20,7 @@ export class NodeManager<N extends Node> {
     });
   }
 
-  destroy(): void {
+  public destroy(): void {
     for (const listener of this.listeners) {
       this.node.removeEventListener(
         listener.event,
