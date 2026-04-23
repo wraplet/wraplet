@@ -45,7 +45,6 @@ function isDependencyMapItem(item: Record<string, unknown>): boolean {
         "required",
         "destructible",
         "injector",
-        "map",
         "args",
       ].includes(key)
     ) {

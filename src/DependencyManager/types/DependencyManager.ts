@@ -3,7 +3,6 @@ import {
   MultipleDependencyKeys,
   SingleDependencyKeys,
   WrapletDependencyMap,
-  WrapletDependencyMapWithDefaults,
 } from "../../Wraplet/types/WrapletDependencyMap";
 import { is } from "../../utils/is";
 import { DependencyLifecycleAsyncListener } from "./DependencyLifecycleAsyncListener";
@@ -26,11 +25,6 @@ export interface DependencyManager<
    * The node that the manager is managing.
    */
   node: N;
-
-  /**
-   * The children map that defines the relationships between nodes.
-   */
-  map: WrapletDependencyMapWithDefaults<M>;
 
   /**
    * Instantiate dependencies based on the map and the current node.

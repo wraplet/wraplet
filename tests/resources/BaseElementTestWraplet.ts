@@ -21,7 +21,7 @@ export abstract class BaseElementTestWraplet<
     map: M,
     element: ParentNode = document,
     args: unknown[] = [],
-  ): C | null {
+  ) {
     const wraplets = this.createDependentWraplets(
       element,
       selectorAttribute,
@@ -32,7 +32,7 @@ export abstract class BaseElementTestWraplet<
       return null;
     }
 
-    return wraplets[0] as C;
+    return wraplets[0] as unknown as C;
   }
 
   public static createAll<C extends BaseElementTestWraplet>(
