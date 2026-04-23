@@ -8,7 +8,6 @@ import {
   WrapletDependencyMap,
 } from "../src";
 import { BaseElementTestWraplet } from "./resources/BaseElementTestWraplet";
-import { DependencyInstance } from "../src/Wraplet/types/DependencyInstance";
 
 const funcCounter = jest.fn();
 beforeEach(() => {
@@ -219,57 +218,6 @@ it("Test that if the required dependency has been destroyed then throw exception
   );
 });
 
-it("Destroy dependency listener", async () => {
-  const mainAttribute = "data-test-main";
-  const dependencyAttribute = "data-test-dependency";
-
-  const func = jest.fn();
-
-  class TestWrapletDependency extends AbstractWraplet {}
-
-  const dependenciesMap = {
-    dependency: {
-      selector: `[${dependencyAttribute}]`,
-      Class: TestWrapletDependency,
-      multiple: false,
-      required: false,
-    },
-  } satisfies WrapletDependencyMap;
-
-  class TestWraplet extends BaseElementTestWraplet<typeof dependenciesMap> {
-    protected async onDependencyDestroyed<
-      K extends keyof typeof dependenciesMap,
-    >(dependency: DependencyInstance<typeof dependenciesMap, K>, id: K) {
-      expect(id).toEqual("dependency");
-      expect(dependency).toBeInstanceOf(TestWrapletDependency);
-      func();
-    }
-  }
-
-  document.body.innerHTML = `
-<div ${mainAttribute}>
-    <div ${dependencyAttribute}></div>
-</div>
-`;
-
-  const wraplet = TestWraplet.create<typeof dependenciesMap, TestWraplet>(
-    mainAttribute,
-    dependenciesMap,
-  );
-  if (!wraplet) {
-    throw new Error("Wraplet not created.");
-  }
-  await wraplet.wraplet.initialize();
-
-  const dependency = wraplet.getDependency("dependency");
-  if (!dependency) {
-    throw new Error("Dependency not found.");
-  }
-  await dependency.wraplet.destroy();
-
-  expect(func).toHaveBeenCalledTimes(1);
-});
-
 it("Test isDestroyed values", async () => {
   const mainAttribute = "data-test-main";
   const dependencyAttribute = "data-test-dependency";
@@ -285,12 +233,7 @@ it("Test isDestroyed values", async () => {
     },
   } satisfies WrapletDependencyMap;
 
-  class TestWraplet extends BaseElementTestWraplet<typeof dependenciesMap> {
-    protected async onDependencyDestroyed() {
-      expect(this.wraplet.status.isGettingDestroyed).toBe(true);
-      expect(this.wraplet.status.isDestroyed).toBe(false);
-    }
-  }
+  class TestWraplet extends BaseElementTestWraplet<typeof dependenciesMap> {}
 
   document.body.innerHTML = `
 <div ${mainAttribute}>

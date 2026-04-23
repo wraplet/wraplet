@@ -6,7 +6,6 @@ import {
   WrapletDependencyMap,
 } from "../../src";
 import { BaseElementTestWraplet } from "../resources/BaseElementTestWraplet";
-import { DependencyInstance } from "../../src/Wraplet/types/DependencyInstance";
 import { DependencyManager } from "../../src/DependencyManager/types/DependencyManager";
 
 const testWrapletSelectorAttribute = "data-test-selector";
@@ -224,71 +223,6 @@ describe("AbstractDependentWraplet", () => {
   });
 
   describe("Dependency Management", () => {
-    it("should trigger listener on dependency instantiation", async () => {
-      const attribute = "data-test-wraplet";
-      const dependency1Attribute = `${attribute}-dependency1`;
-      const dependency2Attribute = `${attribute}-dependency2`;
-
-      const instantiatedFunc = jest.fn();
-
-      class TestWrapletDependency1 extends AbstractWraplet {
-        public testMethod1(): boolean {
-          instantiatedFunc();
-          return true;
-        }
-      }
-
-      class TestWrapletDependency2 extends AbstractWraplet {
-        public testMethod2(): boolean {
-          return true;
-        }
-      }
-
-      const map = {
-        dependency1: {
-          selector: `[${dependency1Attribute}]`,
-          Class: TestWrapletDependency1,
-          multiple: false,
-          required: false,
-        },
-        dependency2: {
-          selector: `[${dependency2Attribute}]`,
-          Class: TestWrapletDependency2,
-          multiple: false,
-          required: false,
-        },
-      } as const satisfies WrapletDependencyMap;
-
-      class TestWraplet extends BaseElementTestWraplet<typeof map> {
-        protected onDependencyInstantiated<K extends keyof typeof map>(
-          dependency: DependencyInstance<typeof map, K>,
-          id: K,
-        ) {
-          if (id === "dependency1") {
-            (dependency as TestWrapletDependency1).testMethod1();
-          }
-        }
-      }
-
-      document.body.innerHTML = `
-<div ${attribute}>
-    <div ${dependency1Attribute}></div>
-    <div ${dependency2Attribute}></div>
-</div>
-`;
-
-      const wraplet = TestWraplet.create<typeof map, TestWraplet>(
-        attribute,
-        map,
-      );
-      if (!wraplet) {
-        throw Error("Wraplet not created.");
-      }
-      await wraplet.wraplet.initialize();
-
-      expect(instantiatedFunc).toHaveBeenCalledTimes(1);
-    });
-
     it("should not throw errors when accessing dependencies whether they are instantiated or not", async () => {
       const attribute = "data-test-wraplet";
       const dependency1Attribute = `${attribute}-dependency1`;
@@ -465,74 +399,6 @@ describe("AbstractDependentWraplet", () => {
   });
 
   describe("Auto-detection of overridden dependency lifecycle methods", () => {
-    it("should auto-detect overridden onDependency* callbacks", async () => {
-      const attribute = "data-test-wraplet";
-      const dependencyAttribute = `${attribute}-dep`;
-
-      const onDependencyInstantiatedFn = jest.fn();
-      const onDependencyInitializedFn = jest.fn();
-      const onDependencyDestroyedFn = jest.fn();
-
-      class TestWrapletDependency extends AbstractWraplet {}
-
-      const map = {
-        dep: {
-          selector: `[${dependencyAttribute}]`,
-          Class: TestWrapletDependency,
-          multiple: false,
-          required: false,
-        },
-      } satisfies WrapletDependencyMap;
-
-      class TestWraplet extends BaseElementTestWraplet<typeof map> {
-        protected async onDependencyInitialized(
-          dependency: DependencyInstance<typeof map, keyof typeof map>,
-          id: keyof typeof map,
-        ) {
-          onDependencyInitializedFn(id);
-        }
-
-        protected onDependencyInstantiated(
-          dependency: DependencyInstance<typeof map, keyof typeof map>,
-          id: keyof typeof map,
-        ) {
-          onDependencyInstantiatedFn(id);
-        }
-
-        protected async onDependencyDestroyed(
-          dependency: DependencyInstance<typeof map, keyof typeof map>,
-          id: keyof typeof map,
-        ) {
-          onDependencyDestroyedFn(id);
-        }
-      }
-
-      document.body.innerHTML = `
-<div ${attribute}>
-    <div ${dependencyAttribute}></div>
-</div>
-`;
-
-      const wraplet = TestWraplet.create<typeof map, TestWraplet>(
-        attribute,
-        map,
-      );
-      if (!wraplet) {
-        throw Error("Wraplet not created.");
-      }
-      await wraplet.wraplet.initialize();
-      await wraplet.wraplet.destroy();
-
-      expect(onDependencyInstantiatedFn).toHaveBeenCalledTimes(1);
-      expect(onDependencyInstantiatedFn).toHaveBeenCalledWith("dep");
-
-      expect(onDependencyInitializedFn).toHaveBeenCalledTimes(1);
-      expect(onDependencyInitializedFn).toHaveBeenCalledWith("dep");
-
-      expect(onDependencyDestroyedFn).toHaveBeenCalledTimes(1);
-      expect(onDependencyDestroyedFn).toHaveBeenCalledWith("dep");
-    });
-
     it("should not register dependency listeners when methods are not overridden", async () => {
       const attribute = "data-test-wraplet";
       const dependencyAttribute = `${attribute}-dep`;
@@ -554,7 +420,6 @@ describe("AbstractDependentWraplet", () => {
     <div ${dependencyAttribute}></div>
 </div>
 `;
-      // If the default "onDependencyInstantiate" method has been registered this would throw an error.
       const wraplet = TestWraplet.create<typeof map, TestWraplet>(
         attribute,
         map,
@@ -573,9 +438,6 @@ describe("AbstractDependentWraplet", () => {
   it("handles method overrides when only parent overrides", async () => {
     const funcInit = jest.fn();
     const funcDestroy = jest.fn();
-    const funcOnDependencyDestroyed = jest.fn();
-    const funcOnDependencyInstantiated = jest.fn();
-    const funcOnDependencyInitialized = jest.fn();
     class LevelOne extends AbstractDependentWraplet {
       protected async onInitialize() {
         funcInit();
@@ -583,18 +445,6 @@ describe("AbstractDependentWraplet", () => {
 
       protected async onDestroy() {
         funcDestroy();
-      }
-
-      protected async onDependencyDestroyed() {
-        funcOnDependencyDestroyed();
-      }
-
-      protected async onDependencyInstantiated() {
-        funcOnDependencyInstantiated();
-      }
-
-      protected async onDependencyInitialized() {
-        funcOnDependencyInitialized();
       }
     }
     class LevelTwo extends LevelOne {}
@@ -607,9 +457,6 @@ describe("AbstractDependentWraplet", () => {
 
     expect(funcInit).toHaveBeenCalledTimes(1);
     expect(funcDestroy).toHaveBeenCalledTimes(1);
-    expect(funcOnDependencyDestroyed).not.toHaveBeenCalledTimes(1);
-    expect(funcOnDependencyInstantiated).not.toHaveBeenCalledTimes(1);
-    expect(funcOnDependencyInitialized).not.toHaveBeenCalledTimes(1);
   });
 
   it("throws when calling createWraplets on AbstractDependentWraplet", () => {

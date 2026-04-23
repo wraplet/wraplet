@@ -181,23 +181,22 @@ describe("Test DDM", () => {
         multiple: false,
         required: false,
       },
-    } as const satisfies WrapletDependencyMap;
+    } satisfies WrapletDependencyMap;
 
     const ddm: DependencyManager<Node, typeof map> = new DDM(node, map);
 
     const func = jest.fn();
-    ddm.addDependencyDestroyedListener(async () => {
+    ddm.addDependencyDestroyedListener("child", async () => {
+      func();
+    });
+    ddm.addDependencyDestroyedListener("children", async () => {
       func();
     });
 
     ddm.instantiateDependencies();
     await ddm.initializeDependencies();
 
-    for (const child of ddm.dependencies.children.values()) {
-      await child.wraplet.destroy();
-    }
-
-    await ddm.dependencies.child?.wraplet.destroy();
+    await ddm.destroyDependencies();
 
     expect(func).toHaveBeenCalledTimes(3);
   });
@@ -219,23 +218,32 @@ describe("Test DDM", () => {
         multiple: false,
         required: false,
       },
-    } as const satisfies WrapletDependencyMap;
+    } satisfies WrapletDependencyMap;
 
     const func = jest.fn();
-
-    const ddm: DependencyManager<Node, typeof map> = new DDM(node, map);
     const funcInitialized = jest.fn();
 
-    ddm.addDependencyInstantiatedListener(async () => {
+    const ddm: DependencyManager<Node, typeof map> = new DDM(node, map);
+
+    ddm.addDependencyInstantiatedListener("child", async () => {
       func();
     });
 
-    ddm.addDependencyInitializedListener(async () => {
+    ddm.addDependencyInitializedListener("child", async () => {
+      funcInitialized();
+    });
+
+    ddm.addDependencyInstantiatedListener("children", async () => {
+      func();
+    });
+
+    ddm.addDependencyInitializedListener("children", async () => {
       funcInitialized();
     });
 
     ddm.instantiateDependencies();
     await ddm.initializeDependencies();
+
     expect(func).toHaveBeenCalledTimes(2);
     expect(funcInitialized).toHaveBeenCalledTimes(2);
   });
@@ -405,30 +413,45 @@ describe("Test DDM", () => {
         multiple: true,
         required: false,
       },
-    } as const satisfies WrapletDependencyMap;
+    } satisfies WrapletDependencyMap;
 
     const funcInstantiate = jest.fn();
     const funcDestroy = jest.fn();
     const funcInitialized = jest.fn();
     const ddm: DependencyManager<Node, typeof map> = new DDM(node, map, {
-      dependencyInstantiatedListeners: [
-        async (child) => {
-          funcInstantiate();
-          expect(child).toBeInstanceOf(TestWrapletClass);
-        },
-      ],
-      dependencyInitializedListeners: [
-        async (child) => {
-          funcInitialized();
-          expect(child).toBeInstanceOf(TestWrapletClass);
-        },
-      ],
-      dependencyDestroyedListeners: [
-        async (child) => {
-          funcDestroy();
-          expect(child).toBeInstanceOf(TestWrapletClass);
-        },
-      ],
+      dependencyInstantiatedListeners: new Map([
+        [
+          "children",
+          [
+            async (child: TestWrapletClass) => {
+              funcInstantiate();
+              expect(child).toBeInstanceOf(TestWrapletClass);
+            },
+          ],
+        ],
+      ]),
+      dependencyInitializedListeners: new Map([
+        [
+          "children",
+          [
+            async (child: TestWrapletClass) => {
+              funcInitialized();
+              expect(child).toBeInstanceOf(TestWrapletClass);
+            },
+          ],
+        ],
+      ]),
+      dependencyDestroyedListeners: new Map([
+        [
+          "children",
+          [
+            async (child: TestWrapletClass) => {
+              funcDestroy();
+              expect(child).toBeInstanceOf(TestWrapletClass);
+            },
+          ],
+        ],
+      ]),
     });
     ddm.instantiateDependencies();
     await ddm.initializeDependencies();
@@ -787,10 +810,10 @@ describe("Test DDM", () => {
 
     const runInstantiateWithErrorInListener = () => {
       const ddm = new DDM(element, map);
-      ddm.addDependencyInstantiatedListener(() => {
+      ddm.addDependencyInstantiatedListener("child1", () => {
         throw new Error("Test error in a listener");
       });
-      ddm.addDependencyInstantiatedListener(() => {
+      ddm.addDependencyInstantiatedListener("child1", () => {
         depListInst();
       });
 
@@ -809,10 +832,10 @@ describe("Test DDM", () => {
 
     const runIntializeWithErrorInListener = async () => {
       const ddm = new DDM(element, map);
-      ddm.addDependencyInitializedListener(async () => {
+      ddm.addDependencyInitializedListener("child1", async () => {
         throw new Error("Test error in a listener");
       });
-      ddm.addDependencyInitializedListener(async () => {
+      ddm.addDependencyInitializedListener("child1", async () => {
         depListInit();
       });
 
@@ -826,10 +849,10 @@ describe("Test DDM", () => {
 
     const runDestroyWithErrorInListener = async () => {
       const ddm = new DDM(element, map);
-      ddm.addDependencyDestroyedListener(async () => {
+      ddm.addDependencyDestroyedListener("child1", async () => {
         throw new Error("Test error in a listener");
       });
-      ddm.addDependencyDestroyedListener(async () => {
+      ddm.addDependencyDestroyedListener("child1", async () => {
         depListDestroy();
       });
       ddm.instantiateDependencies();
@@ -839,9 +862,9 @@ describe("Test DDM", () => {
 
     await expect(runDestroyWithErrorInListener).rejects.toThrow();
 
-    expect(depListDestroy).toHaveBeenCalledTimes(2);
+    expect(depListDestroy).toHaveBeenCalledTimes(1);
 
-    // Initialize callback depApiInitshould run twice because it's registered
+    // Initialize callback depApiInitshould runs twice because it's registered
     // on a single child, but we initialize it in two async functions.
     expect(depApiInit).toHaveBeenCalledTimes(2);
 

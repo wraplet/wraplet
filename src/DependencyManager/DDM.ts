@@ -64,18 +64,18 @@ export class DDM<
   private directDependencies: Partial<WrapletDependencies<M>> = {};
   private wrappedDependencies: Partial<WrapletDependencies<M>> = {};
 
-  private destroyedDependencyListeners: DependencyLifecycleAsyncListener<
-    M,
-    keyof M
-  >[] = [];
-  private instantiatedDependencyListeners: DependencyLifecycleListener<
-    M,
-    keyof M
-  >[] = [];
-  private initializedDependencyListeners: DependencyLifecycleAsyncListener<
-    M,
-    keyof M
-  >[] = [];
+  private instantiatedDependencyListeners: Map<
+    keyof M,
+    DependencyLifecycleListener<M, keyof M>[]
+  >;
+  private initializedDependencyListeners: Map<
+    keyof M,
+    DependencyLifecycleAsyncListener<M, keyof M>[]
+  >;
+  private destroyedDependencyListeners: Map<
+    keyof M,
+    DependencyLifecycleAsyncListener<M, keyof M>[]
+  >;
 
   constructor(
     public node: N,
@@ -102,17 +102,12 @@ export class DDM<
 
     this.logger = optionsWithDefaults.logger;
 
-    for (const listener of optionsWithDefaults.dependencyInstantiatedListeners) {
-      this.instantiatedDependencyListeners.push(listener);
-    }
-
-    for (const listener of optionsWithDefaults.dependencyInitializedListeners) {
-      this.initializedDependencyListeners.push(listener);
-    }
-
-    for (const listener of optionsWithDefaults.dependencyDestroyedListeners) {
-      this.destroyedDependencyListeners.push(listener);
-    }
+    this.instantiatedDependencyListeners =
+      optionsWithDefaults.dependencyInstantiatedListeners;
+    this.initializedDependencyListeners =
+      optionsWithDefaults.dependencyInitializedListeners;
+    this.destroyedDependencyListeners =
+      optionsWithDefaults.dependencyDestroyedListeners;
   }
 
   /**
@@ -145,9 +140,9 @@ export class DDM<
             await wraplet.wraplet.initialize();
 
             const listenerResults = await Promise.allSettled(
-              this.initializedDependencyListeners.map((listener) => {
-                return listener(wraplet as DependencyInstance<M, keyof M>, id);
-              }),
+              (this.initializedDependencyListeners.get(id) || []).map((fn) =>
+                fn(wraplet as DependencyInstance<M, keyof M>),
+              ),
             );
 
             createLifecycleAsyncError(
@@ -378,8 +373,8 @@ export class DDM<
     }
     this.prepareIndividualWraplet(id, wraplet);
 
-    for (const listener of this.instantiatedDependencyListeners) {
-      listener(wraplet as DependencyInstance<M>, id);
+    for (const listener of this.instantiatedDependencyListeners.get(id) || []) {
+      listener(wraplet as DependencyInstance<M>);
     }
 
     return wraplet;
@@ -418,22 +413,31 @@ export class DDM<
     return items;
   }
 
-  public addDependencyDestroyedListener(
-    callback: DependencyLifecycleAsyncListener<M, keyof M>,
+  public addDependencyInstantiatedListener<K extends keyof M>(
+    id: K,
+    callback: DependencyLifecycleListener<M, K>,
   ): void {
-    this.destroyedDependencyListeners.push(callback);
+    const listeners = this.instantiatedDependencyListeners.get(id) || [];
+    listeners.push(callback);
+    this.instantiatedDependencyListeners.set(id, listeners);
   }
 
-  public addDependencyInstantiatedListener(
-    callback: DependencyLifecycleListener<M, keyof M>,
+  public addDependencyInitializedListener<K extends keyof M>(
+    id: K,
+    callback: DependencyLifecycleAsyncListener<M, K>,
   ): void {
-    this.instantiatedDependencyListeners.push(callback);
+    const listeners = this.initializedDependencyListeners.get(id) || [];
+    listeners.push(callback);
+    this.initializedDependencyListeners.set(id, listeners);
   }
 
-  public addDependencyInitializedListener(
-    callback: DependencyLifecycleAsyncListener<M, keyof M>,
+  public addDependencyDestroyedListener<K extends keyof M>(
+    id: K,
+    callback: DependencyLifecycleAsyncListener<M, K>,
   ): void {
-    this.initializedDependencyListeners.push(callback);
+    const listeners = this.destroyedDependencyListeners.get(id) || [];
+    listeners.push(callback);
+    this.destroyedDependencyListeners.set(id, listeners);
   }
 
   public setExistingInstance<
@@ -496,7 +500,7 @@ export class DDM<
       this.removeDependency(w, id);
 
       const results = await Promise.allSettled(
-        this.destroyedDependencyListeners.map((listener) => listener(w, id)),
+        (this.destroyedDependencyListeners.get(id) || []).map((fn) => fn(w)),
       );
 
       // Collect the required-dependency error alongside listener results
@@ -677,9 +681,9 @@ export class DDM<
 
   private defaultOptions(): Required<DDMOptions<M>> {
     return {
-      dependencyInstantiatedListeners: [],
-      dependencyInitializedListeners: [],
-      dependencyDestroyedListeners: [],
+      dependencyInstantiatedListeners: new Map(),
+      dependencyInitializedListeners: new Map(),
+      dependencyDestroyedListeners: new Map(),
       logger: ConsoleLogger.getGlobalLogger(),
     };
   }

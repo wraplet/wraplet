@@ -4,4 +4,4 @@ import { DependencyInstance } from "../../Wraplet/types/DependencyInstance";
 export type DependencyLifecycleAsyncListener<
   M extends WrapletDependencyMap,
   K extends keyof M,
-> = (wraplet: DependencyInstance<M, K>, id: K) => Promise<void>;
+> = (wraplet: DependencyInstance<M, K>) => Promise<void>;

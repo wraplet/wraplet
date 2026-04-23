@@ -44,22 +44,25 @@ export interface DependencyManager<
   /**
    * Add a listener that will be called when a dependency is initialized.
    */
-  addDependencyInitializedListener(
-    callback: DependencyLifecycleAsyncListener<M, keyof M>,
+  addDependencyInitializedListener<K extends keyof M>(
+    id: K,
+    callback: DependencyLifecycleAsyncListener<M, K>,
   ): void;
 
   /**
    * Add a listener that will be called when a dependency is destroyed.
    */
-  addDependencyDestroyedListener(
-    callback: DependencyLifecycleAsyncListener<M, keyof M>,
+  addDependencyDestroyedListener<K extends keyof M>(
+    id: K,
+    callback: DependencyLifecycleAsyncListener<M, K>,
   ): void;
 
   /**
    * Add a listener that will be called when a dependency is instantiated.
    */
-  addDependencyInstantiatedListener(
-    callback: DependencyLifecycleListener<M, keyof M>,
+  addDependencyInstantiatedListener<K extends keyof M>(
+    id: K,
+    callback: DependencyLifecycleListener<M, K>,
   ): void;
 
   /**

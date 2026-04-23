@@ -1,13 +1,11 @@
 import { WrapletDependencyMap } from "./types/WrapletDependencyMap";
 import { WrapletDependencies } from "./types/WrapletDependencies";
 import { Wraplet } from "./types/Wraplet";
-import { DependencyInstance } from "./types/DependencyInstance";
 import {
   DependencyManager,
   isDependencyManager,
 } from "../DependencyManager/types/DependencyManager";
 import { DDM } from "../DependencyManager/DDM";
-import { isOverridden } from "./utils";
 import { AbstractWraplet } from "./AbstractWraplet";
 import { WrapletApi } from "./types/WrapletApi";
 
@@ -26,26 +24,6 @@ export abstract class AbstractDependentWraplet<
     }
 
     super(dm.node);
-
-    if (
-      isOverridden(this, "onDependencyInitialized", AbstractDependentWraplet)
-    ) {
-      dm.addDependencyInitializedListener(
-        this.onDependencyInitialized.bind(this),
-      );
-    }
-
-    if (
-      isOverridden(this, "onDependencyInstantiated", AbstractDependentWraplet)
-    ) {
-      dm.addDependencyInstantiatedListener(
-        this.onDependencyInstantiated.bind(this),
-      );
-    }
-
-    if (isOverridden(this, "onDependencyDestroyed", AbstractDependentWraplet)) {
-      dm.addDependencyDestroyedListener(this.onDependencyDestroyed.bind(this));
-    }
 
     dm.instantiateDependencies();
   }
@@ -77,45 +55,6 @@ export abstract class AbstractDependentWraplet<
    */
   protected get d(): WrapletDependencies<M> {
     return this.dm.dependencies;
-  }
-
-  /**
-   *  This method will be invoked if one of the wraplet's dependencies has been instantiated.
-   */
-  /* istanbul ignore next -- Base method; only called when overridden by subclass. */
-  protected onDependencyInstantiated(
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    dependency: DependencyInstance<M, keyof M>,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    id: keyof M,
-  ) {
-    throw new Error("Method has to be implemented by subclass.");
-  }
-
-  /**
-   *  This method will be invoked if one of the wraplet's dependencies has been initialized.
-   */
-  /* istanbul ignore next -- Base method; only called when overridden by subclass. */
-  protected async onDependencyInitialized(
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    dependency: DependencyInstance<M, keyof M>,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    id: keyof M,
-  ) {
-    throw new Error("Method has to be implemented by subclass.");
-  }
-
-  /**
-   * This method will be ivoked if one of the wraplet's dependencies has been destroyed.
-   */
-  /* istanbul ignore next -- Base method; only called when overridden by subclass. */
-  protected async onDependencyDestroyed(
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    dependency: DependencyInstance<M, keyof M>,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    id: keyof M,
-  ) {
-    throw new Error("Method has to be implemented by subclass.");
   }
 
   protected static createDependencyManager<

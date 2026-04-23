@@ -5,14 +5,17 @@ import { Logger } from "../../Logger/types/Logger";
 
 export type DDMOptions<M extends WrapletDependencyMap = WrapletDependencyMap> =
   {
-    dependencyInstantiatedListeners?: DependencyLifecycleListener<M, keyof M>[];
-    dependencyInitializedListeners?: DependencyLifecycleAsyncListener<
-      M,
-      keyof M
-    >[];
-    dependencyDestroyedListeners?: DependencyLifecycleAsyncListener<
-      M,
-      keyof M
-    >[];
+    dependencyInstantiatedListeners?: Map<
+      keyof M,
+      DependencyLifecycleListener<M, keyof M>[]
+    >;
+    dependencyInitializedListeners?: Map<
+      keyof M,
+      DependencyLifecycleAsyncListener<M, keyof M>[]
+    >;
+    dependencyDestroyedListeners?: Map<
+      keyof M,
+      DependencyLifecycleAsyncListener<M, keyof M>[]
+    >;
     logger?: Logger;
   };
