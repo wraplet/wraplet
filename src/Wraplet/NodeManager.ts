@@ -45,7 +45,7 @@ export class NodeManager<N extends Node> {
     eventName: string,
     callback: EventListenerOrEventListenerObject,
     options?: AddEventListenerOptions | boolean,
-    required: boolean = false,
+    required: boolean = true,
   ) {
     if (!isParentNode(this.node)) {
       throw new Error(
