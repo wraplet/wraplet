@@ -111,7 +111,7 @@ export class DDM<
   }
 
   /**
-   * Initialize DDM.
+   * Initialize dependencies.
    */
   public async initializeDependencies() {
     if (this.status.isInitialized) {

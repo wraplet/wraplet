@@ -1,18 +1,12 @@
 import { destroyWrapletsRecursively } from "./utils";
 import { NodeTreeManager } from "./types/NodeTreeManager";
 import { createLifecycleAsyncError } from "../utils/createLifecycleAsyncError";
+import { NodeInitializer } from "./types/NodeInitializer";
 
-export type Initializer<CONTEXT> = (
-  node: Node,
-  context?: CONTEXT,
-) => Promise<void>;
+export class DNTM<CONTEXT = unknown> implements NodeTreeManager<CONTEXT> {
+  private initializers: NodeInitializer<CONTEXT>[] = [];
 
-export class DefaultNodeTreeManager<
-  CONTEXT = unknown,
-> implements NodeTreeManager<CONTEXT> {
-  private initializers: Initializer<CONTEXT>[] = [];
-
-  public addNodeInitializer(callback: Initializer<CONTEXT>): void {
+  public addNodeInitializer(callback: NodeInitializer<CONTEXT>): void {
     this.initializers.push(callback);
   }
 

@@ -6,7 +6,7 @@ import {
   createElementTree,
   predictElementCount,
 } from "./resources/utils";
-import { DefaultNodeTreeManager } from "../src/NodeTreeManager/DefaultNodeTreeManager";
+import { DNTM } from "../src/NodeTreeManager/DNTM";
 import {
   AbstractDependentWraplet,
   AbstractWraplet,
@@ -38,7 +38,7 @@ it("Test default node tree manager destroy tree", async () => {
     <div ${attribute}></div>
 </div>`;
 
-  const manager: NodeTreeManager = new DefaultNodeTreeManager();
+  const manager: NodeTreeManager = new DNTM();
 
   manager.addNodeInitializer(async (node) => {
     if (!isParentNode(node)) {
@@ -71,7 +71,7 @@ it("Test default node tree manager initialize tree", async () => {
   const element = document.createElement("div");
   element.setAttribute(attribute, "");
 
-  const manager: NodeTreeManager = new DefaultNodeTreeManager();
+  const manager: NodeTreeManager = new DNTM();
   const func = jest.fn();
   manager.addNodeInitializer(async (node: Node) => {
     if (!isParentNode(node)) {
@@ -122,7 +122,7 @@ it("Test wraplet tree manager initialization performance", async () => {
   const tree = createElementTree(treeData.depth, treeData.childrenPerNode);
   document.body.appendChild(tree);
 
-  const manager: NodeTreeManager = new DefaultNodeTreeManager();
+  const manager: NodeTreeManager = new DNTM();
 
   manager.addNodeInitializer(async (node): Promise<void> => {
     if (!isParentNode(node)) {
@@ -146,7 +146,7 @@ it("Test wraplet tree manager initialization performance", async () => {
 });
 
 it("Test default node tree manager handles rejected initializer", async () => {
-  const manager: NodeTreeManager = new DefaultNodeTreeManager();
+  const manager: NodeTreeManager = new DNTM();
   const error = new Error("Initializer failed");
 
   manager.addNodeInitializer(async () => {

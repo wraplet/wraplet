@@ -37,7 +37,8 @@ export { createOuterInitializeCallback } from "./Wraplet/createOuterInitializeCa
 
 // NodeTree
 export type { NodeTreeManager } from "./NodeTreeManager/types/NodeTreeManager";
-export { DefaultNodeTreeManager } from "./NodeTreeManager/DefaultNodeTreeManager";
+export type { NodeInitializer } from "./NodeTreeManager/types/NodeInitializer";
+export { DNTM } from "./NodeTreeManager/DNTM";
 
 // WrapletDependencyMap
 export type { WrapletDependencyMap } from "./Wraplet/types/WrapletDependencyMap";
