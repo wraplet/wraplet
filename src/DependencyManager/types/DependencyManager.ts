@@ -37,6 +37,23 @@ export interface DependencyManager<
   initializeDependencies(): Promise<void>;
 
   /**
+   * Synchronizes dependencies in the DOM.
+   *
+   * When new nodes were added to the DOM, you might want to
+   * synchronize the DependencyManager to inject new dependencies
+   * that might be available.
+   *
+   * Dependencies that are no longer part of the descendant DOM tree
+   * will be destroyed unless they are marked "destructable: false"
+   * or have no "selector" property on the map.
+   *
+   * This is an experimental feature.
+   *
+   * @experimental
+   */
+  syncDependencies(): Promise<void>;
+
+  /**
    * Destroy all dependencies.
    */
   destroyDependencies(): Promise<void>;

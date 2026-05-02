@@ -18,7 +18,10 @@ import {
   WrapletDependencyMap,
   WrapletDependencyMapWithDefaults,
 } from "../Wraplet/types/WrapletDependencyMap";
-import { isParentNode } from "../NodeTreeManager/utils";
+import {
+  findWrapletsOutsideTheTree,
+  isParentNode,
+} from "../NodeTreeManager/utils";
 import { DependencyInstance } from "../Wraplet/types/DependencyInstance";
 import { DDMOptions } from "./types/DDMOptions";
 import {
@@ -32,7 +35,6 @@ import {
   SelectorCallback,
   WrapletDependencyDefinitionWithDefaults,
 } from "../Wraplet/types/WrapletDependencyDefinition";
-import { Status, StatusWritable } from "../Wraplet/types/Status";
 import { DependencyLifecycleAsyncListener } from "./types/DependencyLifecycleAsyncListener";
 import { DependencyLifecycleListener } from "./types/DependencyLifecycleListener";
 import { ConsoleLogger } from "../Logger/ConsoleLogger";
@@ -40,6 +42,7 @@ import { Logger } from "../Logger/types/Logger";
 import { createLifecycleAsyncError } from "../utils/createLifecycleAsyncError";
 import { isMapTreeBuilder, MapTreeBuilder } from "../Map/MapTreeBuilder";
 import { Injector } from "../Injector/types/Injector";
+import { DDMStatus } from "./types/DDMStatus";
 
 export class DDM<
   N extends Node = Node,
@@ -49,16 +52,13 @@ export class DDM<
 
   private logger: Logger;
   private dependenciesAreInstantiated: boolean = false;
-  private statusWritable: StatusWritable = {
+  public status: DDMStatus = {
     isDestroyed: false,
     isGettingDestroyed: false,
+    isGettingSynced: false,
     isInitialized: false,
     isGettingInitialized: false,
   };
-
-  public get status(): Status {
-    return this.statusWritable;
-  }
 
   private readonly mapTree: MapTreeBuilder<M>;
   private directDependencies: Partial<WrapletDependencies<M>> = {};
@@ -110,16 +110,29 @@ export class DDM<
       optionsWithDefaults.dependencyDestroyedListeners;
   }
 
-  /**
-   * Initialize dependencies.
-   */
   public async initializeDependencies() {
     if (this.status.isInitialized) {
       throw new LifecycleError("Dependencies are already initialized.");
     }
 
-    this.statusWritable.isGettingInitialized = true;
+    this.status.isGettingInitialized = true;
 
+    await this.initializeDeps();
+
+    this.status.isInitialized = true;
+    this.status.isGettingInitialized = false;
+
+    // If destruction has been invoked in the meantime, we can finally do it when initialization
+    // is finished.
+    if (this.status.isGettingDestroyed) {
+      await this.destroyDependencies();
+    }
+  }
+
+  /**
+   * Initialize dependencies.
+   */
+  private async initializeDeps() {
     const results = await Promise.allSettled(
       Object.entries(this.directDependencies).map(async ([id, dependency]) => {
         if (!dependency) return;
@@ -168,26 +181,21 @@ export class DDM<
       this.logger.dumpError(error);
       throw error;
     }
+  }
 
-    this.statusWritable.isInitialized = true;
-    this.statusWritable.isGettingInitialized = false;
-
-    // If destruction has been invoked in the meantime, we can finally do it when initialization
-    // is finished.
-    if (this.statusWritable.isGettingDestroyed) {
-      await this.destroyDependencies();
-    }
+  public async syncDependencies() {
+    this.status.isGettingSynced = true;
+    this.instantiateDeps(true);
+    await this.initializeDeps();
+    await this.destroyDeps(true);
+    this.status.isGettingSynced = false;
   }
 
   public get map(): WrapletDependencyMapWithDefaults<M> {
     return this.mapTree.getMap();
   }
 
-  public instantiateDependencies(): void {
-    if (this.dependenciesAreInstantiated) {
-      throw new LifecycleError("Dependencies are already instantiated.");
-    }
-
+  private instantiateDeps(sync: boolean = false): void {
     const dependencies: Partial<Nullable<WrapletDependencies<M>>> =
       this.directDependencies;
     // We check if are dealing with the ParentNode object.
@@ -196,9 +204,7 @@ export class DDM<
         const dependencyDefinition = this.map[id];
         this.validateMapItemForNonParent(id, dependencyDefinition);
       }
-      this.wrappedDependencies = this.wrapDependencies(
-        this.directDependencies as WrapletDependencies<M>,
-      );
+
       this.dependenciesAreInstantiated = true;
       return;
     }
@@ -228,15 +234,37 @@ export class DDM<
         continue;
       }
 
-      dependencies[id] = this.instantiateSingleWrapletDependency(
+      const newDep = this.instantiateSingleWrapletDependency(
         dependencyDefinition,
         this.node,
         id,
       );
+
+      // This might happen when we are syncing and the dependency hasn't changed.
+      if (newDep === dependencies[id]) {
+        continue;
+      }
+
+      // If we are syncing, invoke destruction of the old dependency.
+      if (sync && newDep && dependencies[id]) {
+        (dependencies[id] as Wraplet).wraplet.destroy();
+      }
+
+      dependencies[id] = newDep;
     }
+  }
+
+  public instantiateDependencies() {
+    if (this.dependenciesAreInstantiated) {
+      throw new LifecycleError("Dependencies are already instantiated.");
+    }
+
     this.wrappedDependencies = this.wrapDependencies(
       this.directDependencies as WrapletDependencies<M>,
     );
+
+    this.instantiateDeps();
+
     this.dependenciesAreInstantiated = true;
   }
 
@@ -543,12 +571,12 @@ export class DDM<
    * This method removes from nodes references to this wraplet and its dependencies recursively.
    */
   public async destroyDependencies(): Promise<void> {
-    if (this.statusWritable.isDestroyed) {
+    if (this.status.isDestroyed) {
       throw new LifecycleError("Dependencies are already destroyed.");
     }
-    this.statusWritable.isGettingDestroyed = true;
+    this.status.isGettingDestroyed = true;
 
-    if (this.statusWritable.isGettingInitialized) {
+    if (this.status.isGettingInitialized) {
       // If we are still initializing, then postpone destruction until after
       // initialization is finished.
       // We are leaving this method, but with `isGettingDestroyed` set to true, so
@@ -556,18 +584,18 @@ export class DDM<
       return;
     }
 
-    if (!this.statusWritable.isInitialized) {
+    if (!this.status.isInitialized) {
       // If we are not initialized, then we have nothing to do here.
-      this.statusWritable.isDestroyed = true;
-      this.statusWritable.isGettingDestroyed = false;
+      this.status.isDestroyed = true;
+      this.status.isGettingDestroyed = false;
       return;
     }
 
     await this.destroyDeps();
 
-    this.statusWritable.isInitialized = false;
-    this.statusWritable.isDestroyed = true;
-    this.statusWritable.isGettingDestroyed = false;
+    this.status.isInitialized = false;
+    this.status.isDestroyed = true;
+    this.status.isGettingDestroyed = false;
   }
 
   private findChildrenElements<PN extends ParentNode>(
@@ -688,14 +716,14 @@ export class DDM<
     };
   }
 
-  private async destroyDeps(): Promise<void> {
+  private async destroyDeps(sync: boolean = false): Promise<void> {
     const results = await Promise.allSettled(
       Object.entries(this.directDependencies).map(async ([id, dependency]) => {
         if (!dependency || !this.map[id]["destructible"]) {
           return;
         }
 
-        const wraplets: Wraplet[] = [];
+        let wraplets: Wraplet[] = [];
 
         if (isWrapletSet(dependency)) {
           for (const item of dependency) {
@@ -703,6 +731,14 @@ export class DDM<
           }
         } else {
           wraplets.push(dependency);
+        }
+
+        if (sync) {
+          if (!this.map[id]["selector"]) {
+            return;
+          }
+
+          wraplets = await findWrapletsOutsideTheTree(wraplets, this.node);
         }
 
         const results = await Promise.allSettled(

@@ -359,6 +359,7 @@ describe("Test DDM", () => {
     expect(ddm.status).toEqual({
       isDestroyed: false,
       isGettingDestroyed: false,
+      isGettingSynced: false,
       isInitialized: false,
       isGettingInitialized: false,
     });
@@ -1493,7 +1494,7 @@ describe("Test DDM", () => {
     ).toThrow("Invalid map argument.");
   });
 
-  it("handles dependencies that are not wraplets", async () => {
+  it("handles required dependencies that are manually set", async () => {
     class TestDependency implements Wraplet {
       [WrapletSymbol]: true = true;
       public wraplet: WrapletApi;
@@ -1550,5 +1551,236 @@ describe("Test DDM", () => {
     expect(() => ddm.instantiateDependencies()).toThrow(
       "Created dependency is not a Wraplet instance.",
     );
+  });
+
+  describe("DDM synchronization", () => {
+    it("adds new single dependency during synchronization", async () => {
+      const initFn = jest.fn();
+      const destroyFn = jest.fn();
+
+      class TestDependency implements Wraplet {
+        [WrapletSymbol]: true = true;
+        public wraplet: WrapletApi;
+
+        constructor(node: Node) {
+          this.wraplet = createWrapletApi({
+            node,
+            wraplet: this,
+            initializeCallback: initFn,
+            destroyCallback: destroyFn,
+          });
+        }
+      }
+
+      const map = {
+        requiredDep: {
+          selector: "[data-dep]",
+          Class: TestDependency,
+          required: true,
+          multiple: false,
+        },
+      } satisfies WrapletDependencyMap;
+
+      const element = document.createElement("div");
+      element.innerHTML = "<div data-dep></div>";
+
+      const ddm = new DDM(element, map);
+
+      ddm.instantiateDependencies();
+      await ddm.initializeDependencies();
+
+      const requiredDepFirstInstance = ddm.dependencies.requiredDep;
+
+      // Verify the setup.
+      expect(ddm.dependencies.requiredDep).toBeInstanceOf(TestDependency);
+      expect(initFn).toHaveBeenCalledTimes(1);
+      expect(destroyFn).not.toHaveBeenCalled();
+
+      element.innerHTML = "<span data-dep></span>";
+
+      // Check the "isGettingSynced" status.
+      expect(ddm.status.isGettingSynced).toBe(false);
+      const syncPromise = ddm.syncDependencies();
+      expect(ddm.status.isGettingSynced).toBe(true);
+      await syncPromise;
+      expect(ddm.status.isGettingSynced).toBe(false);
+
+      const requiredDepSecondInstance = ddm.dependencies.requiredDep;
+
+      expect(ddm.dependencies.requiredDep).toBeInstanceOf(TestDependency);
+      expect(requiredDepSecondInstance).not.toBe(requiredDepFirstInstance);
+      expect(initFn).toHaveBeenCalledTimes(2);
+
+      expect(destroyFn).toHaveBeenCalledTimes(1);
+    });
+
+    it("adds new multiple dependency during synchronization", async () => {
+      const initFn = jest.fn();
+      const destroyFn = jest.fn();
+
+      class TestDependency implements Wraplet {
+        [WrapletSymbol]: true = true;
+        public wraplet: WrapletApi;
+
+        constructor(node: Node) {
+          this.wraplet = createWrapletApi({
+            node,
+            wraplet: this,
+            initializeCallback: initFn,
+            destroyCallback: destroyFn,
+          });
+        }
+      }
+
+      const map = {
+        deps: {
+          selector: "[data-deps]",
+          Class: TestDependency,
+          required: false,
+          multiple: true,
+        },
+      } satisfies WrapletDependencyMap;
+
+      const element = document.createElement("div");
+      element.innerHTML = "<div data-deps></div><div data-deps></div>";
+
+      const ddm = new DDM(element, map);
+
+      ddm.instantiateDependencies();
+      await ddm.initializeDependencies();
+
+      // Verify the setup.
+      expect(ddm.dependencies.deps.size).toBe(2);
+      expect(initFn).toHaveBeenCalledTimes(2);
+      expect(destroyFn).not.toHaveBeenCalled();
+
+      element.innerHTML = "<span data-deps></span><span data-deps></span>";
+
+      await ddm.syncDependencies();
+
+      // The old dependencies are destroyed.
+      expect(ddm.dependencies.deps.size).toBe(2);
+      expect(initFn).toHaveBeenCalledTimes(4);
+
+      // Old dependencies are destroyed.
+      expect(destroyFn).toHaveBeenCalledTimes(2);
+
+      element.children[1].remove();
+      const strongEl = document.createElement("strong");
+      strongEl.setAttribute("data-deps", "");
+      element.appendChild(strongEl);
+
+      await ddm.syncDependencies();
+
+      // We replaced one more node, this time by modifying
+      // DOM partially. It shouldn't change the number of
+      // available dependencies.
+      expect(ddm.dependencies.deps.size).toBe(2);
+      expect(initFn).toHaveBeenCalledTimes(5);
+    });
+
+    it("doesn't destroy indestructible dependencies during syncing", async () => {
+      const destroyFn = jest.fn();
+
+      class TestDependency implements Wraplet {
+        [WrapletSymbol]: true = true;
+        public wraplet: WrapletApi;
+
+        constructor(node: Node) {
+          this.wraplet = createWrapletApi({
+            node,
+            wraplet: this,
+            destroyCallback: destroyFn,
+          });
+        }
+      }
+
+      const map = {
+        dep: {
+          selector: "[data-dep]",
+          Class: TestDependency,
+          required: false,
+          multiple: false,
+          destructible: false,
+        },
+        deps: {
+          selector: "[data-deps]",
+          Class: TestDependency,
+          required: false,
+          multiple: true,
+          destructible: false,
+        },
+      } satisfies WrapletDependencyMap;
+
+      const element = document.createElement("div");
+      element.innerHTML =
+        "<div data-dep></div><div data-deps></div><div data-deps></div>";
+
+      const ddm = new DDM(element, map);
+
+      ddm.instantiateDependencies();
+      await ddm.initializeDependencies();
+
+      element.innerHTML = "";
+
+      await ddm.syncDependencies();
+
+      // Old dependencies are not destroyed because they
+      // are marked as indestructible.
+      expect(destroyFn).toHaveBeenCalledTimes(0);
+    });
+
+    it("doesn't destroy dependencies without selectors during syncing", async () => {
+      const destroyFn = jest.fn();
+
+      class TestDependency implements Wraplet {
+        [WrapletSymbol]: true = true;
+        public wraplet: WrapletApi;
+
+        constructor(node: Node) {
+          this.wraplet = createWrapletApi({
+            node,
+            wraplet: this,
+            destroyCallback: destroyFn,
+          });
+        }
+      }
+
+      const map = {
+        dep: {
+          Class: TestDependency,
+          required: false,
+          multiple: false,
+        },
+        deps: {
+          Class: TestDependency,
+          required: false,
+          multiple: true,
+        },
+      } satisfies WrapletDependencyMap;
+
+      const element = document.createElement("div");
+
+      const ddm = new DDM(element, map);
+
+      ddm.setExistingInstance(
+        "dep",
+        new TestDependency(document.createElement("div")),
+      );
+
+      ddm.addExistingInstance(
+        "deps",
+        new TestDependency(document.createElement("div")),
+      );
+
+      ddm.instantiateDependencies();
+      await ddm.initializeDependencies();
+
+      await ddm.syncDependencies();
+
+      // Old dependencies are not destroyed because they
+      // don't have selectors.
+      expect(destroyFn).toHaveBeenCalledTimes(0);
+    });
   });
 });

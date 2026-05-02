@@ -53,6 +53,23 @@ export async function actOnNodesRecursively(
   }
 }
 
+export async function findWrapletsOutsideTheTree(
+  wraplets: Wraplet[],
+  node: Node,
+) {
+  const wrapletsOutsideTree = new DefaultWrapletSet(wraplets);
+  await actOnNodesRecursively(node, (node) => {
+    const nodeWraplets = getWrapletsFromNode(node);
+    if (!nodeWraplets) {
+      return;
+    }
+    for (const wraplet of nodeWraplets) {
+      wrapletsOutsideTree.delete(wraplet);
+    }
+  });
+  return Array.from(wrapletsOutsideTree);
+}
+
 export async function destroyWrapletsRecursively(node: Node): Promise<void> {
   const allWraplets: Wraplet[] = [];
   await actOnNodesRecursively(node, (node) => {
