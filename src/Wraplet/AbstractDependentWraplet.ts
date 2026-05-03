@@ -82,16 +82,24 @@ export abstract class AbstractDependentWraplet<
 
   /**
    * Instantiates wraplets on a given ParentNode.
+   *
+   * @param node - The ParentNode to instantiate wraplets on.
+   * @param attribute - The attribute to look for or a function to retrieve nodes.
+   * @param map - The dependency map for the wraplets.
+   * @param additional_args - Additional arguments to pass to the wraplet constructor.
+   *
+   * @returns An array of instantiated wraplets.
    */
   protected static createDependentWraplets<
     T extends abstract new (
       ddm: any,
       ...args: any[]
     ) => AbstractDependentWraplet<any, any>,
+    PN extends ParentNode,
   >(
     this: T,
-    node: ParentNode,
-    attribute: string,
+    node: PN,
+    attribute: string | ((node: PN) => Iterable<Node>),
     map: WrapletDependencyMap,
     additional_args: unknown[] = [],
   ): InstanceType<T>[] {
@@ -103,14 +111,20 @@ export abstract class AbstractDependentWraplet<
     const self = this as T & typeof AbstractDependentWraplet;
 
     const result: InstanceType<T>[] = [];
+    let elements: Iterable<Node>;
 
-    if (node instanceof Element && node.hasAttribute(attribute)) {
-      const dm = self.createDependencyManager(node, map);
-      result.push(new (this as any)(dm, ...additional_args));
+    if (typeof attribute === "function") {
+      elements = attribute(node);
+    } else {
+      if (node instanceof Element && node.hasAttribute(attribute)) {
+        const dm = self.createDependencyManager(node, map);
+        result.push(new (this as any)(dm, ...additional_args));
+      }
+
+      elements = node.querySelectorAll(`[${attribute}]`);
     }
 
-    const foundElements = node.querySelectorAll(`[${attribute}]`);
-    for (const element of foundElements) {
+    for (const element of elements) {
       const dm = self.createDependencyManager(element, map);
       result.push(new (this as any)(dm, ...additional_args));
     }
@@ -120,15 +134,23 @@ export abstract class AbstractDependentWraplet<
 
   /**
    * Instantiates and initializes wraplets on a given ParentNode.
+   *
+   * @param node - The ParentNode to instantiate wraplets on.
+   * @param attribute - The attribute to look for or a function to retrieve nodes.
+   * @param map - The dependency map for the wraplets.
+   * @param additional_args - Additional arguments to pass to the wraplet constructor.
+   *
+   * @returns An array of instantiated and initialized wraplets.
    */
   protected static async createAndInitializeDependentWraplets<
     T extends {
       new (ddm: any, ...args: any[]): AbstractDependentWraplet<any, any>;
     },
+    PN extends ParentNode,
   >(
     this: T,
-    node: ParentNode,
-    attribute: string,
+    node: PN,
+    attribute: string | ((node: PN) => Iterable<Node>),
     map: WrapletDependencyMap,
     additional_args: unknown[] = [],
   ): Promise<InstanceType<T>[]> {

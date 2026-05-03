@@ -119,13 +119,20 @@ export abstract class AbstractWraplet<
 
   /**
    * Instantiates wraplets on a given ParentNode.
+   *
+   * @param node - The ParentNode to instantiate wraplets on.
+   * @param attribute - The attribute to look for or a function to retrieve nodes.
+   * @param additional_args - Additional arguments to pass to the wraplet constructor.
+   *
+   * @returns An array of instantiated wraplets.
    */
   protected static createWraplets<
     T extends abstract new (ddm: any, ...args: any[]) => AbstractWraplet<any>,
+    PN extends ParentNode,
   >(
     this: T,
-    node: ParentNode,
-    attribute: string,
+    node: PN,
+    attribute: string | ((node: PN) => Iterable<Node>),
     additional_args: unknown[] = [],
   ): InstanceType<T>[] {
     // @ts-expect-error TypeScript doesn't like this, but we still do this check.
@@ -134,13 +141,18 @@ export abstract class AbstractWraplet<
     }
 
     const result: InstanceType<T>[] = [];
+    let elements: Iterable<Node>;
 
-    if (node instanceof Element && node.hasAttribute(attribute)) {
-      result.push(new (this as any)(node, ...additional_args));
+    if (typeof attribute === "function") {
+      elements = attribute(node);
+    } else {
+      if (node instanceof Element && node.hasAttribute(attribute)) {
+        result.push(new (this as any)(node, ...additional_args));
+      }
+      elements = node.querySelectorAll(`[${attribute}]`);
     }
 
-    const foundElements = node.querySelectorAll(`[${attribute}]`);
-    for (const element of foundElements) {
+    for (const element of elements) {
       result.push(new (this as any)(element, ...additional_args));
     }
 
@@ -149,15 +161,22 @@ export abstract class AbstractWraplet<
 
   /**
    * Instantiates and initializes wraplets on a given ParentNode.
+   *
+   * @param node - The ParentNode to instantiate wraplets on.
+   * @param attribute - The attribute to look for or a function to retrieve nodes.
+   * @param additional_args - Additional arguments to pass to the wraplet constructor.
+   *
+   * @returns An array of instantiated wraplets.
    */
   protected static async createAndInitializeWraplets<
     T extends {
       new (ddm: any, ...args: any[]): AbstractWraplet<any>;
     },
+    PN extends ParentNode,
   >(
     this: T,
-    node: ParentNode,
-    attribute: string,
+    node: PN,
+    attribute: string | ((node: PN) => Iterable<Node>),
     additional_args: unknown[] = [],
   ): Promise<InstanceType<T>[]> {
     const self = this as T & typeof AbstractWraplet;

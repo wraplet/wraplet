@@ -97,6 +97,29 @@ describe("AbstractWraplet", () => {
     expect(wraplets).toHaveLength(1);
   });
 
+  it("createWraplets works with a callback instead of an attribute", async () => {
+    class SimpleWraplet extends AbstractWraplet<HTMLElement> {
+      public static create(
+        node: ParentNode,
+        attribute: (node: ParentNode) => Iterable<Node>,
+      ): SimpleWraplet[] {
+        return this.createWraplets(node, attribute);
+      }
+    }
+
+    const testClass = "test-class";
+    const container = document.createElement("div");
+    const child = document.createElement("span");
+    child.classList.add(testClass);
+    container.appendChild(child);
+
+    const wraplets = SimpleWraplet.create(container, (node) =>
+      node.querySelectorAll(`.${testClass}`),
+    );
+    // only the child, top element has no attribute
+    expect(wraplets).toHaveLength(1);
+  });
+
   it("createAndInitializeWraplets creates and initializes wraplets", async () => {
     const initFn = jest.fn();
     class InitWraplet extends AbstractWraplet<HTMLElement> {
@@ -121,6 +144,35 @@ describe("AbstractWraplet", () => {
     const wraplets = await InitWraplet.createAndInit(container, "data-w");
     expect(wraplets).toHaveLength(2);
     expect(initFn).toHaveBeenCalledTimes(2);
+    wraplets.forEach((w) => expect(w).toBeInstanceOf(InitWraplet));
+  });
+
+  it("createAndInitializeWraplets works with a callback instead of an attribute", async () => {
+    const initFn = jest.fn();
+    class InitWraplet extends AbstractWraplet<HTMLElement> {
+      public static createAndInit(
+        node: ParentNode,
+        attribute: (node: ParentNode) => Iterable<Node>,
+      ): Promise<InitWraplet[]> {
+        return this.createAndInitializeWraplets(node, attribute);
+      }
+
+      protected async onInitialize() {
+        initFn();
+      }
+    }
+
+    const testClass = "test-class";
+    const container = document.createElement("div");
+    const child = document.createElement("span");
+    child.classList.add(testClass);
+    container.appendChild(child);
+
+    const wraplets = await InitWraplet.createAndInit(container, (node) =>
+      node.querySelectorAll(`.${testClass}`),
+    );
+    expect(wraplets).toHaveLength(1);
+    expect(initFn).toHaveBeenCalledTimes(1);
     wraplets.forEach((w) => expect(w).toBeInstanceOf(InitWraplet));
   });
 });

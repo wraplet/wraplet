@@ -23,11 +23,7 @@ const dependenciesMap = {
   },
 } satisfies WrapletDependencyMap;
 
-class TestWraplet extends BaseElementTestWraplet<typeof dependenciesMap> {
-  public hasNode(): boolean {
-    return !!this.node;
-  }
-}
+class TestWraplet extends BaseElementTestWraplet<typeof dependenciesMap> {}
 
 describe("AbstractDependentWraplet", () => {
   describe("Instantiation & Initialization", () => {
@@ -39,50 +35,76 @@ describe("AbstractDependentWraplet", () => {
       expect(func).toThrow(Error);
     });
 
-    it("should prohibit direct AbstractDependentWraplet instantiation", () => {
-      const func = () => {
-        (AbstractDependentWraplet as any).createDependentWraplets(
-          undefined,
-          undefined,
+    describe("createDependentWraplets", () => {
+      it("should prohibit direct AbstractDependentWraplet instantiation", () => {
+        const func = () => {
+          (AbstractDependentWraplet as any).createDependentWraplets(
+            undefined,
+            undefined,
+          );
+        };
+        expect(func).toThrow("You cannot instantiate an abstract class.");
+      });
+
+      it("should initialize a wraplet successfully", () => {
+        document.body.innerHTML = `<div ${testWrapletSelectorAttribute}><div ${testWrapletDependencySelectorAttribute}></div></div>`;
+        const wraplet = TestWraplet.create(
+          testWrapletSelectorAttribute,
+          dependenciesMap,
         );
-      };
-      expect(func).toThrow("You cannot instantiate an abstract class.");
-    });
+        expect(wraplet).toBeTruthy();
+      });
 
-    it("should initialize a wraplet successfully", () => {
-      document.body.innerHTML = `<div ${testWrapletSelectorAttribute}><div ${testWrapletDependencySelectorAttribute}></div></div>`;
-      const wraplet = TestWraplet.create(
-        testWrapletSelectorAttribute,
-        dependenciesMap,
-      );
-      expect(wraplet).toBeTruthy();
-    });
+      it("should initialize multiple wraplets successfully", () => {
+        document.body.innerHTML = `<div ${testWrapletSelectorAttribute}></div><div ${testWrapletSelectorAttribute}><div ${testWrapletDependencySelectorAttribute}></div></div>`;
+        const wraplets = TestWraplet.createAll(testWrapletSelectorAttribute);
+        expect(wraplets.length).toEqual(2);
+      });
 
-    it("should initialize multiple wraplets successfully", () => {
-      document.body.innerHTML = `<div ${testWrapletSelectorAttribute}></div><div ${testWrapletSelectorAttribute}><div ${testWrapletDependencySelectorAttribute}></div></div>`;
-      const wraplets = TestWraplet.createAll(testWrapletSelectorAttribute);
-      expect(wraplets.length).toEqual(2);
-    });
+      it("should match the top element during creation", () => {
+        const attribute = "data-test-selector";
 
-    it("should match the top element during creation", () => {
-      const attribute = "data-test-selector";
+        class TestWraplet extends AbstractDependentWraplet {
+          public static create(node: ParentNode): TestWraplet {
+            const wraplets = this.createDependentWraplets(node, attribute, {});
+            expect(wraplets.length).toEqual(1);
 
-      class TestWraplet extends AbstractDependentWraplet {
-        public static create(node: ParentNode): TestWraplet {
-          const wraplets = this.createDependentWraplets(node, attribute, {});
-          expect(wraplets.length).toEqual(1);
-
-          return wraplets[0];
+            return wraplets[0];
+          }
         }
-      }
 
-      const element = document.createElement("div");
-      element.setAttribute(attribute, "");
-      const wraplet = TestWraplet.create(element);
-      expect(wraplet).toBeInstanceOf(TestWraplet);
+        const element = document.createElement("div");
+        element.setAttribute(attribute, "");
+        const wraplet = TestWraplet.create(element);
+        expect(wraplet).toBeInstanceOf(TestWraplet);
+      });
+
+      it("should instantiate with callback instead of an attribute", async () => {
+        const testClass = "test-class";
+
+        class TestWraplet extends AbstractDependentWraplet {
+          public static create(node: ParentNode): TestWraplet {
+            const wraplets = this.createDependentWraplets(
+              node,
+              (node) => node.querySelectorAll(`.${testClass}`),
+              {},
+            );
+
+            return wraplets[0];
+          }
+        }
+
+        const container = document.createElement("div");
+        const child = document.createElement("div");
+        child.classList.add(testClass);
+        container.appendChild(child);
+
+        const wraplet = TestWraplet.create(container);
+        expect(wraplet).toBeInstanceOf(TestWraplet);
+      });
     });
 
-    describe("createAndInitializeWraplets", () => {
+    describe("createAndInitializeDependentWraplets", () => {
       it("should create and initialize wraplets", async () => {
         const attribute = "data-test-create-and-initialize";
 
@@ -205,20 +227,30 @@ describe("AbstractDependentWraplet", () => {
         expect(wraplets[0].extraArg).toEqual("hello");
         expect(wraplets[0].wraplet.status.isInitialized).toBe(true);
       });
-    });
-  });
 
-  describe("Node Access", () => {
-    it("should confirm the wraplet has an element", () => {
-      document.body.innerHTML = `<div ${testWrapletSelectorAttribute}></div>`;
-      const wraplet = TestWraplet.create<typeof dependenciesMap, TestWraplet>(
-        testWrapletSelectorAttribute,
-        dependenciesMap,
-      );
-      if (!wraplet) {
-        throw Error("Wraplet not initialized.");
-      }
-      expect(wraplet.hasNode()).toBeTruthy();
+      it("should instantiate and initialize with callback instead of an attribute", async () => {
+        const testClass = "test-class";
+
+        class TestWraplet extends AbstractDependentWraplet {
+          public static async create(node: ParentNode) {
+            const wraplets = await this.createAndInitializeDependentWraplets(
+              node,
+              (node) => node.querySelectorAll(`.${testClass}`),
+              {},
+            );
+
+            return wraplets[0];
+          }
+        }
+
+        const container = document.createElement("div");
+        const child = document.createElement("div");
+        child.classList.add(testClass);
+        container.appendChild(child);
+
+        const wraplet = await TestWraplet.create(container);
+        expect(wraplet).toBeInstanceOf(TestWraplet);
+      });
     });
   });
 
