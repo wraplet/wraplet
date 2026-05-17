@@ -43,6 +43,20 @@ describe("AbstractWraplet", () => {
     expect(funcInit).toHaveBeenCalledTimes(1);
     expect(funcDestroy).toHaveBeenCalledTimes(1);
   });
+
+  it("buildWrapletApi handles destroy without a destroyCallback", async () => {
+    class NoDestroyCallbackWraplet extends AbstractWraplet<HTMLElement> {
+      protected createWrapletApi() {
+        return this.buildWrapletApi();
+      }
+    }
+
+    const wraplet = new NoDestroyCallbackWraplet(document.createElement("div"));
+    await wraplet.wraplet.initialize();
+    await wraplet.wraplet.destroy();
+    expect(wraplet.wraplet.status.isDestroyed).toBe(true);
+  });
+
   it("throws when calling createWraplets directly on AbstractWraplet", () => {
     expect(() =>
       (AbstractWraplet as any).createWraplets(

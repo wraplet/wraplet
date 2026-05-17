@@ -1,11 +1,11 @@
 import { Wraplet, WrapletSymbol } from "./types/Wraplet";
 import { Constructable } from "../utils/types/Utils";
 import { UnsupportedNodeTypeError } from "../errors";
-import { isOverridden } from "./utils";
 import { NodeManager } from "./NodeManager";
 import { createWrapletApi } from "./createWrapletApi";
 import { WrapletApi } from "./types/WrapletApi";
 import { WrapletApiFactoryBasicCallback } from "./types/WrapletApiFactoryCallbacks";
+import { RESOLVE } from "../utils/utils";
 
 export abstract class AbstractWraplet<
   N extends Node = Node,
@@ -38,19 +38,10 @@ export abstract class AbstractWraplet<
    * double-creation of WrapletApi.
    */
   protected createWrapletApi(): WrapletApi {
-    const initializeCallback = isOverridden(
-      this,
-      "onInitialize",
-      AbstractWraplet,
-    )
-      ? this.onInitialize.bind(this)
-      : undefined;
-
-    const destroyCallback = isOverridden(this, "onDestroy", AbstractWraplet)
-      ? this.onDestroy.bind(this)
-      : undefined;
-
-    return this.buildWrapletApi(initializeCallback, destroyCallback);
+    return this.buildWrapletApi(
+      this.onInitialize.bind(this),
+      this.onDestroy.bind(this),
+    );
   }
 
   /**
@@ -104,17 +95,15 @@ export abstract class AbstractWraplet<
   /**
    * This method gets invoked when the wraplet is initialized.
    */
-  /* istanbul ignore next -- Base method; only called when overridden by subclass. */
-  protected async onInitialize(): Promise<void> {
-    throw new Error("Method has to be implemented by subclass.");
+  protected onInitialize(): Promise<void> {
+    return RESOLVE;
   }
 
   /**
    * This method gets invoked when the wraplet is destroyed.
    */
-  /* istanbul ignore next -- Base method; only called when overridden by subclass. */
-  protected async onDestroy(): Promise<void> {
-    throw new Error("Method has to be implemented by subclass.");
+  protected onDestroy(): Promise<void> {
+    return RESOLVE;
   }
 
   /**

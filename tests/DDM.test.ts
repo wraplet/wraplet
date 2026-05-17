@@ -248,39 +248,6 @@ describe("Test DDM", () => {
     expect(funcInitialized).toHaveBeenCalledTimes(2);
   });
 
-  it("Test DDM cannot be destroyed twice", async () => {
-    const node = document.createElement("div");
-    node.innerHTML =
-      "<div data-children></div><div data-children></div><div data-child></div>";
-
-    const map = {
-      children: {
-        selector: "[data-children]",
-        Class: TestWrapletClass,
-        multiple: true,
-        required: false,
-      },
-      child: {
-        selector: "[data-child]",
-        Class: TestWrapletClass,
-        multiple: false,
-        required: false,
-      },
-    } as const satisfies WrapletDependencyMap;
-
-    const ddm: DependencyManager<Node, typeof map> = new DDM(node, map);
-
-    ddm.instantiateDependencies();
-    await ddm.initializeDependencies();
-
-    const func = async () => {
-      await ddm.destroyDependencies();
-      await ddm.destroyDependencies();
-    };
-
-    await expect(func).rejects.toThrow("Dependencies are already destroyed.");
-  });
-
   it("Test DDM user accessing non-existing children", async () => {
     const node = document.createElement("div");
 
@@ -874,17 +841,6 @@ describe("Test DDM", () => {
     consoleDirSpy.mockRestore();
   });
 
-  it("Test DDM throws when initializeDependencies is called twice", async () => {
-    const node = document.createElement("div");
-    const ddm = new DDM(node, {});
-    ddm.instantiateDependencies();
-    await ddm.initializeDependencies();
-
-    await expect(ddm.initializeDependencies()).rejects.toThrow(
-      "Dependencies are already initialized.",
-    );
-  });
-
   it("Test DDM throws when instantiateDependencies is called twice", () => {
     const node = document.createElement("div");
     const ddm = new DDM(node, {});
@@ -893,6 +849,63 @@ describe("Test DDM", () => {
     expect(() => ddm.instantiateDependencies()).toThrow(
       "Dependencies are already instantiated.",
     );
+  });
+
+  it("Test DDM returns early when initializeDependencies is called on already initialized DDM", async () => {
+    const node = document.createElement("div");
+    const ddm = new DDM(node, {});
+    ddm.instantiateDependencies();
+
+    await ddm.initializeDependencies();
+    expect(ddm.status.isInitialized).toBe(true);
+
+    // Second call should hit the early return branch.
+    await ddm.initializeDependencies();
+    expect(ddm.status.isInitialized).toBe(true);
+  });
+
+  it("Test DDM returns existing initializePromise when initializeDependencies is invoked concurrently", async () => {
+    const node = document.createElement("div");
+    node.innerHTML = `
+        <div data-js-child></div>
+    `;
+
+    const ddm = new DDM(node, {});
+    ddm.instantiateDependencies();
+
+    const p1 = ddm.initializeDependencies();
+    const p2 = ddm.initializeDependencies();
+
+    expect(p1).toBe(p2);
+  });
+
+  it("Test DDM returns early when destroyDependencies is called on already initialized DDM", async () => {
+    const node = document.createElement("div");
+    const ddm = new DDM(node, {});
+    ddm.instantiateDependencies();
+
+    await ddm.destroyDependencies();
+    expect(ddm.status.isDestroyed).toBe(true);
+
+    // Second call should hit the early return branch.
+    await ddm.destroyDependencies();
+    expect(ddm.status.isDestroyed).toBe(true);
+  });
+
+  it("Test DDM returns existing destroyPromise when destroyDependencies is invoked concurrently", async () => {
+    const node = document.createElement("div");
+    node.innerHTML = `
+        <div data-js-child></div>
+    `;
+
+    const ddm = new DDM(node, {});
+    ddm.instantiateDependencies();
+    await ddm.initializeDependencies();
+
+    const p1 = ddm.destroyDependencies();
+    const p2 = ddm.destroyDependencies();
+
+    expect(p1).toBe(p2);
   });
 
   it("Test DDM skips already initialized wraplet during initializeDependencies", async () => {
@@ -1781,6 +1794,28 @@ describe("Test DDM", () => {
       // Old dependencies are not destroyed because they
       // don't have selectors.
       expect(destroyFn).toHaveBeenCalledTimes(0);
+    });
+
+    it("returns existing syncPromise when syncDependencies is invoked concurrently", async () => {
+      const node = document.createElement("div");
+      node.innerHTML = "<div data-child></div>";
+      const map = {
+        child: {
+          selector: "[data-child]",
+          Class: TestWrapletClass,
+          multiple: false,
+          required: false,
+        },
+      } as const satisfies WrapletDependencyMap;
+      const ddm = new DDM(node, map);
+
+      ddm.instantiateDependencies();
+      await ddm.initializeDependencies();
+
+      const p1 = ddm.syncDependencies();
+      const p2 = ddm.syncDependencies();
+
+      expect(p1).toBe(p2);
     });
   });
 });

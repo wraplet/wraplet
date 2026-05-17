@@ -43,6 +43,7 @@ import { createLifecycleAsyncError } from "../utils/createLifecycleAsyncError";
 import { isMapTreeBuilder, MapTreeBuilder } from "../Map/MapTreeBuilder";
 import { Injector } from "../Injector/types/Injector";
 import { DDMStatus } from "./types/DDMStatus";
+import { RESOLVE } from "../utils/utils";
 
 export class DDM<
   N extends Node = Node,
@@ -52,6 +53,10 @@ export class DDM<
 
   private logger: Logger;
   private dependenciesAreInstantiated: boolean = false;
+  private initializePromise: Promise<void> | null = null;
+  private destroyPromise: Promise<void> | null = null;
+  private syncPromise: Promise<void> | null = null;
+
   public status: DDMStatus = {
     isDestroyed: false,
     isGettingDestroyed: false,
@@ -110,23 +115,29 @@ export class DDM<
       optionsWithDefaults.dependencyDestroyedListeners;
   }
 
-  public async initializeDependencies() {
+  public initializeDependencies(): Promise<void> {
     if (this.status.isInitialized) {
-      throw new LifecycleError("Dependencies are already initialized.");
+      return RESOLVE;
     }
 
-    this.status.isGettingInitialized = true;
-
-    await this.initializeDeps();
-
-    this.status.isInitialized = true;
-    this.status.isGettingInitialized = false;
-
-    // If destruction has been invoked in the meantime, we can finally do it when initialization
-    // is finished.
-    if (this.status.isGettingDestroyed) {
-      await this.destroyDependencies();
+    if (this.initializePromise) {
+      return this.initializePromise;
     }
+
+    this.initializePromise = (async () => {
+      try {
+        this.status.isGettingInitialized = true;
+
+        await this.initializeDeps();
+
+        this.status.isInitialized = true;
+      } finally {
+        this.initializePromise = null;
+        this.status.isGettingInitialized = false;
+      }
+    })();
+
+    return this.initializePromise;
   }
 
   /**
@@ -183,12 +194,24 @@ export class DDM<
     }
   }
 
-  public async syncDependencies() {
-    this.status.isGettingSynced = true;
-    this.instantiateDeps(true);
-    await this.initializeDeps();
-    await this.destroyDeps(true);
-    this.status.isGettingSynced = false;
+  public syncDependencies(): Promise<void> {
+    if (this.syncPromise) {
+      return this.syncPromise;
+    }
+
+    this.syncPromise = (async () => {
+      try {
+        this.status.isGettingSynced = true;
+        this.instantiateDeps(true);
+        await this.initializeDeps();
+        await this.destroyDeps(true);
+      } finally {
+        this.syncPromise = null;
+        this.status.isGettingSynced = false;
+      }
+    })();
+
+    return this.syncPromise;
   }
 
   public get map(): WrapletDependencyMapWithDefaults<M> {
@@ -570,32 +593,43 @@ export class DDM<
   /**
    * This method removes from nodes references to this wraplet and its dependencies recursively.
    */
-  public async destroyDependencies(): Promise<void> {
+  public destroyDependencies(): Promise<void> {
     if (this.status.isDestroyed) {
-      throw new LifecycleError("Dependencies are already destroyed.");
-    }
-    this.status.isGettingDestroyed = true;
-
-    if (this.status.isGettingInitialized) {
-      // If we are still initializing, then postpone destruction until after
-      // initialization is finished.
-      // We are leaving this method, but with `isGettingDestroyed` set to true, so
-      // the initialization process will know to return here after it will finish.
-      return;
+      return RESOLVE;
     }
 
-    if (!this.status.isInitialized) {
-      // If we are not initialized, then we have nothing to do here.
-      this.status.isDestroyed = true;
-      this.status.isGettingDestroyed = false;
-      return;
+    if (this.destroyPromise) {
+      return this.destroyPromise;
     }
 
-    await this.destroyDeps();
+    this.destroyPromise = (async () => {
+      try {
+        this.status.isGettingDestroyed = true;
 
-    this.status.isInitialized = false;
-    this.status.isDestroyed = true;
-    this.status.isGettingDestroyed = false;
+        if (this.initializePromise) {
+          // If we are still initializing, then postpone destruction until after
+          // initialization is finished.
+          await this.initializePromise;
+        }
+
+        if (!this.status.isInitialized) {
+          // If we are not initialized, then we have nothing to do here.
+          this.status.isDestroyed = true;
+          this.status.isGettingDestroyed = false;
+          return;
+        }
+
+        await this.destroyDeps();
+
+        this.status.isInitialized = false;
+        this.status.isDestroyed = true;
+      } finally {
+        this.destroyPromise = null;
+        this.status.isGettingDestroyed = false;
+      }
+    })();
+
+    return this.destroyPromise;
   }
 
   private findChildrenElements<PN extends ParentNode>(

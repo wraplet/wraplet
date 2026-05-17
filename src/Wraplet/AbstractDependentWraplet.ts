@@ -8,6 +8,7 @@ import {
 import { DDM } from "../DependencyManager/DDM";
 import { AbstractWraplet } from "./AbstractWraplet";
 import { WrapletApi } from "./types/WrapletApi";
+import { RESOLVE } from "../utils/utils";
 
 export abstract class AbstractDependentWraplet<
   N extends Node = Node,
@@ -46,9 +47,13 @@ export abstract class AbstractDependentWraplet<
     );
   }
 
-  protected override async onDestroy(): Promise<void> {}
+  protected override onDestroy(): Promise<void> {
+    return RESOLVE;
+  }
 
-  protected override async onInitialize(): Promise<void> {}
+  protected override onInitialize(): Promise<void> {
+    return RESOLVE;
+  }
 
   /**
    * Dependencies.
