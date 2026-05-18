@@ -26,7 +26,7 @@
     "dev:build": "webpack --mode development --config ./webpack.config.ts",
     "dev:watch": "webpack --mode development --watch --config ./webpack.config.ts",
     "lint": "tsc --noemit && npx eslint './src/**/*.ts' './tests/**/*.ts'",
-    "lint:fix": "npx eslint './src/**/*.ts' './tests/**/*.ts' --fix",
+    "lint:fix": "npm exec eslint './src/**/*.ts' './tests/**/*.ts' --fix",
     "tests": "node --unhandled-rejections=throw ./node_modules/jest/bin/jest.js --coverage --detectOpenHandles"
   },
   "dependencies": {},
@@ -43,7 +43,6 @@
     "jest": "^30.4.2",
     "jest-cli": "^30.4.2",
     "jest-environment-jsdom": "^30.4.1",
-    "npx": "^10.2.2",
     "prettier": "^3.8.3",
     "prettier-eslint": "^16.4.2",
     "ts-jest": "^29.4.9",
