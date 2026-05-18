@@ -1,7 +1,6 @@
 /.idea/
 /*.iml
 /.todo
-/pnpm-lock.yaml
 /node_modules/
 /dist/
 /coverage/
