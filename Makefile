@@ -17,5 +17,11 @@ build:
 	rm -r ${MAKEFILE_DIR}/dist/*
 	pnpm run build
 
-publish: build
-	pnpm publish --access public
+publish: required-TAG build
+	pnpm publish --access public --tag "${TAG}"
+
+required-%:
+	@if [ "${${*}}" = "" ]; then
+		echo "Variable $* is required";
+		exit 1;
+	fi
