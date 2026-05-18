@@ -10,11 +10,6 @@
       "import": "./dist/index.js",
       "require": "./dist/index.cjs"
     },
-    "./storage": {
-      "types": "./dist/storage.d.ts",
-      "import": "./dist/storage.js",
-      "require": "./dist/storage.cjs"
-    }
   },
   "license": "MIT",
   "author": "Łukasz Zaroda",
