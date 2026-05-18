@@ -4,13 +4,16 @@
     "noImplicitAny": true,
     "module": "ES2022",
     "target": "ES2022",
-    "jsx": "react",
     "moduleResolution": "node",
     "strict": true,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "declaration": true,
-    "isolatedModules": true
+    "isolatedModules": true,
+    "rootDir": ".",
+    "types": ["@types/jest", "@types/node", "@types/webpack"],
+    // Temporarily disable deprecation warnings for TypeScript 6.0 until this is released: https://github.com/kulshekhar/ts-jest/pull/5280
+    "ignoreDeprecations": "6.0"
   },
   "include": [
     "src", "tests"

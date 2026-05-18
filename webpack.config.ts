@@ -1,7 +1,8 @@
 import webpack from "webpack";
 import path from "path";
 import { fileURLToPath } from "url";
-import AmbientDtsPlugin from "./plugins/AmbientDtsPlugin";
+// @ts-ignore
+import AmbientDtsPlugin from "./plugins/AmbientDtsPlugin.ts";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

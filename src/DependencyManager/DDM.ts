@@ -396,7 +396,7 @@ export class DDM<
       return existingWraplet;
     }
 
-    let wraplet: Wraplet | null = null;
+    let wraplet: Wraplet;
     try {
       const instance = new dependencyDefinition.Class(
         dependencyDefinition.injector.callback(
