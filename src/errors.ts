@@ -6,8 +6,6 @@ export class RequiredDependencyDestroyedError extends Error {}
 
 export class DependenciesAreNotAvailableError extends Error {}
 
-export class StorageValidationError extends Error {}
-
 export class TooManyChildrenFoundError extends Error {}
 
 export class InternalLogicError extends Error {}
