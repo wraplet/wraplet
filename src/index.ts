@@ -31,7 +31,6 @@ export type { Status } from "./Wraplet/types/Status";
 export { isWraplet, WrapletSymbol } from "./Wraplet/types/Wraplet";
 
 export * from "./Wraplet/createWrapletApi";
-export * from "./Wraplet/statusActions";
 export { createOuterDestroyCallback } from "./Wraplet/createOuterDestroyCallback";
 export { createOuterInitializeCallback } from "./Wraplet/createOuterInitializeCallback";
 

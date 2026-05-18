@@ -185,4 +185,71 @@ describe("createWrapletApi", () => {
     expect(node.wraplets).toBeDefined();
     expect(node.wraplets?.size).toBe(1);
   });
+
+  describe("memoization", () => {
+    class TestWraplet implements Wraplet {
+      [WrapletSymbol]: true = true;
+
+      public wraplet: WrapletApi;
+
+      constructor(node: Node) {
+        this.wraplet = createWrapletApi({
+          node,
+          wraplet: this,
+          initializeCallback: async () => {},
+          destroyCallback: async () => {},
+        });
+      }
+    }
+
+    it("has initialize method memoized", async () => {
+      const node = document.createElement("div");
+
+      const wraplet = new TestWraplet(node);
+
+      const p1 = wraplet.wraplet.initialize();
+      const p2 = wraplet.wraplet.initialize();
+      expect(p1).toBe(p2);
+    });
+
+    it("has destroy method memoized", async () => {
+      const node = document.createElement("div");
+
+      const wraplet = new TestWraplet(node);
+
+      await wraplet.wraplet.initialize();
+
+      const p1 = wraplet.wraplet.destroy();
+      const p2 = wraplet.wraplet.destroy();
+      expect(p1).toBe(p2);
+    });
+  });
+
+  it("cannot run initialization after destroy", async () => {
+    class TestWraplet implements Wraplet {
+      [WrapletSymbol]: true = true;
+
+      public wraplet: WrapletApi;
+
+      constructor(node: Node) {
+        this.wraplet = createWrapletApi({
+          node,
+          wraplet: this,
+          initializeCallback: async () => {},
+          destroyCallback: async () => {},
+        });
+      }
+    }
+
+    const node = document.createElement("div");
+
+    const wraplet = new TestWraplet(node);
+
+    await wraplet.wraplet.initialize();
+    await wraplet.wraplet.destroy();
+
+    await expect(wraplet.wraplet.initialize()).rejects.toThrow(
+      "Wraplet cannot be initialized when destroyed or in the process of being destroyed",
+    );
+  });
 });

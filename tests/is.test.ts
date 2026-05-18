@@ -9,7 +9,6 @@ import {
 } from "../src/DependencyManager/types/DependencyManager";
 import { WrapletSymbol, isWraplet } from "../src/Wraplet/types/Wraplet";
 import { WrapletSetSymbol, isWrapletSet } from "../src/Set/types/WrapletSet";
-import { KeyValueStorageSymbol, isKeyValueStorage } from "../src/storage";
 
 describe("utils/is and related type guards (positive cases)", () => {
   it("is() returns true for an object tagged with the given symbol", () => {
@@ -32,10 +31,5 @@ describe("utils/is and related type guards (positive cases)", () => {
   it("isWrapletSet returns true when object has WrapletSetSymbol", () => {
     const obj: unknown = { [WrapletSetSymbol]: true };
     expect(isWrapletSet(obj)).toBe(true);
-  });
-
-  it("isKeyValueStorage returns true when object has KeyValueStorageSymbol", () => {
-    const obj: unknown = { [KeyValueStorageSymbol]: true };
-    expect(isKeyValueStorage(obj)).toBe(true);
   });
 });
