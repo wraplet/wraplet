@@ -73,21 +73,7 @@ const indexCjsConfig: webpack.Configuration = createOutputConfig(
   "commonjs",
 );
 
-const storageEsmConfig: webpack.Configuration = createOutputConfig(
-  "storage.js",
-  "./src/storage.ts",
-  "module",
-);
-
-const storageCjsConfig: webpack.Configuration = createOutputConfig(
-  "storage.cjs",
-  "./src/storage.ts",
-  "commonjs",
-);
-
 export default [
   indexEsmConfig,
   indexCjsConfig,
-  storageEsmConfig,
-  storageCjsConfig,
 ];
