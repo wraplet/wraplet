@@ -142,6 +142,28 @@ it("Test wraplet tree manager initialization performance", async () => {
   expect(countNodesRecursively(tree)).toBe(
     predictElementCount(treeData.depth, treeData.childrenPerNode),
   );
+  console.log(endTime - startTime);
+  expect(endTime - startTime).toBeLessThan(1000);
+});
+
+it("Test wraplet tree manager destruction performance", async () => {
+  const treeData = {
+    depth: 6,
+    childrenPerNode: 8,
+  };
+
+  const tree = createElementTree(treeData.depth, treeData.childrenPerNode);
+  document.body.appendChild(tree);
+
+  const manager: NodeTreeManager = new DNTM();
+
+  const startTime = performance.now();
+  await manager.destroyNode(tree);
+  const endTime = performance.now();
+
+  expect(countNodesRecursively(tree)).toBe(
+    predictElementCount(treeData.depth, treeData.childrenPerNode),
+  );
   expect(endTime - startTime).toBeLessThan(1000);
 });
 

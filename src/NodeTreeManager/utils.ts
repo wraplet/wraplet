@@ -42,14 +42,18 @@ export function addWrapletToNode<N extends Node>(
   node.wraplets.add(wraplet);
 }
 
-export async function actOnNodesRecursively(
+export function actOnNodesRecursively(
   node: Node,
   callback: (node: Node) => void,
-): Promise<void> {
-  callback(node);
-  const children = node.childNodes;
-  for (const child of children) {
-    await actOnNodesRecursively(child, callback);
+): void {
+  const stack: Node[] = [node];
+  while (stack.length > 0) {
+    const current = stack.pop()!;
+    callback(current);
+    const children = current.childNodes;
+    for (let i = children.length - 1; i >= 0; i--) {
+      stack.push(children[i]);
+    }
   }
 }
 
@@ -58,7 +62,7 @@ export async function findWrapletsOutsideTheTree(
   node: Node,
 ) {
   const wrapletsOutsideTree = new DefaultWrapletSet(wraplets);
-  await actOnNodesRecursively(node, (node) => {
+  actOnNodesRecursively(node, (node) => {
     const nodeWraplets = getWrapletsFromNode(node);
     if (!nodeWraplets) {
       return;
@@ -72,7 +76,7 @@ export async function findWrapletsOutsideTheTree(
 
 export async function destroyWrapletsRecursively(node: Node): Promise<void> {
   const allWraplets: Wraplet[] = [];
-  await actOnNodesRecursively(node, (node) => {
+  actOnNodesRecursively(node, (node) => {
     const wraplets = getWrapletsFromNode(node);
     if (!wraplets) {
       return;
