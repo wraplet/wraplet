@@ -9,12 +9,12 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v3.5.3
+      - name: Enabling pnpm.
+        run: corepack enable
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: pnpm
-      - name: Enabling pnpm.
-        run: corepack enable
       - name: Installing dependencies.
         run: pnpm install --frozen-lockfile
       - name: Running tests.
