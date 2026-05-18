@@ -21,7 +21,7 @@
     "dist"
   ],
   "scripts": {
-    "setup": "yarn install",
+    "setup": "pnpm install",
     "build": "webpack --mode production --config ./webpack.config.ts",
     "dev:build": "webpack --mode development --config ./webpack.config.ts",
     "dev:watch": "webpack --mode development --watch --config ./webpack.config.ts",

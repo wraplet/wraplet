@@ -12,9 +12,12 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+          cache: pnpm
+      - name: Enabling pnpm.
+        run: corepack enable
       - name: Installing dependencies.
-        run: yarn install
+        run: pnpm install --frozen-lockfile
       - name: Running tests.
-        run: yarn run tests
+        run: pnpm run tests
       - name: Linting check.
-        run: yarn run lint
+        run: pnpm run lint
