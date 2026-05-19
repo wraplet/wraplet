@@ -21,5 +21,7 @@ jobs:
         run: pnpm run tests
       - name: Running performance tests.
         run: pnpm run tests:perf
+      - name: Testing size
+        run: pnpm run size
       - name: Linting check.
         run: pnpm run lint

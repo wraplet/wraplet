@@ -21,6 +21,12 @@
   "files": [
     "dist"
   ],
+  "size-limit": [
+    {
+      "path": "dist/index.js",
+      "limit": "5 kB"
+    }
+  ],
   "scripts": {
     "setup": "pnpm install",
     "build": "webpack --mode production --config ./webpack.config.ts",
@@ -30,11 +36,12 @@
     "lint:fix": "npm exec eslint './src/**/*.ts' './tests/**/*.ts' --fix",
     "tests": "node --unhandled-rejections=throw ./node_modules/jest/bin/jest.js --coverage --detectOpenHandles",
     "tests:perf": "node --env-file=.env.perf --unhandled-rejections=throw --expose-gc ./node_modules/jest/bin/jest.js --config jest.config.ts --runInBand",
-    "tests:all": "npm run tests && npm run tests:perf"
+    "tests:all": "npm run tests && npm run tests:perf",
+    "size": "size-limit"
   },
-  "dependencies": {},
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@size-limit/preset-small-lib": "^12.1.0",
     "@types/jest": "^30.0.0",
     "@types/node": "^25.8.0",
     "@types/webpack": "^5.28.5",
@@ -48,6 +55,7 @@
     "jest-environment-jsdom": "^30.4.1",
     "prettier": "^3.8.3",
     "prettier-eslint": "^16.4.2",
+    "size-limit": "^12.1.0",
     "ts-jest": "^29.4.9",
     "ts-loader": "^9.5.7",
     "tsx": "^4.22.1",

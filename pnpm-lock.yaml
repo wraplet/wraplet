@@ -11,6 +11,9 @@ importers:
       '@eslint/js':
         specifier: ^10.0.1
         version: 10.0.1(eslint@10.4.0)
+      '@size-limit/preset-small-lib':
+        specifier: ^12.1.0
+        version: 12.1.0(size-limit@12.1.0)
       '@types/jest':
         specifier: ^30.0.0
         version: 30.0.0
@@ -50,6 +53,9 @@ importers:
       prettier-eslint:
         specifier: ^16.4.2
         version: 16.4.2(typescript@6.0.3)
+      size-limit:
+        specifier: ^12.1.0
+        version: 12.1.0
       ts-jest:
         specifier: ^29.4.9
         version: 29.4.9(@babel/core@7.29.0)(@jest/transform@30.4.1)(@jest/types@30.4.1)(babel-jest@30.4.1(@babel/core@7.29.0))(esbuild@0.28.0)(jest-util@30.4.1)(jest@30.4.2(@types/node@25.9.0)(esbuild-register@3.6.0(esbuild@0.28.0)))(typescript@6.0.3)
@@ -677,6 +683,23 @@ packages:
   '@sinonjs/fake-timers@15.4.0':
     resolution: {integrity: sha512-DsG+8/LscQIQg68J6Ef3dv10u6nVyetYn923s3/sus5eaGfTo1of5WMZSLf0UJc9KDuKPilPH0UDJCjvNbDNCA==}
 
+  '@size-limit/esbuild@12.1.0':
+    resolution: {integrity: sha512-Um6MVrX+05kIxI4+zk0ZByG9dA/Th1f+sfGc571D95BnCPc90/pl2+2OdsQuOyoWEbeAMqfcTKo0v07i+E65Vw==}
+    engines: {node: ^20.0.0 || ^22.0.0 || >=24.0.0}
+    peerDependencies:
+      size-limit: 12.1.0
+
+  '@size-limit/file@12.1.0':
+    resolution: {integrity: sha512-eGwDcIufnNnvJRzv3liDOn6MAOGgmOTUdpeGQ2KuRTlgIgO54AJH1ilvktlJc6PIjNfwpYY0dOGyap1QgM1swQ==}
+    engines: {node: ^20.0.0 || ^22.0.0 || >=24.0.0}
+    peerDependencies:
+      size-limit: 12.1.0
+
+  '@size-limit/preset-small-lib@12.1.0':
+    resolution: {integrity: sha512-TVVQ/iuHbaGtHJrjur5s4XKYEyGk0nIwUAqhuzhKPbTyV9nYOH/laDelQ4vg3cGmm8sayRx998wxEdnwM/Yewg==}
+    peerDependencies:
+      size-limit: 12.1.0
+
   '@tybys/wasm-util@0.10.2':
     resolution: {integrity: sha512-RoBvJ2X0wuKlWFIjrwffGw1IqZHKQqzIchKaadZZfnNpsAYp2mM0h36JtPCjNDAHGgYez/15uMBpfGwchhiMgg==}
 
@@ -1137,6 +1160,10 @@ packages:
 
   buffer-from@1.1.2:
     resolution: {integrity: sha512-E+XQCRwSbaaiChtv6k6Dwgc+bx+Bs6vuKJHHl5kox/BaKbhiXzqQOwK4cO22yElGp2OCmjwVhT3HmxgyPGnJfQ==}
+
+  bytes-iec@3.1.1:
+    resolution: {integrity: sha512-fey6+4jDK7TFtFg/klGSvNKJctyU7n2aQdnM+CO0ruLPbqqMOM8Tio0Pc+deqUeVKX1tL5DQep1zQ7+37aTAsA==}
+    engines: {node: '>= 0.8'}
 
   callsites@3.1.0:
     resolution: {integrity: sha512-P8BjAsXvZS+VIDUI11hHCQEv74YT67YUi5JJFNWIqL235sBmjX4+qx9Muvls5ivyNENctx46xQLQ3aTuE7ssaQ==}
@@ -1930,6 +1957,10 @@ packages:
     resolution: {integrity: sha512-+bT2uH4E5LGE7h/n3evcS/sQlJXCpIp6ym8OWJ5eV6+67Dsql/LaaT7qJBAt2rzfoa/5QBGBhxDix1dMt2kQKQ==}
     engines: {node: '>= 0.8.0'}
 
+  lilconfig@3.1.3:
+    resolution: {integrity: sha512-/vlFKAoH5Cgt3Ie+JLhRbwOsCQePABiU3tJ1egGvyQ+33R/vcwM2Zl2QR/LzjsBeItPt3oSVXapn+m4nQDvpzw==}
+    engines: {node: '>=14'}
+
   lines-and-columns@1.2.4:
     resolution: {integrity: sha512-7ylylesZQ/PV29jhEDl3Ufjo6ZX7gCqJr5F7PKrqc93v7fzSymt1BpwEU8nAUXs8qzzvqhbjhK5QZg6Mt/HkBg==}
 
@@ -2020,6 +2051,14 @@ packages:
 
   ms@2.1.3:
     resolution: {integrity: sha512-6FlzubTLZG3J2a/NVCAleEhjzq5oxgHyaCU9yYXvcLsvoVaHJq/s5xXI6/XXP6tz7R9xAOtHnSO/tXtF3WRTlA==}
+
+  nanoid@5.1.11:
+    resolution: {integrity: sha512-v+KEsUv2ps74PaSKv0gHTxTCgMXOIfBEbaqa6w6ISIGC7ZsvHN4N9oJ8d4cmf0n5oTzQz2SLmThbQWhjd/8eKg==}
+    engines: {node: ^18 || >=20}
+    hasBin: true
+
+  nanospinner@1.2.2:
+    resolution: {integrity: sha512-Zt/AmG6qRU3e+WnzGGLuMCEAO/dAu45stNbHY223tUxldaDAeE+FxSPsd9Q+j+paejmm0ZbrNVs5Sraqy3dRxA==}
 
   napi-postinstall@0.3.4:
     resolution: {integrity: sha512-PHI5f1O0EP5xJ9gQmFGMS6IZcrVvTjpXjz7Na41gTE7eE2hK11lg04CECCYEEjdc17EV4DO+fkGEtt7TpTaTiQ==}
@@ -2270,6 +2309,16 @@ packages:
   signal-exit@4.1.0:
     resolution: {integrity: sha512-bzyZ1e88w9O1iNJbKnOlvYTrWPDl46O1bG0D3XInv+9tkPrxrN8jUUTiFlDkkmKWgn1M6CfIA13SuGqOa9Korw==}
     engines: {node: '>=14'}
+
+  size-limit@12.1.0:
+    resolution: {integrity: sha512-VnDS2fycANrJFVPQwjaD+h+hkISY7EB3LsPsYWje4lBCjQwwsZLxjwwRwVJKHrcj2ZqyG+DdXykWm9mbZklZrw==}
+    engines: {node: ^20.0.0 || ^22.0.0 || >=24.0.0}
+    hasBin: true
+    peerDependencies:
+      jiti: ^2.0.0
+    peerDependenciesMeta:
+      jiti:
+        optional: true
 
   slash@3.0.0:
     resolution: {integrity: sha512-g9Q1haeby36OSStwb4ntCGGGaKsaVSjQ68fBxoQcutl5fS1vuY18H3wSt3jFyFtrkx+Kz0V1G85A4MyAdDMi2Q==}
@@ -3352,6 +3401,22 @@ snapshots:
     dependencies:
       '@sinonjs/commons': 3.0.1
 
+  '@size-limit/esbuild@12.1.0(size-limit@12.1.0)':
+    dependencies:
+      esbuild: 0.28.0
+      nanoid: 5.1.11
+      size-limit: 12.1.0
+
+  '@size-limit/file@12.1.0(size-limit@12.1.0)':
+    dependencies:
+      size-limit: 12.1.0
+
+  '@size-limit/preset-small-lib@12.1.0(size-limit@12.1.0)':
+    dependencies:
+      '@size-limit/esbuild': 12.1.0(size-limit@12.1.0)
+      '@size-limit/file': 12.1.0(size-limit@12.1.0)
+      size-limit: 12.1.0
+
   '@tybys/wasm-util@0.10.2':
     dependencies:
       tslib: 2.8.1
@@ -3881,6 +3946,8 @@ snapshots:
       node-int64: 0.4.0
 
   buffer-from@1.1.2: {}
+
+  bytes-iec@3.1.1: {}
 
   callsites@3.1.0: {}
 
@@ -4890,6 +4957,8 @@ snapshots:
       prelude-ls: 1.2.1
       type-check: 0.4.0
 
+  lilconfig@3.1.3: {}
+
   lines-and-columns@1.2.4: {}
 
   loader-runner@4.3.2: {}
@@ -4965,6 +5034,12 @@ snapshots:
   minipass@7.1.3: {}
 
   ms@2.1.3: {}
+
+  nanoid@5.1.11: {}
+
+  nanospinner@1.2.2:
+    dependencies:
+      picocolors: 1.1.1
 
   napi-postinstall@0.3.4: {}
 
@@ -5179,6 +5254,14 @@ snapshots:
   signal-exit@3.0.7: {}
 
   signal-exit@4.1.0: {}
+
+  size-limit@12.1.0:
+    dependencies:
+      bytes-iec: 3.1.1
+      lilconfig: 3.1.3
+      nanospinner: 1.2.2
+      picocolors: 1.1.1
+      tinyglobby: 0.2.16
 
   slash@3.0.0: {}
 
