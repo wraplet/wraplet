@@ -87,3 +87,21 @@ it("destroyWrapletsRecursively", async () => {
   await destroyWrapletsRecursively(element);
   expect(counter).toHaveBeenCalledTimes(1);
 });
+
+it("destroyWrapletsRecursively aggregates errors thrown during destruction", async () => {
+  const element = document.createElement("div");
+
+  class FailingWraplet extends AbstractDependentWraplet {
+    protected async onDestroy(): Promise<void> {
+      throw new Error("destruction failed");
+    }
+  }
+
+  const ddm = new DDM(element, {});
+  const wraplet = new FailingWraplet(ddm);
+  await wraplet.wraplet.initialize();
+
+  await expect(destroyWrapletsRecursively(element)).rejects.toThrow(
+    "Some wraplets threw exceptions during destruction",
+  );
+});

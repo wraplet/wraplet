@@ -1812,4 +1812,40 @@ describe("Test DDM", () => {
       expect(p1).toBe(p2);
     });
   });
+
+  it("Test DDM aggregates errors thrown during dependency initialization", async () => {
+    class FailingInitWraplet implements Wraplet {
+      [WrapletSymbol]: true = true;
+      public wraplet: WrapletApi;
+
+      constructor(node: Node) {
+        this.wraplet = createWrapletApi({
+          node,
+          wraplet: this,
+          initializeCallback: async () => {
+            throw new Error("initialization failed");
+          },
+        });
+      }
+    }
+
+    const node = document.createElement("div");
+    node.innerHTML = "<div data-child></div>";
+
+    const map = {
+      child: {
+        selector: "[data-child]",
+        Class: FailingInitWraplet,
+        multiple: false,
+        required: false,
+      },
+    } satisfies WrapletDependencyMap;
+
+    const ddm: DependencyManager<Node, typeof map> = new DDM(node, map);
+    ddm.instantiateDependencies();
+
+    await expect(ddm.initializeDependencies()).rejects.toThrow(
+      "Errors during the dependencies initialization.",
+    );
+  });
 });
