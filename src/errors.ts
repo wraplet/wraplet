@@ -13,7 +13,3 @@ export class InternalLogicError extends Error {}
 export class UnsupportedNodeTypeError extends Error {}
 
 export class LifecycleError extends Error {}
-
-export class LifecycleAsyncErrors extends Error {
-  errors: Error[] = [];
-}

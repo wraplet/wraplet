@@ -1,18 +1,8 @@
 import "./setup";
 import { NodeTreeManager } from "../src/NodeTreeManager/types/NodeTreeManager";
 import { BaseElementTestWraplet } from "./resources/BaseElementTestWraplet";
-import {
-  countNodesRecursively,
-  createElementTree,
-  predictElementCount,
-} from "./resources/utils";
 import { DNTM } from "../src/NodeTreeManager/DNTM";
-import {
-  AbstractDependentWraplet,
-  AbstractWraplet,
-  Status,
-  WrapletDependencyMap,
-} from "../src";
+import { Status } from "../src";
 import { isParentNode } from "../src/NodeTreeManager/utils";
 
 it("Test default node tree manager destroy tree", async () => {
@@ -94,77 +84,6 @@ it("Test default node tree manager initialize tree", async () => {
   expect(func).toHaveBeenCalledTimes(1);
   expect(element.wraplets.size).toBeDefined();
   expect(element.wraplets.size).toBe(1);
-});
-
-it("Test wraplet tree manager initialization performance", async () => {
-  class TestWrapletDependency extends AbstractWraplet<Element> {}
-
-  const map = {
-    dependency: {
-      selector: `[data-id-0-1-0-0]`,
-      multiple: false,
-      Class: TestWrapletDependency,
-      required: true,
-    },
-  } satisfies WrapletDependencyMap;
-
-  class TestWraplet extends AbstractDependentWraplet<Node, typeof map> {
-    public static create(node: ParentNode, attribute: string): TestWraplet[] {
-      return TestWraplet.createDependentWraplets(node, attribute, map);
-    }
-  }
-
-  const treeData = {
-    depth: 6,
-    childrenPerNode: 8,
-  };
-
-  const tree = createElementTree(treeData.depth, treeData.childrenPerNode);
-  document.body.appendChild(tree);
-
-  const manager: NodeTreeManager = new DNTM();
-
-  manager.addNodeInitializer(async (node): Promise<void> => {
-    if (!isParentNode(node)) {
-      throw new Error("Node is not parent node.");
-    }
-
-    const wraplets = TestWraplet.create(node, "data-id-0-1");
-    for (const wraplet of wraplets) {
-      await wraplet.wraplet.initialize();
-    }
-  });
-
-  const startTime = performance.now();
-  await manager.initializeNode(tree);
-  const endTime = performance.now();
-
-  expect(countNodesRecursively(tree)).toBe(
-    predictElementCount(treeData.depth, treeData.childrenPerNode),
-  );
-  console.log(endTime - startTime);
-  expect(endTime - startTime).toBeLessThan(1000);
-});
-
-it("Test wraplet tree manager destruction performance", async () => {
-  const treeData = {
-    depth: 6,
-    childrenPerNode: 8,
-  };
-
-  const tree = createElementTree(treeData.depth, treeData.childrenPerNode);
-  document.body.appendChild(tree);
-
-  const manager: NodeTreeManager = new DNTM();
-
-  const startTime = performance.now();
-  await manager.destroyNode(tree);
-  const endTime = performance.now();
-
-  expect(countNodesRecursively(tree)).toBe(
-    predictElementCount(treeData.depth, treeData.childrenPerNode),
-  );
-  expect(endTime - startTime).toBeLessThan(1000);
 });
 
 it("Test default node tree manager handles rejected initializer", async () => {

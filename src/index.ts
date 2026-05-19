@@ -12,8 +12,6 @@ export {
   getWrapletsFromNode,
 } from "./NodeTreeManager/utils";
 
-// Map
-
 // WrapletSet
 export type { WrapletSetReadonly } from "./Set/types/WrapletSetReadonly";
 export type { WrapletSet } from "./Set/types/WrapletSet";

@@ -19,5 +19,7 @@ jobs:
         run: pnpm install --frozen-lockfile
       - name: Running tests.
         run: pnpm run tests
+      - name: Running performance tests.
+        run: pnpm run tests:perf
       - name: Linting check.
         run: pnpm run lint

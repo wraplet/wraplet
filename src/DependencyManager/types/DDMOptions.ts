@@ -1,7 +1,6 @@
 import { WrapletDependencyMap } from "../../Wraplet/types/WrapletDependencyMap";
 import { DependencyLifecycleAsyncListener } from "./DependencyLifecycleAsyncListener";
 import { DependencyLifecycleListener } from "./DependencyLifecycleListener";
-import { Logger } from "../../Logger/types/Logger";
 
 export type DDMOptions<M extends WrapletDependencyMap = WrapletDependencyMap> =
   {
@@ -17,5 +16,4 @@ export type DDMOptions<M extends WrapletDependencyMap = WrapletDependencyMap> =
       keyof M,
       DependencyLifecycleAsyncListener<M, keyof M>[]
     >;
-    logger?: Logger;
   };

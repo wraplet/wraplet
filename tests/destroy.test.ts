@@ -4,7 +4,6 @@ import {
   AbstractDependentWraplet,
   AbstractWraplet,
   DDM,
-  LifecycleAsyncErrors,
   WrapletDependencyMap,
 } from "../src";
 import { BaseElementTestWraplet } from "./resources/BaseElementTestWraplet";
@@ -213,9 +212,7 @@ it("Test that if the required dependency has been destroyed then throw exception
     throw new Error("Dependency not found.");
   }
 
-  await expect(dependency.wraplet.destroy).rejects.toThrow(
-    LifecycleAsyncErrors,
-  );
+  await expect(dependency.wraplet.destroy).rejects.toThrow(AggregateError);
 });
 
 it("Test isDestroyed values", async () => {

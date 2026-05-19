@@ -37,13 +37,10 @@ import {
 } from "../Wraplet/types/WrapletDependencyDefinition";
 import { DependencyLifecycleAsyncListener } from "./types/DependencyLifecycleAsyncListener";
 import { DependencyLifecycleListener } from "./types/DependencyLifecycleListener";
-import { ConsoleLogger } from "../Logger/ConsoleLogger";
-import { Logger } from "../Logger/types/Logger";
-import { createLifecycleAsyncError } from "../utils/createLifecycleAsyncError";
 import { isMapTreeBuilder, MapTreeBuilder } from "../Map/MapTreeBuilder";
 import { Injector } from "../Injector/types/Injector";
 import { DDMStatus } from "./types/DDMStatus";
-import { RESOLVE } from "../utils/utils";
+import { RESOLVE, throwIfErrors } from "../utils/utils";
 
 export class DDM<
   N extends Node = Node,
@@ -51,7 +48,6 @@ export class DDM<
 > implements DependencyManager<N, M> {
   public [DependencyManagerSymbol]: true = true;
 
-  private logger: Logger;
   private dependenciesAreInstantiated: boolean = false;
   private initializePromise: Promise<void> | null = null;
   private destroyPromise: Promise<void> | null = null;
@@ -105,8 +101,6 @@ export class DDM<
       options,
     );
 
-    this.logger = optionsWithDefaults.logger;
-
     this.instantiatedDependencyListeners =
       optionsWithDefaults.dependencyInstantiatedListeners;
     this.initializedDependencyListeners =
@@ -144,7 +138,9 @@ export class DDM<
    * Initialize dependencies.
    */
   private async initializeDeps() {
-    const results = await Promise.allSettled(
+    const errors: Error[] = [];
+
+    await Promise.all(
       Object.entries(this.directDependencies).map(async ([id, dependency]) => {
         if (!dependency) return;
 
@@ -152,7 +148,7 @@ export class DDM<
           ? Array.from(dependency)
           : [dependency];
 
-        const results = await Promise.allSettled(
+        await Promise.all(
           wraplets.map(async (wraplet) => {
             if (
               wraplet.wraplet.status.isInitialized ||
@@ -161,37 +157,44 @@ export class DDM<
               return;
             }
 
-            await wraplet.wraplet.initialize();
+            try {
+              await wraplet.wraplet.initialize();
+            } catch (error) {
+              errors.push(
+                new AggregateError(
+                  [error],
+                  `Error during initialization of the "${id}" dependency.`,
+                ),
+              );
+              return;
+            }
 
-            const listenerResults = await Promise.allSettled(
-              (this.initializedDependencyListeners.get(id) || []).map((fn) =>
-                fn(wraplet as DependencyInstance<M, keyof M>),
-              ),
-            );
+            const listenersErrors: unknown[] = [];
 
-            createLifecycleAsyncError(
-              `Errors in the DDM's dependency "${id}" initialize listeners.`,
-              listenerResults,
-            );
+            const listeners = this.initializedDependencyListeners.get(id);
+            if (listeners) {
+              for (const fn of listeners) {
+                try {
+                  await fn(wraplet as DependencyInstance<M, keyof M>);
+                } catch (error) {
+                  listenersErrors.push(error);
+                }
+              }
+              if (listenersErrors.length > 0) {
+                errors.push(
+                  new AggregateError(
+                    listenersErrors,
+                    `At least one listener of the "${id}" dependency threw exception`,
+                  ),
+                );
+              }
+            }
           }),
-        );
-
-        createLifecycleAsyncError(
-          `Error at "${id}" dependency's initialization.`,
-          results,
         );
       }),
     );
 
-    const error = createLifecycleAsyncError(
-      `Error at DDM's initialization.`,
-      results,
-      false,
-    );
-    if (error) {
-      this.logger.dumpError(error);
-      throw error;
-    }
+    throwIfErrors(errors, `Errors during the dependencies initialization.`);
   }
 
   public syncDependencies(): Promise<void> {
@@ -550,20 +553,31 @@ export class DDM<
     return (async (w: DependencyInstance<M, K>) => {
       this.removeDependency(w, id);
 
-      const results = await Promise.allSettled(
-        (this.destroyedDependencyListeners.get(id) || []).map((fn) => fn(w)),
-      );
+      const errors: Error[] = [];
 
-      // Collect the required-dependency error alongside listener results
-      // so that everything surfaces through the same LifecycleError mechanism.
-      const requiredError = this.validateRequiredDependencyAfterRemoval(id);
-      if (requiredError) {
-        results.push({ status: "rejected", reason: requiredError });
+      const listeners = this.destroyedDependencyListeners.get(id);
+      if (listeners && listeners.length > 0) {
+        await Promise.all(
+          listeners.map(async (fn) => {
+            try {
+              await fn(w);
+            } catch (error) {
+              errors.push(error as Error);
+            }
+          }),
+        );
       }
 
-      createLifecycleAsyncError(
-        `Errors in the destruction callbacks of the "${id} dependency."`,
-        results,
+      // Collect the required-dependency error alongside listener errors
+      // so that everything surfaces through the same error-aggregation pipeline.
+      const requiredError = this.validateRequiredDependencyAfterRemoval(id);
+      if (requiredError) {
+        errors.push(requiredError);
+      }
+
+      throwIfErrors(
+        errors,
+        `Errors in the destruction callbacks of the "${id}" dependency.`,
       );
     }) as DestroyListener;
   }
@@ -746,26 +760,21 @@ export class DDM<
       dependencyInstantiatedListeners: new Map(),
       dependencyInitializedListeners: new Map(),
       dependencyDestroyedListeners: new Map(),
-      logger: ConsoleLogger.getGlobalLogger(),
     };
   }
 
   private async destroyDeps(sync: boolean = false): Promise<void> {
-    const results = await Promise.allSettled(
+    const errors: Error[] = [];
+
+    await Promise.all(
       Object.entries(this.directDependencies).map(async ([id, dependency]) => {
         if (!dependency || !this.map[id]["destructible"]) {
           return;
         }
 
-        let wraplets: Wraplet[] = [];
-
-        if (isWrapletSet(dependency)) {
-          for (const item of dependency) {
-            wraplets.push(item);
-          }
-        } else {
-          wraplets.push(dependency);
-        }
+        let wraplets: Wraplet[] = isWrapletSet(dependency)
+          ? Array.from(dependency)
+          : [dependency];
 
         if (sync) {
           if (!this.map[id]["selector"]) {
@@ -775,7 +784,7 @@ export class DDM<
           wraplets = await findWrapletsOutsideTheTree(wraplets, this.node);
         }
 
-        const results = await Promise.allSettled(
+        await Promise.all(
           wraplets.map(async (wraplet) => {
             if (
               wraplet.wraplet.status.isDestroyed ||
@@ -783,27 +792,26 @@ export class DDM<
             ) {
               return;
             }
-            return wraplet.wraplet.destroy();
-          }),
-        );
 
-        createLifecycleAsyncError(
-          `Errors during destruction of the "${id}" dependency.`,
-          results,
+            try {
+              await wraplet.wraplet.destroy();
+            } catch (error) {
+              errors.push(
+                new AggregateError(
+                  [error],
+                  `There was an error during destruction of the "${id}" dependency.`,
+                ),
+              );
+            }
+          }),
         );
       }),
     );
 
-    const error = createLifecycleAsyncError(
-      `Errors during the dependencies destruction.`,
-      results,
-      false,
+    throwIfErrors(
+      errors,
+      `There were errors during the dependencies destruction.`,
     );
-
-    if (error) {
-      this.logger.dumpError(error);
-      throw error;
-    }
   }
 
   /**

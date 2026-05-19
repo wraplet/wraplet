@@ -708,7 +708,6 @@ describe("Test DDM", () => {
   });
 
   it("handles exceptions in the lifecycle callbacks", async () => {
-    const consoleDirSpy = jest.spyOn(console, "dir").mockImplementation();
     const depListInst = jest.fn();
     const depListInit = jest.fn();
     const depListDestroy = jest.fn();
@@ -812,9 +811,6 @@ describe("Test DDM", () => {
     };
     await expect(runIntializeWithErrorInListener).rejects.toThrow();
 
-    // Multiple errors result in a single printout.
-    expect(consoleDirSpy).toHaveBeenCalledTimes(1);
-
     const runDestroyWithErrorInListener = async () => {
       const ddm = new DDM(element, map);
       ddm.addDependencyDestroyedListener("child1", async () => {
@@ -837,8 +833,6 @@ describe("Test DDM", () => {
     expect(depApiInit).toHaveBeenCalledTimes(2);
 
     expect(depApiDestroy).toHaveBeenCalledTimes(1);
-
-    consoleDirSpy.mockRestore();
   });
 
   it("Test DDM throws when instantiateDependencies is called twice", () => {

@@ -13,6 +13,9 @@ lint:
 tests:
 	pnpm run tests
 
+tests-perf:
+	pnpm run tests:perf
+
 build:
 	rm -r ${MAKEFILE_DIR}/dist/*
 	pnpm run build

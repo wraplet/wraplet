@@ -28,7 +28,9 @@
     "dev:watch": "webpack --mode development --watch --config ./webpack.config.ts",
     "lint": "tsc --noemit && npx eslint './src/**/*.ts' './tests/**/*.ts'",
     "lint:fix": "npm exec eslint './src/**/*.ts' './tests/**/*.ts' --fix",
-    "tests": "node --unhandled-rejections=throw ./node_modules/jest/bin/jest.js --coverage --detectOpenHandles"
+    "tests": "node --unhandled-rejections=throw ./node_modules/jest/bin/jest.js --coverage --detectOpenHandles",
+    "tests:perf": "node --env-file=.env.perf --unhandled-rejections=throw --expose-gc ./node_modules/jest/bin/jest.js --config jest.config.ts --runInBand",
+    "tests:all": "npm run tests && npm run tests:perf"
   },
   "dependencies": {},
   "devDependencies": {
