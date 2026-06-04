@@ -7,7 +7,7 @@ import {
   DependencyManagerSymbol,
   isDependencyManager,
 } from "../src/DependencyManager/types/DependencyManager";
-import { isWraplet } from "../src/Wraplet/types/Wraplet";
+import { isWraplet } from "../src";
 import { WrapletSetSymbol, isWrapletSet } from "../src/Set/types/WrapletSet";
 import { WrapletApiSymbol } from "../src/Wraplet/types/WrapletApi";
 

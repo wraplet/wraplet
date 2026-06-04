@@ -11,8 +11,8 @@ import {
   TooManyChildrenFoundError,
   MapError,
 } from "../src";
-import { DependencyManager } from "../src/DependencyManager/types/DependencyManager";
-import { Wraplet } from "../src/Wraplet/types/Wraplet";
+import { DependencyManager } from "../src";
+import { Wraplet } from "../src";
 import { StatusWritable } from "../src/Wraplet/types/Status";
 import { fillMapWithDefaults } from "../src/Map/utils";
 

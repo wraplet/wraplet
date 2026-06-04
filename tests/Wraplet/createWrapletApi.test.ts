@@ -1,5 +1,5 @@
 import { createWrapletApi, WrapletApi } from "../../src";
-import { Wraplet } from "../../src/Wraplet/types/Wraplet";
+import { Wraplet } from "../../src";
 import { isWrapletApi } from "../../src/Wraplet/types/WrapletApi";
 
 describe("createWrapletApi", () => {
