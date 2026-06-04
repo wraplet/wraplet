@@ -6,7 +6,6 @@ import {
   WrapletDependencyMap,
   WrapletApi,
 } from "../../src";
-import { WrapletSymbol } from "../../src";
 import { BaseElementTestWraplet } from "../resources/BaseElementTestWraplet";
 import { Injector } from "../../src/Injector/types/Injector";
 import { DDMOptions } from "../../src/DependencyManager/types/DDMOptions";
@@ -20,7 +19,6 @@ it("Test isWraplet", () => {
   expect(isWraplet(noWraplet)).toBe(false);
 
   class WrapletClass implements Wraplet {
-    [WrapletSymbol]: true = true;
     wraplet: WrapletApi = {
       [WrapletApiSymbol]: true,
       destroy: async () => {},
@@ -32,7 +30,6 @@ it("Test isWraplet", () => {
         isGettingDestroyed: false,
       },
       addDestroyListener() {},
-      accessNode: () => {},
     } as WrapletApi;
   }
 

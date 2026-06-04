@@ -1,14 +1,10 @@
-import { createWrapletApi, WrapletApi, WrapletSymbol } from "../../src";
+import { createWrapletApi, WrapletApi } from "../../src";
 import { Wraplet } from "../../src/Wraplet/types/Wraplet";
-import {
-  isWrapletApi,
-  WrapletApiSymbol,
-} from "../../src/Wraplet/types/WrapletApi";
+import { isWrapletApi } from "../../src/Wraplet/types/WrapletApi";
 
 describe("createWrapletApi", () => {
   class MockWraplet implements Wraplet {
     wraplet: WrapletApi;
-    [WrapletSymbol]: true = true;
 
     constructor() {
       this.wraplet = jest.fn().mockImplementation() as any;
@@ -118,17 +114,6 @@ describe("createWrapletApi", () => {
       ).toThrow("Correct node has to be provided.");
     });
 
-    it("should throw when wraplet is not a valid instance in createWrapletApi", () => {
-      expect(() =>
-        createWrapletApi({
-          node: document.createElement("div"),
-          wraplet: {
-            [WrapletApiSymbol]: true,
-          } as any,
-        }),
-      ).toThrow("Correct wraplet instance has to be provided.");
-    });
-
     it("should throw when initializeCallback is not a function", () => {
       expect(() =>
         createWrapletApi({
@@ -169,7 +154,6 @@ describe("createWrapletApi", () => {
 
   it("should add wraplet to the node's `wraplets` property immidiately", () => {
     class TestWraplet implements Wraplet {
-      [WrapletSymbol]: true = true;
       wraplet: WrapletApi;
       constructor(node: Node) {
         this.wraplet = createWrapletApi({
@@ -188,8 +172,6 @@ describe("createWrapletApi", () => {
 
   describe("memoization", () => {
     class TestWraplet implements Wraplet {
-      [WrapletSymbol]: true = true;
-
       public wraplet: WrapletApi;
 
       constructor(node: Node) {
@@ -227,8 +209,6 @@ describe("createWrapletApi", () => {
 
   it("cannot run initialization after destroy", async () => {
     class TestWraplet implements Wraplet {
-      [WrapletSymbol]: true = true;
-
       public wraplet: WrapletApi;
 
       constructor(node: Node) {

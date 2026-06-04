@@ -12,13 +12,12 @@ import {
   MapError,
 } from "../src";
 import { DependencyManager } from "../src/DependencyManager/types/DependencyManager";
-import { Wraplet, WrapletSymbol } from "../src/Wraplet/types/Wraplet";
+import { Wraplet } from "../src/Wraplet/types/Wraplet";
 import { StatusWritable } from "../src/Wraplet/types/Status";
 import { fillMapWithDefaults } from "../src/Map/utils";
 
 describe("Test DDM", () => {
   class TestWrapletClass implements Wraplet {
-    [WrapletSymbol]: true = true;
     public wraplet: WrapletApi;
 
     constructor(private node: Node) {
@@ -30,7 +29,6 @@ describe("Test DDM", () => {
   }
 
   class TestWrapletClassWithDependencies implements Wraplet {
-    [WrapletSymbol]: true = true;
     public wraplet: WrapletApi;
 
     constructor(private dm: DependencyManager) {
@@ -716,7 +714,6 @@ describe("Test DDM", () => {
     const depApiDestroy = jest.fn();
 
     class TestWrapletChild1 implements Wraplet {
-      [WrapletSymbol]: true = true;
       public wraplet: WrapletApi;
 
       constructor(node: Node) {
@@ -738,8 +735,6 @@ describe("Test DDM", () => {
     }
 
     class TestWrapletChild2 implements Wraplet {
-      [WrapletSymbol]: true = true;
-
       constructor(node: Node) {
         this.wraplet = createWrapletApi({
           node,
@@ -938,7 +933,6 @@ describe("Test DDM", () => {
     const constructorFn = jest.fn();
 
     class ChildWraplet implements Wraplet {
-      [WrapletSymbol]: true = true;
       public wraplet: WrapletApi;
 
       constructor(node: Node) {
@@ -986,7 +980,6 @@ describe("Test DDM", () => {
       const constructorFn = jest.fn();
 
       class ChildWraplet implements Wraplet {
-        [WrapletSymbol]: true = true;
         public wraplet: WrapletApi;
 
         constructor(node: Node) {
@@ -1027,7 +1020,6 @@ describe("Test DDM", () => {
       const constructorFn = jest.fn();
 
       class ChildWraplet implements Wraplet {
-        [WrapletSymbol]: true = true;
         public wraplet: WrapletApi;
 
         constructor(node: Node) {
@@ -1069,7 +1061,6 @@ describe("Test DDM", () => {
       node.innerHTML = "<div data-child></div>";
 
       class ChildWraplet implements Wraplet {
-        [WrapletSymbol]: true = true;
         public wraplet: WrapletApi;
 
         constructor(dm: DependencyManager) {
@@ -1112,7 +1103,6 @@ describe("Test DDM", () => {
       node.innerHTML = "<div data-child></div>";
 
       class ChildWraplet implements Wraplet {
-        [WrapletSymbol]: true = true;
         public wraplet: WrapletApi;
 
         constructor(node: Node) {
@@ -1181,7 +1171,6 @@ describe("Test DDM", () => {
       const node = document.createElement("div");
 
       class ChildWraplet implements Wraplet {
-        [WrapletSymbol]: true = true;
         public wraplet: WrapletApi;
 
         constructor(dm: DependencyManager) {
@@ -1326,7 +1315,6 @@ describe("Test DDM", () => {
     const constructorFn = jest.fn();
 
     class ChildWraplet implements Wraplet {
-      [WrapletSymbol]: true = true;
       public wraplet: WrapletApi;
 
       constructor(node: Node) {
@@ -1371,7 +1359,6 @@ describe("Test DDM", () => {
     const fn = jest.fn();
 
     class WrapletClass implements Wraplet {
-      [WrapletSymbol]: true = true;
       public wraplet: WrapletApi;
 
       constructor(node: Node) {
@@ -1443,7 +1430,6 @@ describe("Test DDM", () => {
 
   it("allows for non-dependent leaf-dependencies", async () => {
     class DDMlessWraplet implements Wraplet {
-      [WrapletSymbol]: true = true;
       public wraplet: WrapletApi;
 
       constructor(private node: Node) {
@@ -1503,7 +1489,6 @@ describe("Test DDM", () => {
 
   it("handles required dependencies that are manually set", async () => {
     class TestDependency implements Wraplet {
-      [WrapletSymbol]: true = true;
       public wraplet: WrapletApi;
 
       constructor() {
@@ -1566,7 +1551,6 @@ describe("Test DDM", () => {
       const destroyFn = jest.fn();
 
       class TestDependency implements Wraplet {
-        [WrapletSymbol]: true = true;
         public wraplet: WrapletApi;
 
         constructor(node: Node) {
@@ -1626,7 +1610,6 @@ describe("Test DDM", () => {
       const destroyFn = jest.fn();
 
       class TestDependency implements Wraplet {
-        [WrapletSymbol]: true = true;
         public wraplet: WrapletApi;
 
         constructor(node: Node) {
@@ -1690,7 +1673,6 @@ describe("Test DDM", () => {
       const destroyFn = jest.fn();
 
       class TestDependency implements Wraplet {
-        [WrapletSymbol]: true = true;
         public wraplet: WrapletApi;
 
         constructor(node: Node) {
@@ -1741,7 +1723,6 @@ describe("Test DDM", () => {
       const destroyFn = jest.fn();
 
       class TestDependency implements Wraplet {
-        [WrapletSymbol]: true = true;
         public wraplet: WrapletApi;
 
         constructor(node: Node) {
@@ -1815,7 +1796,6 @@ describe("Test DDM", () => {
 
   it("Test DDM aggregates errors thrown during dependency initialization", async () => {
     class FailingInitWraplet implements Wraplet {
-      [WrapletSymbol]: true = true;
       public wraplet: WrapletApi;
 
       constructor(node: Node) {

@@ -26,7 +26,7 @@ export type { WrapletApi } from "./Wraplet/types/WrapletApi";
 export type { WrapletApiFactoryArgs } from "./Wraplet/types/WrapletApiFactoryArgs";
 export type { Status } from "./Wraplet/types/Status";
 
-export { isWraplet, WrapletSymbol } from "./Wraplet/types/Wraplet";
+export { isWraplet } from "./Wraplet/types/Wraplet";
 
 export * from "./Wraplet/createWrapletApi";
 export { createOuterDestroyCallback } from "./Wraplet/createOuterDestroyCallback";

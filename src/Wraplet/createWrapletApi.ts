@@ -8,7 +8,6 @@ import {
   WrapletApiDebug,
   WrapletApiSymbol,
 } from "./types/WrapletApi";
-import { isWraplet } from "./types/Wraplet";
 import { DestroyListener } from "../DependencyManager/types/DestroyListener";
 import { createOuterDestroyCallback } from "./createOuterDestroyCallback";
 import { createOuterInitializeCallback } from "./createOuterInitializeCallback";
@@ -16,10 +15,6 @@ import { createOuterInitializeCallback } from "./createOuterInitializeCallback";
 function validateNodeWrapletApiFactoryArgs<N extends Node>(
   args: WrapletApiFactoryArgs<N>,
 ): void {
-  if (!isWraplet(args.wraplet)) {
-    throw new Error("Correct wraplet instance has to be provided.");
-  }
-
   if (args.node && !(args.node instanceof Node)) {
     throw new Error("Correct node has to be provided.");
   }

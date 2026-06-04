@@ -1,4 +1,4 @@
-import { Wraplet, WrapletSymbol } from "./types/Wraplet";
+import { Wraplet } from "./types/Wraplet";
 import { Constructable } from "../utils/types/Utils";
 import { UnsupportedNodeTypeError } from "../errors";
 import { NodeManager } from "./NodeManager";
@@ -10,8 +10,6 @@ import { RESOLVE } from "../utils/utils";
 export abstract class AbstractWraplet<
   N extends Node = Node,
 > implements Wraplet {
-  public [WrapletSymbol]: true = true;
-
   public wraplet: WrapletApi;
   private _nodeManager: NodeManager<N> | undefined;
 

@@ -7,8 +7,9 @@ import {
   DependencyManagerSymbol,
   isDependencyManager,
 } from "../src/DependencyManager/types/DependencyManager";
-import { WrapletSymbol, isWraplet } from "../src/Wraplet/types/Wraplet";
+import { isWraplet } from "../src/Wraplet/types/Wraplet";
 import { WrapletSetSymbol, isWrapletSet } from "../src/Set/types/WrapletSet";
+import { WrapletApiSymbol } from "../src/Wraplet/types/WrapletApi";
 
 describe("utils/is and related type guards (positive cases)", () => {
   it("is() returns true for an object tagged with the given symbol", () => {
@@ -23,8 +24,12 @@ describe("utils/is and related type guards (positive cases)", () => {
     expect(isDependencyManager(obj)).toBe(true);
   });
 
-  it("isWraplet returns true when object has WrapletSymbol", () => {
-    const obj: unknown = { [WrapletSymbol]: true };
+  it("isWraplet returns true when object has 'wraplet' property", () => {
+    const obj: unknown = {
+      wraplet: {
+        [WrapletApiSymbol]: true,
+      },
+    };
     expect(isWraplet(obj)).toBe(true);
   });
 

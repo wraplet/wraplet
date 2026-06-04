@@ -1,13 +1,14 @@
 import { is } from "../../utils/is";
-import { WrapletApi } from "./WrapletApi";
-
-export const WrapletSymbol = Symbol("Wraplet");
+import { WrapletApi, WrapletApiSymbol } from "./WrapletApi";
 
 export interface Wraplet {
-  [WrapletSymbol]: true;
   wraplet: WrapletApi;
 }
 
-export function isWraplet(object: unknown): object is Wraplet {
-  return is(object, WrapletSymbol);
+export function isWraplet(value: unknown): value is Wraplet {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    is((value as { wraplet: unknown }).wraplet, WrapletApiSymbol)
+  );
 }
