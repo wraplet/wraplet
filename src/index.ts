@@ -21,14 +21,12 @@ export { DefaultWrapletSet } from "./Set/DefaultWrapletSet";
 
 // Wraplet
 export type { Wraplet } from "./Wraplet/types/Wraplet";
-export type { WrapletApiDebug } from "./Wraplet/types/WrapletApi";
 export type { WrapletApi } from "./Wraplet/types/WrapletApi";
-export type { WrapletApiFactoryArgs } from "./Wraplet/types/WrapletApiFactoryArgs";
 export type { Status } from "./Wraplet/types/Status";
 
 export { isWraplet } from "./Wraplet/types/Wraplet";
 
-export * from "./Wraplet/createWrapletApi";
+export { createWrapletApi } from "./Wraplet/createWrapletApi";
 export { createOuterDestroyCallback } from "./Wraplet/createOuterDestroyCallback";
 export { createOuterInitializeCallback } from "./Wraplet/createOuterInitializeCallback";
 
@@ -39,7 +37,6 @@ export { DNTM } from "./NodeTreeManager/DNTM";
 
 // WrapletDependencyMap
 export type { WrapletDependencyMap } from "./Wraplet/types/WrapletDependencyMap";
-export type { SelectorCallback } from "./Wraplet/types/WrapletDependencyDefinition";
 
 // Utils
 export type { Constructable } from "./utils/types/Utils";
