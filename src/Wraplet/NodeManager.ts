@@ -1,6 +1,8 @@
 import { isParentNode } from "../NodeTreeManager/utils";
 import { SelectorCallback } from "./types/WrapletDependencyDefinition";
 
+import { Wiring } from "./composeWrapletApi";
+
 type Listener = {
   callback: EventListenerOrEventListenerObject;
   event: string;
@@ -88,5 +90,20 @@ export class NodeManager<N extends Node> {
       }
     }
     this.listeners.clear();
+  }
+
+  public static wire(
+    nodeManager: (() => NodeManager<Node> | undefined) | NodeManager<Node>,
+  ): Wiring {
+    return {
+      destroyCallback: async () => {
+        const nm =
+          typeof nodeManager === "object" ? nodeManager : nodeManager();
+        if (!nm) {
+          return;
+        }
+        nm.destroy();
+      },
+    };
   }
 }

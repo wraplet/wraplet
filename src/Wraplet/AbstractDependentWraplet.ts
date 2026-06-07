@@ -6,9 +6,13 @@ import {
   isDependencyManager,
 } from "../DependencyManager/types/DependencyManager";
 import { DDM } from "../DependencyManager/DDM";
-import { AbstractWraplet } from "./AbstractWraplet";
+import { AbstractWraplet, AbstractWrapletWiringArgs } from "./AbstractWraplet";
 import { WrapletApi } from "./types/WrapletApi";
-import { RESOLVE } from "../utils/utils";
+import { mergeWirings, Wiring } from "./composeWrapletApi";
+
+interface AbstractDependentWrapletWiringArgs extends AbstractWrapletWiringArgs {
+  dependencyManager: (() => DependencyManager) | DependencyManager;
+}
 
 export abstract class AbstractDependentWraplet<
   N extends Node = Node,
@@ -29,30 +33,39 @@ export abstract class AbstractDependentWraplet<
     dm.instantiateDependencies();
   }
 
-  /**
-   * Override createWrapletApi to provide DependencyManager-aware lifecycle callbacks
-   * instead of the base class's version — this avoids creating two WrapletApi
-   * instances.
-   */
   protected override createWrapletApi(): WrapletApi {
-    return this.buildWrapletApi(
-      async () => {
-        await this.dm.initializeDependencies();
-        await this.onInitialize.bind(this)();
-      },
-      async () => {
-        await this.onDestroy.bind(this)();
-        await this.dm.destroyDependencies();
-      },
+    // @todo Remove this condition for the next major release.
+    if (
+      Object.getPrototypeOf(this).buildWrapletApi !==
+      AbstractDependentWraplet.prototype.buildWrapletApi
+    ) {
+      return this.buildWrapletApi(
+        async () => {
+          await this.dm.initializeDependencies();
+          await this.onInitialize.bind(this)();
+        },
+        async () => {
+          await this.onDestroy.bind(this)();
+          await this.dm.destroyDependencies();
+        },
+      );
+    }
+
+    return super.createWrapletApi();
+  }
+
+  /**
+   * Wire up the DependencyManager-aware lifecycle callbacks.
+   */
+  protected override wrapletApiWirings() {
+    const wirings = super.wrapletApiWirings();
+    wirings.push(
+      AbstractDependentWraplet.wiring({
+        dependencyManager: () => this.dm,
+      }),
     );
-  }
 
-  protected override onDestroy(): Promise<void> {
-    return RESOLVE;
-  }
-
-  protected override onInitialize(): Promise<void> {
-    return RESOLVE;
+    return wirings;
   }
 
   /**
@@ -60,6 +73,30 @@ export abstract class AbstractDependentWraplet<
    */
   protected get d(): WrapletDependencies<M> {
     return this.dm.dependencies;
+  }
+
+  public static wiring(args: AbstractDependentWrapletWiringArgs): Wiring {
+    const parentWiring = super.wiring(args);
+    const dependencyManagerArg = args.dependencyManager;
+    const dependencyManagerProvider =
+      typeof dependencyManagerArg === "function"
+        ? dependencyManagerArg
+        : () => dependencyManagerArg;
+
+    // The dependency manager wiring is placed *before* the parent's wirings:
+    //  - initialize runs first (dependencies ready for the parent's init code),
+    //  - destroy runs last (parent's destroy code still has access to dependencies),
+    //    because the composer reverses the destroy order.
+    const wiring = {
+      initializeCallback: async () => {
+        await dependencyManagerProvider().initializeDependencies();
+      },
+      destroyCallback: async () => {
+        await dependencyManagerProvider().destroyDependencies();
+      },
+    };
+
+    return mergeWirings([parentWiring, wiring]);
   }
 
   protected static createDependencyManager<

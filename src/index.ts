@@ -27,8 +27,17 @@ export type { Status } from "./Wraplet/types/Status";
 export { isWraplet } from "./Wraplet/types/Wraplet";
 
 export { createWrapletApi } from "./Wraplet/createWrapletApi";
+export {
+  composeWrapletApi,
+  mergeWirings,
+  wireCallback,
+  type Wiring,
+} from "./Wraplet/composeWrapletApi";
 export { createOuterDestroyCallback } from "./Wraplet/createOuterDestroyCallback";
 export { createOuterInitializeCallback } from "./Wraplet/createOuterInitializeCallback";
+
+// NodeManager
+export { NodeManager } from "./Wraplet/NodeManager";
 
 // NodeTree
 export type { NodeTreeManager } from "./NodeTreeManager/types/NodeTreeManager";

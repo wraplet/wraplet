@@ -558,4 +558,82 @@ describe("AbstractDependentWraplet", () => {
     expect(childInitFunc).toHaveBeenCalledTimes(1);
     expect(childDestroyFunc).toHaveBeenCalledTimes(1);
   });
+
+  it("uses the legacy createWrapletApi path when a subclass overrides buildWrapletApi", async () => {
+    const initFn = jest.fn();
+    const destroyFn = jest.fn();
+
+    class OverridesBuildWraplet extends AbstractDependentWraplet {
+      protected buildWrapletApi(
+        initializeCallback?: () => Promise<void>,
+        destroyCallback?: () => Promise<void>,
+      ) {
+        return super.buildWrapletApi(initializeCallback, destroyCallback);
+      }
+
+      protected async onInitialize() {
+        initFn();
+      }
+
+      protected async onDestroy() {
+        destroyFn();
+      }
+    }
+
+    const ddm = new DDM(document.createElement("div"), {});
+    const wraplet = new OverridesBuildWraplet(ddm);
+    await wraplet.wraplet.initialize();
+    await wraplet.wraplet.destroy();
+
+    expect(initFn).toHaveBeenCalledTimes(1);
+    expect(destroyFn).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("getAbstractDependentWrapletWirings", () => {
+  it("accepts a DependencyManager instance directly", async () => {
+    const initSpy = jest.fn();
+    const destroySpy = jest.fn();
+    const dm = {
+      initializeDependencies: async () => {
+        initSpy();
+      },
+      destroyDependencies: async () => {
+        destroySpy();
+      },
+    } as DependencyManager;
+
+    const wiring = AbstractDependentWraplet.wiring({
+      dependencyManager: dm,
+    });
+
+    await wiring.initializeCallback!();
+    await wiring.destroyCallback!();
+
+    expect(initSpy).toHaveBeenCalledTimes(1);
+    expect(destroySpy).toHaveBeenCalledTimes(1);
+  });
+
+  it("accepts a DependencyManager provider", async () => {
+    const initSpy = jest.fn();
+    const destroySpy = jest.fn();
+    const dm = {
+      initializeDependencies: async () => {
+        initSpy();
+      },
+      destroyDependencies: async () => {
+        destroySpy();
+      },
+    } as DependencyManager;
+
+    const wiring = AbstractDependentWraplet.wiring({
+      dependencyManager: () => dm,
+    });
+
+    await wiring.initializeCallback!();
+    await wiring.destroyCallback!();
+
+    expect(initSpy).toHaveBeenCalledTimes(1);
+    expect(destroySpy).toHaveBeenCalledTimes(1);
+  });
 });

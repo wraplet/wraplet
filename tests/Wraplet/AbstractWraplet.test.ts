@@ -1,4 +1,5 @@
 import { AbstractWraplet } from "../../src/Wraplet/AbstractWraplet";
+import { NodeManager } from "../../src/Wraplet/NodeManager";
 
 class ConcreteWraplet extends AbstractWraplet<HTMLElement> {
   public getNodeManager() {
@@ -44,17 +45,82 @@ describe("AbstractWraplet", () => {
     expect(funcDestroy).toHaveBeenCalledTimes(1);
   });
 
-  it("buildWrapletApi handles destroy without a destroyCallback", async () => {
-    class NoDestroyCallbackWraplet extends AbstractWraplet<HTMLElement> {
-      protected createWrapletApi() {
-        return this.buildWrapletApi();
+  describe("buildWrapletApi", () => {
+    it("buildWrapletApi handles destroy without a destroyCallback", async () => {
+      class NoDestroyCallbackWraplet extends AbstractWraplet<HTMLElement> {
+        protected createWrapletApi() {
+          return this.buildWrapletApi();
+        }
       }
-    }
 
-    const wraplet = new NoDestroyCallbackWraplet(document.createElement("div"));
-    await wraplet.wraplet.initialize();
-    await wraplet.wraplet.destroy();
-    expect(wraplet.wraplet.status.isDestroyed).toBe(true);
+      const wraplet = new NoDestroyCallbackWraplet(
+        document.createElement("div"),
+      );
+      await wraplet.wraplet.initialize();
+      await wraplet.wraplet.destroy();
+      expect(wraplet.wraplet.status.isDestroyed).toBe(true);
+    });
+
+    it("buildWrapletApi invokes the provided callbacks and destroys the nodeManager", async () => {
+      const initializeFn = jest.fn();
+      const destroyFn = jest.fn();
+      const listenerFn = jest.fn();
+      class LegacyWraplet extends AbstractWraplet<HTMLElement> {
+        protected createWrapletApi() {
+          return this.buildWrapletApi(
+            async () => {
+              initializeFn();
+            },
+            async () => {
+              destroyFn();
+            },
+          );
+        }
+
+        public attachListener() {
+          this.nodeManager.addListener("click", listenerFn);
+        }
+      }
+
+      const node = document.createElement("div");
+      const wraplet = new LegacyWraplet(node);
+      wraplet.attachListener();
+      await wraplet.wraplet.initialize();
+      await wraplet.wraplet.destroy();
+
+      expect(initializeFn).toHaveBeenCalledTimes(1);
+      expect(destroyFn).toHaveBeenCalledTimes(1);
+      node.dispatchEvent(new Event("click"));
+      expect(listenerFn).not.toHaveBeenCalled();
+    });
+
+    it("uses the legacy createWrapletApi path when a subclass overrides buildWrapletApi", async () => {
+      const initFn = jest.fn();
+      const destroyFn = jest.fn();
+      class OverridesBuildWraplet extends AbstractWraplet<HTMLElement> {
+        protected buildWrapletApi(
+          initializeCallback?: () => Promise<void>,
+          destroyCallback?: () => Promise<void>,
+        ) {
+          return super.buildWrapletApi(initializeCallback, destroyCallback);
+        }
+
+        protected async onInitialize() {
+          initFn();
+        }
+
+        protected async onDestroy() {
+          destroyFn();
+        }
+      }
+
+      const wraplet = new OverridesBuildWraplet(document.createElement("div"));
+      await wraplet.wraplet.initialize();
+      await wraplet.wraplet.destroy();
+
+      expect(initFn).toHaveBeenCalledTimes(1);
+      expect(destroyFn).toHaveBeenCalledTimes(1);
+    });
   });
 
   it("throws when calling createWraplets directly on AbstractWraplet", () => {
@@ -188,5 +254,43 @@ describe("AbstractWraplet", () => {
     expect(wraplets).toHaveLength(1);
     expect(initFn).toHaveBeenCalledTimes(1);
     wraplets.forEach((w) => expect(w).toBeInstanceOf(InitWraplet));
+  });
+});
+
+describe("getAbstractWrapletWirings", () => {
+  it("getAbstractWrapletWirings accepts a NodeManager instance directly", async () => {
+    const node = document.createElement("div");
+    const nodeManager = new NodeManager(node);
+    const listenerFn = jest.fn();
+    nodeManager.addListener("click", listenerFn);
+
+    const wiring = AbstractWraplet.wiring({
+      initializeCallback: async () => {},
+      destroyCallback: async () => {},
+      nodeManager,
+    });
+
+    // The last wiring is the NodeManager destroy wiring.
+    await wiring.destroyCallback!();
+    node.dispatchEvent(new Event("click"));
+    expect(listenerFn).not.toHaveBeenCalled();
+  });
+
+  it("getAbstractWrapletWirings accepts a NodeManager provider", async () => {
+    const node = document.createElement("div");
+    const nodeManager = new NodeManager(node);
+    const listenerFn = jest.fn();
+    nodeManager.addListener("click", listenerFn);
+
+    const wiring = AbstractWraplet.wiring({
+      initializeCallback: async () => {},
+      destroyCallback: async () => {},
+      nodeManager: () => nodeManager,
+    });
+
+    // The last wiring is the NodeManager destroy wiring.
+    await wiring.destroyCallback!();
+    node.dispatchEvent(new Event("click"));
+    expect(listenerFn).not.toHaveBeenCalled();
   });
 });
