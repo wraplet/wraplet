@@ -247,9 +247,7 @@ export abstract class AbstractWraplet<
       attribute,
       additional_args,
     );
-    for (const wraplet of wraplets) {
-      await wraplet.wraplet.initialize();
-    }
+    await Promise.all(wraplets.map((wraplet) => wraplet.wraplet.initialize()));
     return wraplets;
   }
 }

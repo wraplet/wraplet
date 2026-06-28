@@ -202,9 +202,7 @@ export abstract class AbstractDependentWraplet<
       map,
       additional_args,
     );
-    for (const wraplet of wraplets) {
-      await wraplet.wraplet.initialize();
-    }
+    await Promise.all(wraplets.map((wraplet) => wraplet.wraplet.initialize()));
     return wraplets;
   }
 }

@@ -251,6 +251,79 @@ describe("AbstractDependentWraplet", () => {
         const wraplet = await TestWraplet.create(container);
         expect(wraplet).toBeInstanceOf(TestWraplet);
       });
+
+      it("should initialize multiple wraplets in parallel", async () => {
+        const attribute = "data-test-caiw-parallel";
+
+        const createDeferred = <T>() => {
+          let resolve!: (value: T | PromiseLike<T>) => void;
+          const promise = new Promise<T>((res) => {
+            resolve = res;
+          });
+
+          return { promise, resolve };
+        };
+
+        const gate = createDeferred<void>();
+        const firstEntered = createDeferred<void>();
+        const secondEntered = createDeferred<void>();
+
+        class TestWraplet extends AbstractDependentWraplet {
+          private readonly wrapletId: string;
+
+          constructor(ddm: DependencyManager) {
+            super(ddm);
+            this.wrapletId =
+              (ddm.node as Element).getAttribute("data-id") || "";
+          }
+
+          protected async onInitialize(): Promise<void> {
+            if (this.wrapletId === "1") {
+              firstEntered.resolve();
+            }
+            if (this.wrapletId === "2") {
+              secondEntered.resolve();
+            }
+
+            await gate.promise;
+          }
+
+          public static async createAndInit(
+            node: ParentNode,
+          ): Promise<TestWraplet[]> {
+            return this.createAndInitializeDependentWraplets(
+              node,
+              attribute,
+              {},
+            );
+          }
+        }
+
+        document.body.innerHTML = `
+          <div ${attribute} data-id="1"></div>
+          <div ${attribute} data-id="2"></div>
+        `;
+
+        const created = TestWraplet.createAndInit(document.body);
+
+        const failAfter = (ms: number): Promise<void> =>
+          new Promise((_, reject) => {
+            setTimeout(() => reject(new Error("Initialization timeout")), ms);
+          });
+
+        await Promise.all([
+          Promise.race([firstEntered.promise, failAfter(300)]),
+          Promise.race([secondEntered.promise, failAfter(300)]),
+        ]);
+
+        gate.resolve();
+        const wraplets = await created;
+
+        expect(wraplets.length).toEqual(2);
+        for (const wraplet of wraplets) {
+          expect(wraplet.wraplet.status.isInitialized).toBe(true);
+        }
+      });
     });
   });
 
