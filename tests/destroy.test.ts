@@ -252,6 +252,54 @@ it("Test isDestroyed values", async () => {
   expect(wraplet.wraplet.status.isDestroyed).toBe(true);
 });
 
+it("Test that errors are grouped differently depending on whether they come from 'destroy' or 'afterDestroy' listeners", async () => {
+  class TestWraplet extends AbstractDependentWraplet {}
+
+  const element = document.createElement("div");
+  const ddm = new DDM(element, {});
+  const wraplet = new TestWraplet(ddm);
+
+  await wraplet.wraplet.initialize();
+
+  const destroyError = new Error("destroy listener error");
+  const afterDestroyError = new Error("after-destroy listener error");
+
+  wraplet.wraplet.onDestroy(async () => {
+    throw destroyError;
+  });
+
+  wraplet.wraplet.onAfterDestroy(async () => {
+    throw afterDestroyError;
+  });
+
+  let thrown: unknown = null;
+  try {
+    await wraplet.wraplet.destroy();
+  } catch (error) {
+    thrown = error;
+  }
+
+  expect(thrown).toBeInstanceOf(AggregateError);
+  const aggregate = thrown as AggregateError;
+  expect(aggregate.errors).toHaveLength(2);
+
+  const destroyGroup = aggregate.errors.find(
+    (error: Error) => error.message === "Errors in destroy listeners.",
+  ) as AggregateError | undefined;
+  const afterDestroyGroup = aggregate.errors.find(
+    (error: Error) => error.message === "Errors in after-destroy listeners.",
+  ) as AggregateError | undefined;
+
+  expect(destroyGroup).toBeInstanceOf(AggregateError);
+  expect(afterDestroyGroup).toBeInstanceOf(AggregateError);
+
+  expect(destroyGroup?.errors).toContain(destroyError);
+  expect(destroyGroup?.errors).not.toContain(afterDestroyError);
+
+  expect(afterDestroyGroup?.errors).toContain(afterDestroyError);
+  expect(afterDestroyGroup?.errors).not.toContain(destroyError);
+});
+
 it("Test order of invoked destroy listeners is reversed", async () => {
   class TestWraplet extends AbstractDependentWraplet {}
 
@@ -263,11 +311,11 @@ it("Test order of invoked destroy listeners is reversed", async () => {
 
   let result: string = "";
 
-  wraplet.wraplet.addDestroyListener(async () => {
+  wraplet.wraplet.onDestroy(async () => {
     result += "1";
   });
 
-  wraplet.wraplet.addDestroyListener(async () => {
+  wraplet.wraplet.onDestroy(async () => {
     result += "2";
   });
 

@@ -10,26 +10,6 @@ export function throwIfErrors(errors: Error[], message: string): void {
   throw new AggregateError(errors, `${message}`);
 }
 
-/**
- * @deprecated
- *   Will be removed with the next major release.
- */
-export function flattenDependencies<M extends WrapletDependencyMap>(
-  dependencies: Partial<WrapletDependencies<M>>,
-): Wraplet[] {
-  const wraplets: Wraplet[] = [];
-  for (const item of Object.values(dependencies)) {
-    if (isWrapletSet(item)) {
-      wraplets.push(...item.values());
-      continue;
-    }
-    if (item) {
-      wraplets.push(item);
-    }
-  }
-  return wraplets;
-}
-
 export async function actOnDependencies<M extends WrapletDependencyMap>(
   deps: WrapletDependencies<M>,
   callback: <T extends keyof WrapletDependencies<M>>(

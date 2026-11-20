@@ -8,6 +8,7 @@ import { is } from "../../utils/is";
 import { DependencyLifecycleAsyncListener } from "./DependencyLifecycleAsyncListener";
 import { DependencyLifecycleListener } from "./DependencyLifecycleListener";
 import { DependencyInstance } from "../../Wraplet/types/DependencyInstance";
+import { Wireable } from "../../Wraplet/composeWrapletApi";
 
 export const DependencyManagerSymbol = Symbol("DependencyManager");
 
@@ -18,7 +19,7 @@ export const DependencyManagerSymbol = Symbol("DependencyManager");
 export interface DependencyManager<
   N extends Node = Node,
   M extends WrapletDependencyMap = {},
-> {
+> extends Wireable {
   [DependencyManagerSymbol]: true;
 
   /**

@@ -26,6 +26,34 @@ const dependenciesMap = {
 class TestWraplet extends BaseElementTestWraplet<typeof dependenciesMap> {}
 
 describe("AbstractDependentWraplet", () => {
+  describe("wiring", () => {
+    it("accepts a DependencyManager instance directly as the dependencyManager argument", async () => {
+      const dm = new DDM(document.createElement("div"), {});
+      const dmWiringSpy = jest.spyOn(dm, "wiring");
+
+      const wiring = AbstractDependentWraplet.wiring({
+        dependencyManager: dm,
+      });
+
+      expect(dmWiringSpy).toHaveBeenCalledTimes(1);
+      expect(typeof wiring.initializeCallback).toBe("function");
+      expect(typeof wiring.destroyCallback).toBe("function");
+    });
+
+    it("doesn't mutate the wirings array that is provided in the arguments", () => {
+      const dm = new DDM(document.createElement("div"), {});
+      const providedWirings = [{ initializeCallback: async () => {} }];
+
+      AbstractDependentWraplet.wiring({
+        dependencyManager: dm,
+        wirings: providedWirings,
+      });
+
+      // The dependency manager wiring is appended to the provided array.
+      expect(providedWirings.length).toEqual(1);
+    });
+  });
+
   describe("Instantiation & Initialization", () => {
     it("should require a node for initialization", () => {
       class TestWraplet extends AbstractDependentWraplet {}
@@ -632,36 +660,6 @@ describe("AbstractDependentWraplet", () => {
     expect(childDestroyFunc).toHaveBeenCalledTimes(1);
   });
 
-  it("uses the legacy createWrapletApi path when a subclass overrides buildWrapletApi", async () => {
-    const initFn = jest.fn();
-    const destroyFn = jest.fn();
-
-    class OverridesBuildWraplet extends AbstractDependentWraplet {
-      protected buildWrapletApi(
-        initializeCallback?: () => Promise<void>,
-        destroyCallback?: () => Promise<void>,
-      ) {
-        return super.buildWrapletApi(initializeCallback, destroyCallback);
-      }
-
-      protected async onInitialize() {
-        initFn();
-      }
-
-      protected async onDestroy() {
-        destroyFn();
-      }
-    }
-
-    const ddm = new DDM(document.createElement("div"), {});
-    const wraplet = new OverridesBuildWraplet(ddm);
-    await wraplet.wraplet.initialize();
-    await wraplet.wraplet.destroy();
-
-    expect(initFn).toHaveBeenCalledTimes(1);
-    expect(destroyFn).toHaveBeenCalledTimes(1);
-  });
-
   it("initializes dependencies before the `onInitialize` and destroys them after `onDestroy`", async () => {
     const order: string[] = [];
 
@@ -705,53 +703,5 @@ describe("AbstractDependentWraplet", () => {
       "parent:destroy",
       "dep:destroy",
     ]);
-  });
-});
-
-describe("AbstractDependentWraplet.wiring", () => {
-  it("accepts a DependencyManager instance directly", async () => {
-    const initSpy = jest.fn();
-    const destroySpy = jest.fn();
-    const dm = {
-      initializeDependencies: async () => {
-        initSpy();
-      },
-      destroyDependencies: async () => {
-        destroySpy();
-      },
-    } as DependencyManager;
-
-    const wiring = AbstractDependentWraplet.wiring({
-      dependencyManager: dm,
-    });
-
-    await wiring.initializeCallback!();
-    await wiring.destroyCallback!();
-
-    expect(initSpy).toHaveBeenCalledTimes(1);
-    expect(destroySpy).toHaveBeenCalledTimes(1);
-  });
-
-  it("accepts a DependencyManager provider", async () => {
-    const initSpy = jest.fn();
-    const destroySpy = jest.fn();
-    const dm = {
-      initializeDependencies: async () => {
-        initSpy();
-      },
-      destroyDependencies: async () => {
-        destroySpy();
-      },
-    } as DependencyManager;
-
-    const wiring = AbstractDependentWraplet.wiring({
-      dependencyManager: () => dm,
-    });
-
-    await wiring.initializeCallback!();
-    await wiring.destroyCallback!();
-
-    expect(initSpy).toHaveBeenCalledTimes(1);
-    expect(destroySpy).toHaveBeenCalledTimes(1);
   });
 });

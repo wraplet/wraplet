@@ -28,7 +28,7 @@ import {
   DependencyManager,
   DependencyManagerSymbol,
 } from "./types/DependencyManager";
-import { DestroyListener } from "./types/DestroyListener";
+import { LifecycleListener } from "../Wraplet/types/LifecycleListener";
 import { isWrapletSet, WrapletSet } from "../Set/types/WrapletSet";
 import { DefaultWrapletSet } from "../Set/DefaultWrapletSet";
 import {
@@ -46,6 +46,7 @@ import {
   RESOLVE,
   throwIfErrors,
 } from "../utils/utils";
+import { Wiring } from "../Wraplet/composeWrapletApi";
 
 export class DDM<
   N extends Node = Node,
@@ -310,19 +311,9 @@ export class DDM<
         return null;
       }
 
-      const existingDependencies = existingDependency.find(
-        (wraplet: Wraplet) => {
-          return childElementWraplets.has(wraplet);
-        },
-      );
-
-      if (existingDependencies.length > 1) {
-        throw new InternalLogicError(
-          "Internal logic error. Multiple instances wrapping the same element found in the DDM.",
-        );
-      }
-
-      return existingDependencies[0];
+      return existingDependency.findOne((wraplet: Wraplet) => {
+        return childElementWraplets.has(wraplet);
+      });
     } else {
       if (!isWraplet(existingDependency)) {
         throw new InternalLogicError(
@@ -538,14 +529,12 @@ export class DDM<
     wraplet: Wraplet,
   ) {
     // Listen for the dependency's destruction.
-    wraplet.wraplet.addDestroyListener(
-      this.createDependencyDestroyListener(id),
-    );
+    wraplet.wraplet.onAfterDestroy(this.createDependencyDestroyListener(id));
   }
 
   private createDependencyDestroyListener<K extends Extract<keyof M, string>>(
     id: K,
-  ): DestroyListener {
+  ): LifecycleListener {
     return (async (w: DependencyInstance<M, K>) => {
       this.removeDependency(w, id);
 
@@ -575,7 +564,7 @@ export class DDM<
         errors,
         `Errors in the destruction callbacks of the "${id}" dependency.`,
       );
-    }) as DestroyListener;
+    }) as LifecycleListener;
   }
 
   /**
@@ -810,6 +799,17 @@ export class DDM<
       errors,
       `There were errors during the dependencies destruction.`,
     );
+  }
+
+  public wiring(): Wiring {
+    return {
+      initializeCallback: async () => {
+        await this.initializeDependencies();
+      },
+      destroyCallback: async () => {
+        await this.destroyDependencies();
+      },
+    };
   }
 
   /**

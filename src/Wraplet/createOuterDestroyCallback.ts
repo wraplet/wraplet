@@ -1,18 +1,19 @@
 import { Status, StatusWritable } from "./types/Status";
 import { Wraplet } from "./types/Wraplet";
-import { DestroyListener } from "../DependencyManager/types/DestroyListener";
-import { WrapletApiFactoryBasicCallback } from "./types/WrapletApiFactoryCallbacks";
+import { LifecycleListener } from "./types/LifecycleListener";
 import { LifecycleError } from "../errors";
+import { throwIfErrors } from "../utils/utils";
 
 export type OuterDestroyCallbackArgs = {
   wraplet: Wraplet;
-  destroyListeners: DestroyListener[];
+  destroyListeners: LifecycleListener[];
+  destroyedListeners: LifecycleListener[];
+  initializeListeners: LifecycleListener[];
   status: Status;
 };
 
 export function createOuterDestroyCallback(
   args: OuterDestroyCallbackArgs,
-  destroyLogic?: WrapletApiFactoryBasicCallback,
 ): () => Promise<void> {
   let promise: Promise<void> | null = null;
   return function () {
@@ -42,19 +43,50 @@ export function createOuterDestroyCallback(
         );
       }
 
-      if (destroyLogic) {
-        await destroyLogic();
+      const destroyErrors: Error[] = [];
+
+      for (const listener of [...args.destroyListeners].reverse()) {
+        try {
+          await listener(args.wraplet);
+        } catch (error) {
+          destroyErrors.push(error as Error);
+        }
       }
+
+      args.destroyListeners.length = 0;
+      args.initializeListeners.length = 0;
 
       status.isGettingDestroyed = false;
       status.isInitialized = false;
       status.isDestroyed = true;
 
-      for (const listener of [...args.destroyListeners].reverse()) {
-        await listener(args.wraplet);
+      const afterDestroyErrors: Error[] = [];
+      for (const listener of [...args.destroyedListeners].reverse()) {
+        try {
+          await listener(args.wraplet);
+        } catch (error) {
+          afterDestroyErrors.push(error as Error);
+        }
       }
 
-      args.destroyListeners.length = 0;
+      const errors: Error[] = [];
+
+      if (destroyErrors.length > 0) {
+        errors.push(
+          new AggregateError(destroyErrors, "Errors in destroy listeners."),
+        );
+      }
+
+      if (afterDestroyErrors.length > 0) {
+        errors.push(
+          new AggregateError(
+            afterDestroyErrors,
+            "Errors in after-destroy listeners.",
+          ),
+        );
+      }
+
+      throwIfErrors(errors, "Errors during wraplet destruction.");
     })().finally(() => {
       promise = null;
     });

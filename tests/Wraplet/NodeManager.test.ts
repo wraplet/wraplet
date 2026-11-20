@@ -96,41 +96,78 @@ describe("NodeManager", () => {
     const callback = jest.fn();
 
     expect(() => manager.addListenerTo("anything", "click", callback)).toThrow(
-      "Target node is not a parent node. Cannot add listener to its child.",
+      "Target node is not a parent node.",
     );
   });
 
-  describe("NodeManager.wire", () => {
-    it("wire accepts a NodeManager instance directly and destroys it", async () => {
-      const root = document.createElement("div");
-      const manager = new NodeManager(root);
-      const callback = jest.fn();
-      manager.addListener("click", callback);
+  it("addObserver observes the node and destroy disconnects the observer", async () => {
+    document.body.innerHTML = `<div id="root"></div>`;
+    const root = document.getElementById("root") as HTMLDivElement;
+    const manager = new NodeManager(root);
+    const callback = jest.fn();
 
-      const wiring = NodeManager.wire(manager);
-      await wiring.destroyCallback!();
+    manager.addObserver(callback, { childList: true });
 
-      root.dispatchEvent(new Event("click"));
-      expect(callback).not.toHaveBeenCalled();
-    });
+    root.appendChild(document.createElement("span"));
+    await Promise.resolve();
+    expect(callback).toHaveBeenCalledTimes(1);
 
-    it("wire accepts a callback that returns a NodeManager", async () => {
-      const root = document.createElement("div");
-      const manager = new NodeManager(root);
-      const callback = jest.fn();
-      manager.addListener("click", callback);
+    manager.destroy();
 
-      const wiring = NodeManager.wire(() => manager);
-      await wiring.destroyCallback!();
+    root.appendChild(document.createElement("span"));
+    await Promise.resolve();
 
-      root.dispatchEvent(new Event("click"));
-      expect(callback).not.toHaveBeenCalled();
-    });
+    // Second append should not trigger the callback.
+    expect(callback).toHaveBeenCalledTimes(1);
+  });
 
-    it("wire handles callback returning undefined", async () => {
-      const wiring = NodeManager.wire(() => undefined);
+  it("addObserverTo observes children matching a string selector", async () => {
+    document.body.innerHTML = `
+  <div id="root">
+    <div class="target"></div>
+    <div class="target"></div>
+  </div>`;
+    const root = document.getElementById("root") as HTMLDivElement;
+    const manager = new NodeManager(root);
+    const callback = jest.fn();
 
-      await expect(wiring.destroyCallback!()).resolves.toBeUndefined();
-    });
+    manager.addObserverTo(".target", callback, { childList: true });
+
+    const targets = root.querySelectorAll(".target");
+    targets.forEach((t) => t.appendChild(document.createElement("span")));
+    await Promise.resolve();
+    expect(callback).toHaveBeenCalledTimes(2);
+
+    manager.destroy();
+
+    targets.forEach((t) => t.appendChild(document.createElement("span")));
+    await Promise.resolve();
+
+    // Second append should not trigger the callback.
+    expect(callback).toHaveBeenCalledTimes(2);
+  });
+
+  it("addObserverTo observes a Node found by a callback", async () => {
+    document.body.innerHTML = `
+  <div id="root">
+    <div class="target"></div>
+  </div>`;
+    const root = document.getElementById("root") as HTMLDivElement;
+    const target = root.querySelector(".target") as HTMLDivElement;
+    const manager = new NodeManager(root);
+    const callback = jest.fn();
+
+    manager.addObserverTo(
+      (node) => Array.from(node.querySelectorAll(".target")),
+      callback,
+      { childList: true },
+      false,
+    );
+
+    target.appendChild(document.createElement("span"));
+    await Promise.resolve();
+    expect(callback).toHaveBeenCalledTimes(1);
+
+    manager.destroy();
   });
 });

@@ -22,42 +22,19 @@ describe("createOuterInitializeCallback", () => {
     wraplet: {},
   } as any;
 
-  it("should call customInitializeLogic and complete initialization", async () => {
-    const destroyCallback = jest.fn().mockResolvedValue(undefined);
-    const customInitializeLogic = jest.fn().mockResolvedValue(undefined);
-
-    const initializeCallback = createOuterInitializeCallback(
-      {
-        destroyCallback: destroyCallback,
-        status: status,
-        wraplet: mockWrapletApi,
-      },
-      customInitializeLogic,
-    );
-
-    await initializeCallback();
-
-    expect(customInitializeLogic).toHaveBeenCalledTimes(1);
-    expect(status.isInitialized).toBe(true);
-  });
-
   it("should return early when already initialized", async () => {
     status.isInitialized = true;
     const destroyCallback = jest.fn().mockResolvedValue(undefined);
-    const customInitializeLogic = jest.fn().mockResolvedValue(undefined);
 
-    const initializeCallback = createOuterInitializeCallback(
-      {
-        destroyCallback: destroyCallback,
-        status: status,
-        wraplet: mockWrapletApi,
-      },
-      customInitializeLogic,
-    );
+    const initializeCallback = createOuterInitializeCallback({
+      destroyCallback: destroyCallback,
+      status: status,
+      wraplet: mockWrapletApi,
+      initializeListeners: [],
+    });
 
     await initializeCallback();
 
-    expect(customInitializeLogic).not.toHaveBeenCalled();
     expect(status.isGettingInitialized).toBe(false);
   });
 
@@ -68,6 +45,7 @@ describe("createOuterInitializeCallback", () => {
       destroyCallback: destroyCallback,
       status: status,
       wraplet: mockWrapletApi,
+      initializeListeners: [],
     });
 
     await expect(initializeCallback).resolves.not.toThrow();

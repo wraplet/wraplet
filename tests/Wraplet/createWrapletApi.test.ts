@@ -86,21 +86,23 @@ describe("createWrapletApi", () => {
   });
 
   it("should cleanup private arrays", async () => {
-    const mockNode = document.createElement("div");
     const destroyListenerCallback = jest.fn();
+    const initializeListenerCallback = jest.fn();
 
     const api = createWrapletApi({
-      node: mockNode,
       wraplet: mockWraplet,
     });
 
     await api.initialize();
 
-    api.addDestroyListener(destroyListenerCallback);
+    api.onInitialize(initializeListenerCallback);
+    api.onDestroy(destroyListenerCallback);
+    expect(api.__initializeListeners).toHaveLength(1);
     expect(api.__destroyListeners).toHaveLength(1);
 
     await api.destroy();
 
+    expect(api.__initializeListeners).toHaveLength(0);
     expect(api.__destroyListeners).toHaveLength(0);
   });
 

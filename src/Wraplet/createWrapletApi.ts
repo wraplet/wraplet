@@ -8,7 +8,7 @@ import {
   WrapletApiDebug,
   WrapletApiSymbol,
 } from "./types/WrapletApi";
-import { DestroyListener } from "../DependencyManager/types/DestroyListener";
+import { LifecycleListener } from "./types/LifecycleListener";
 import { createOuterDestroyCallback } from "./createOuterDestroyCallback";
 import { createOuterInitializeCallback } from "./createOuterInitializeCallback";
 
@@ -47,36 +47,39 @@ export const createWrapletApi = (
 
   const api: Partial<WrapletApi & WrapletApiDebug> = {};
 
-  const destroyListeners: DestroyListener[] = [];
+  const initializeListeners: LifecycleListener[] = [];
+  const destroyListeners: LifecycleListener[] = [];
+  const destroyedListeners: LifecycleListener[] = [];
 
-  const destroyCallback = createOuterDestroyCallback(
-    {
-      status: defaultStatus,
-      wraplet: newArgs.wraplet,
-      destroyListeners: destroyListeners,
-    },
-    async () => {
-      if (newArgs.destroyCallback) {
-        await newArgs.destroyCallback();
-      }
-      if (newArgs.node) {
-        removeWrapletFromNode(newArgs.wraplet, newArgs.node);
-      }
-    },
-  ).bind(api);
+  if (newArgs.initializeCallback) {
+    initializeListeners.push(newArgs.initializeCallback);
+  }
 
-  const initializeCallback = createOuterInitializeCallback(
-    {
-      status: defaultStatus,
-      destroyCallback: destroyCallback,
-      wraplet: newArgs.wraplet,
-    },
-    async () => {
-      if (newArgs.initializeCallback) {
-        await newArgs.initializeCallback();
-      }
-    },
-  ).bind(api);
+  const node = newArgs.node;
+  if (node) {
+    destroyListeners.push(async () => {
+      removeWrapletFromNode(newArgs.wraplet, node);
+    });
+  }
+
+  if (newArgs.destroyCallback) {
+    destroyListeners.push(newArgs.destroyCallback);
+  }
+
+  const destroyCallback = createOuterDestroyCallback({
+    status: defaultStatus,
+    wraplet: newArgs.wraplet,
+    initializeListeners: initializeListeners,
+    destroyListeners: destroyListeners,
+    destroyedListeners: destroyedListeners,
+  }).bind(api);
+
+  const initializeCallback = createOuterInitializeCallback({
+    status: defaultStatus,
+    wraplet: newArgs.wraplet,
+    destroyCallback: destroyCallback,
+    initializeListeners: initializeListeners,
+  }).bind(api);
 
   // Note that it's added immediately without initialization required.
   if (newArgs.node) {
@@ -85,14 +88,24 @@ export const createWrapletApi = (
 
   return Object.assign(api, {
     [WrapletApiSymbol]: true as const,
+    __initializeListeners: initializeListeners,
     __destroyListeners: destroyListeners,
     status: defaultStatus,
-    addDestroyListener: (callback: DestroyListener) => {
+
+    onInitialize: (callback: LifecycleListener) => {
+      initializeListeners.push(callback);
+    },
+
+    onDestroy: (callback: LifecycleListener) => {
       destroyListeners.push(callback);
+    },
+
+    onAfterDestroy: (callback: LifecycleListener) => {
+      destroyedListeners.push(callback);
     },
 
     initialize: initializeCallback,
 
     destroy: destroyCallback,
-  });
+  } satisfies WrapletApi & WrapletApiDebug);
 };

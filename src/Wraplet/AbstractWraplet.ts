@@ -4,14 +4,19 @@ import { UnsupportedNodeTypeError } from "../errors";
 import { NodeManager } from "./NodeManager";
 import { createWrapletApi } from "./createWrapletApi";
 import { WrapletApi } from "./types/WrapletApi";
-import { WrapletApiFactoryBasicCallback } from "./types/WrapletApiFactoryCallbacks";
 import { RESOLVE } from "../utils/utils";
-import { composeWrapletApi, mergeWirings, Wiring } from "./composeWrapletApi";
+import {
+  lazyWiring,
+  mergeWirings,
+  wireCallback,
+  Wiring,
+} from "./composeWrapletApi";
 
 export interface AbstractWrapletWiringArgs {
   initializeCallback?: () => Promise<void>;
   destroyCallback?: () => Promise<void>;
   nodeManager?: (() => NodeManager<Node> | undefined) | NodeManager<Node>;
+  wirings?: Wiring[];
 }
 
 export abstract class AbstractWraplet<
@@ -43,61 +48,18 @@ export abstract class AbstractWraplet<
    * double-creation of WrapletApi.
    */
   protected createWrapletApi(): WrapletApi {
-    // @todo Remove this condition for the next major release.
-    if (
-      Object.getPrototypeOf(this).buildWrapletApi !==
-      AbstractWraplet.prototype.buildWrapletApi
-    ) {
-      return this.buildWrapletApi(
-        this.onInitialize.bind(this),
-        this.onDestroy.bind(this),
-      );
-    }
-
-    return composeWrapletApi(this.node, this, [
-      ...this.wrapletApiWirings(),
-      this.defaultWrapletApiWiring(),
-    ]);
-  }
-
-  protected defaultWrapletApiWiring(): Wiring {
-    return AbstractWraplet.wiring({
-      initializeCallback: this.onInitialize.bind(this),
-      destroyCallback: this.onDestroy.bind(this),
-      nodeManager: () => this._nodeManager,
-    });
-  }
-
-  /**
-   * Builds a WrapletApi with the given callbacks and ensures NodeManager cleanup
-   * is always wired into the destroy path.
-   *
-   * @deprecated
-   *   The new method of building WrapletApi is through adding wirings in the `wrapletApiWirings` method.
-   *   `buildWrapletApi` method will be removed in future versions.
-   */
-  protected buildWrapletApi(
-    initializeCallback?: WrapletApiFactoryBasicCallback,
-    destroyCallback?: WrapletApiFactoryBasicCallback,
-  ): WrapletApi {
     return createWrapletApi({
-      node: this.node,
       wraplet: this,
-      initializeCallback,
-      destroyCallback: async () => {
-        if (destroyCallback) {
-          await destroyCallback();
-        }
-        if (this._nodeManager) {
-          this._nodeManager.destroy();
-        }
-      },
+      node: this.node,
+      ...AbstractWraplet.wiring({
+        initializeCallback: this.onInitialize.bind(this),
+        destroyCallback: this.onDestroy.bind(this),
+        wirings: this.wrapletApiWirings(),
+        nodeManager: () => this._nodeManager,
+      }),
     });
   }
 
-  /**
-   * Wires up the WrapletApi with lifecycle callbacks and NodeManager integration.
-   */
   protected wrapletApiWirings(): Wiring[] {
     return [];
   }
@@ -144,35 +106,23 @@ export abstract class AbstractWraplet<
   public static wiring(args: AbstractWrapletWiringArgs): Wiring {
     const wirings: Wiring[] = [];
 
-    const callbackWiring: Wiring = {};
+    if (args.wirings) {
+      wirings.push(...args.wirings);
+    }
+
+    const nodeManager = args.nodeManager;
+    if (typeof nodeManager === "object") {
+      wirings.push(nodeManager.wiring());
+    } else if (typeof nodeManager === "function") {
+      wirings.push(lazyWiring(() => nodeManager()?.wiring()));
+    }
 
     if (args.initializeCallback) {
-      callbackWiring.initializeCallback = args.initializeCallback;
+      wirings.push(wireCallback("initializeCallback", args.initializeCallback));
     }
 
     if (args.destroyCallback) {
-      callbackWiring.destroyCallback = args.destroyCallback;
-    }
-
-    wirings.push(callbackWiring);
-
-    if (args.nodeManager) {
-      const nodeManagerArg = args.nodeManager;
-
-      wirings.push({
-        destroyCallback: async () => {
-          const nodeManager =
-            typeof nodeManagerArg === "function"
-              ? nodeManagerArg()
-              : nodeManagerArg;
-
-          // NodeManager implements only destroyCallback.
-          // @todo We don't use the new lazyWiring function here because
-          //   it would evaluate the callback on initialization,
-          //   which would be a subtle BC break.
-          await nodeManager?.wiring().destroyCallback?.();
-        },
-      });
+      wirings.push(wireCallback("destroyCallback", args.destroyCallback));
     }
 
     return mergeWirings(wirings);

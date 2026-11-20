@@ -24,6 +24,7 @@ export { isWrapletSet } from "./Set/types/WrapletSet";
 export type { Wraplet } from "./Wraplet/types/Wraplet";
 export type { WrapletApi } from "./Wraplet/types/WrapletApi";
 export type { Status } from "./Wraplet/types/Status";
+export type { WrapletDependencies } from "./Wraplet/types/WrapletDependencies";
 
 export { isWraplet } from "./Wraplet/types/Wraplet";
 
@@ -51,11 +52,7 @@ export { DNTM } from "./NodeTreeManager/DNTM";
 export type { WrapletDependencyMap } from "./Wraplet/types/WrapletDependencyMap";
 
 // Utils
-export {
-  flattenDependencies,
-  actOnDependencies,
-  actOnDependenciesWraplets,
-} from "./utils/utils";
+export { actOnDependencies, actOnDependenciesWraplets } from "./utils/utils";
 export type { Constructable } from "./utils/types/Utils";
 
 // Global

@@ -7,8 +7,7 @@ import {
 } from "../DependencyManager/types/DependencyManager";
 import { DDM } from "../DependencyManager/DDM";
 import { AbstractWraplet, AbstractWrapletWiringArgs } from "./AbstractWraplet";
-import { WrapletApi } from "./types/WrapletApi";
-import { composeWrapletApi, mergeWirings, Wiring } from "./composeWrapletApi";
+import { lazyWiring, Wiring } from "./composeWrapletApi";
 
 interface AbstractDependentWrapletWiringArgs extends AbstractWrapletWiringArgs {
   dependencyManager: (() => DependencyManager) | DependencyManager;
@@ -33,37 +32,12 @@ export abstract class AbstractDependentWraplet<
     dm.instantiateDependencies();
   }
 
-  protected override createWrapletApi(): WrapletApi {
-    // @todo Remove this condition for the next major release.
-    if (
-      Object.getPrototypeOf(this).buildWrapletApi !==
-      AbstractDependentWraplet.prototype.buildWrapletApi
-    ) {
-      return this.buildWrapletApi(
-        async () => {
-          await this.dm.initializeDependencies();
-          await this.onInitialize.bind(this)();
-        },
-        async () => {
-          await this.onDestroy.bind(this)();
-          await this.dm.destroyDependencies();
-        },
-      );
-    }
-
-    return composeWrapletApi(this.node, this, [
-      ...this.wrapletApiWirings(),
-      this.defaultWrapletApiWiring(),
-    ]);
-  }
-
-  protected defaultWrapletApiWiring(): Wiring {
-    return mergeWirings([
+  protected override wrapletApiWirings(): Wiring[] {
+    return [
       AbstractDependentWraplet.wiring({
         dependencyManager: () => this.dm,
       }),
-      super.defaultWrapletApiWiring(),
-    ]);
+    ];
   }
 
   /**
@@ -74,27 +48,22 @@ export abstract class AbstractDependentWraplet<
   }
 
   public static wiring(args: AbstractDependentWrapletWiringArgs): Wiring {
-    const parentWiring = super.wiring(args);
+    const wirings = [...(args.wirings ?? [])];
+
+    if (!args.wirings) {
+      args.wirings = wirings;
+    }
+
     const dependencyManagerArg = args.dependencyManager;
-    const dependencyManagerProvider =
-      typeof dependencyManagerArg === "function"
-        ? dependencyManagerArg
-        : () => dependencyManagerArg;
+    if (typeof dependencyManagerArg === "function") {
+      wirings.push(lazyWiring(() => dependencyManagerArg().wiring()));
+    }
 
-    // The dependency manager wiring is placed *before* the parent's wirings:
-    //  - initialize runs first (dependencies ready for the parent's init code),
-    //  - destroy runs last (parent's destroy code still has access to dependencies),
-    //    because the composer reverses the destroy order.
-    const wiring = {
-      initializeCallback: async () => {
-        await dependencyManagerProvider().initializeDependencies();
-      },
-      destroyCallback: async () => {
-        await dependencyManagerProvider().destroyDependencies();
-      },
-    };
+    if (typeof dependencyManagerArg === "object") {
+      wirings.push(dependencyManagerArg.wiring());
+    }
 
-    return mergeWirings([parentWiring, wiring]);
+    return super.wiring(args);
   }
 
   protected static createDependencyManager<

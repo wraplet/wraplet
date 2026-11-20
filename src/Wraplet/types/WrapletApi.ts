@@ -1,5 +1,5 @@
 import { is } from "../../utils/is";
-import { DestroyListener } from "../../DependencyManager/types/DestroyListener";
+import { LifecycleListener } from "./LifecycleListener";
 import { Status } from "./Status";
 
 export const WrapletApiSymbol = Symbol("WrapletApi");
@@ -13,7 +13,11 @@ export interface WrapletApi {
 
   initialize(): Promise<void>;
 
-  addDestroyListener(callback: DestroyListener): void;
+  onInitialize(callback: LifecycleListener): void;
+
+  onDestroy(callback: LifecycleListener): void;
+
+  onAfterDestroy(callback: LifecycleListener): void;
 }
 
 export function isWrapletApi(object: unknown): object is WrapletApi {
@@ -21,5 +25,6 @@ export function isWrapletApi(object: unknown): object is WrapletApi {
 }
 
 export interface WrapletApiDebug {
-  __destroyListeners: DestroyListener[];
+  __initializeListeners: LifecycleListener[];
+  __destroyListeners: LifecycleListener[];
 }

@@ -29,7 +29,9 @@ it("Test isWraplet", () => {
         isDestroyed: false,
         isGettingDestroyed: false,
       },
-      addDestroyListener() {},
+      onInitialize() {},
+      onDestroy() {},
+      onAfterDestroy() {},
     } as WrapletApi;
   }
 

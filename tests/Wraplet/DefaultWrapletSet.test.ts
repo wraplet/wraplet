@@ -43,13 +43,13 @@ describe("Test default wraplet set", () => {
       return item.getValue() === 1;
     });
 
-    expect(result.length).toBe(1);
+    expect(result.size).toBe(1);
 
     const resultEmpty = set.find((item: TestWraplet) => {
       return item.getValue() === 3;
     });
 
-    expect(resultEmpty.length).toBe(0);
+    expect(resultEmpty.size).toBe(0);
 
     const resultOne = set.findOne((item: TestWraplet) => {
       return item.getValue() === 1;

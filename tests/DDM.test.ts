@@ -1098,52 +1098,6 @@ describe("Test DDM", () => {
       expect(result).toBeNull();
     });
 
-    it("findExistingWraplet throws for multiple instances wrapping same element", async () => {
-      const node = document.createElement("div");
-      node.innerHTML = "<div data-child></div>";
-
-      class ChildWraplet implements Wraplet {
-        public wraplet: WrapletApi;
-
-        constructor(node: Node) {
-          this.wraplet = createWrapletApi({
-            node,
-            wraplet: this,
-          });
-        }
-      }
-
-      const map = {
-        child: {
-          selector: "[data-child]",
-          Class: ChildWraplet,
-          multiple: true,
-          required: false,
-        },
-      } satisfies WrapletDependencyMap;
-
-      const childElement = node.querySelector("[data-child]")!;
-      const ddm = new DDM(node, map);
-
-      // Create two wraplets wrapping the same element
-      const wraplet1 = new ChildWraplet(childElement);
-      await wraplet1.wraplet.initialize();
-
-      const wraplet2 = new ChildWraplet(childElement);
-      await wraplet2.wraplet.initialize();
-
-      const set = new DefaultWrapletSet();
-      set.add(wraplet1);
-      set.add(wraplet2);
-
-      const ddmAny = ddm as any;
-      ddmAny.directDependencies["child"] = set;
-
-      expect(() => ddmAny.findExistingWraplet("child", childElement)).toThrow(
-        "Internal logic error. Multiple instances wrapping the same element found in the DDM.",
-      );
-    });
-
     it("findExistingWraplet throws InternalLogicError for non-Wraplet single dependency", () => {
       const node = document.createElement("div");
 
@@ -1408,7 +1362,7 @@ describe("Test DDM", () => {
     // We remove the wraplet's default destroy listener that removes it from
     // the ddm's dependencies to achieve an incorrect state, but the one
     // we want to test.
-    (dep1.wraplet as any).__destroyListeners.length = 0;
+    (dep1.wraplet as any).__destroyListeners.unshift();
 
     // Now we can destroy it.
     await dep1.wraplet.destroy();

@@ -1,17 +1,17 @@
 import { Status, StatusWritable } from "./types/Status";
 import { Wraplet } from "./types/Wraplet";
-import { WrapletApiFactoryBasicCallback } from "./types/WrapletApiFactoryCallbacks";
 import { LifecycleError } from "../errors";
+import { LifecycleListener } from "./types/LifecycleListener";
 
 export type OuterInitializeCallbackArgs = {
   wraplet: Wraplet;
-  destroyCallback: () => Promise<void>;
   status: Status;
+  destroyCallback: LifecycleListener;
+  initializeListeners: LifecycleListener[];
 };
 
 export function createOuterInitializeCallback(
   args: OuterInitializeCallbackArgs,
-  initializeLogic?: WrapletApiFactoryBasicCallback,
 ): () => Promise<void> {
   let promise: Promise<void> | null = null;
   return function () {
@@ -33,17 +33,16 @@ export function createOuterInitializeCallback(
 
       status.isGettingInitialized = true;
 
-      if (initializeLogic) {
-        await initializeLogic();
+      for (const listener of args.initializeListeners) {
+        await listener(args.wraplet);
       }
 
       status.isInitialized = true;
       status.isGettingInitialized = false;
-
       // If destruction has been invoked in the meantime, we can finally do it, when initialization
       // is finished.
       if (status.isGettingDestroyed) {
-        await args.destroyCallback();
+        await args.destroyCallback(args.wraplet);
       }
     })().finally(() => {
       promise = null;

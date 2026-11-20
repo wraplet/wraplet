@@ -19,14 +19,14 @@ export function mergeWirings(wirings: Wiring[]): Wiring {
     .reverse();
 
   return {
-    initializeCallback: async (): Promise<void> => {
+    initializeCallback: async (wraplet): Promise<void> => {
       for (const callback of initializeCallbacks) {
-        await callback?.();
+        await callback?.(wraplet);
       }
     },
-    destroyCallback: async (): Promise<void> => {
+    destroyCallback: async (wraplet): Promise<void> => {
       for (const callback of destroyCallbacks) {
-        await callback?.();
+        await callback?.(wraplet);
       }
     },
   };
@@ -59,11 +59,11 @@ export function lazyWiring(callback: () => Wiring | void): Wiring {
   };
 
   return {
-    initializeCallback: async () => {
-      return getWiring()?.initializeCallback?.();
+    initializeCallback: async (wraplet) => {
+      return getWiring()?.initializeCallback?.(wraplet);
     },
-    destroyCallback: async () => {
-      return getWiring()?.destroyCallback?.();
+    destroyCallback: async (wraplet) => {
+      return getWiring()?.destroyCallback?.(wraplet);
     },
   };
 }
