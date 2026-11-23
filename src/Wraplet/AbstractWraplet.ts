@@ -5,12 +5,7 @@ import { NodeManager } from "./NodeManager";
 import { createWrapletApi } from "./createWrapletApi";
 import { WrapletApi } from "./types/WrapletApi";
 import { RESOLVE } from "../utils/utils";
-import {
-  lazyWiring,
-  mergeWirings,
-  wireCallback,
-  Wiring,
-} from "./composeWrapletApi";
+import { mergeWirings, wireCallback, Wiring } from "./composeWrapletApi";
 
 export interface AbstractWrapletWiringArgs {
   initializeCallback?: () => Promise<void>;
@@ -114,7 +109,11 @@ export abstract class AbstractWraplet<
     if (typeof nodeManager === "object") {
       wirings.push(nodeManager.wiring());
     } else if (typeof nodeManager === "function") {
-      wirings.push(lazyWiring(() => nodeManager()?.wiring()));
+      wirings.push({
+        destroyCallback: async (wraplet) => {
+          await nodeManager()?.wiring().destroyCallback?.(wraplet);
+        },
+      });
     }
 
     if (args.initializeCallback) {

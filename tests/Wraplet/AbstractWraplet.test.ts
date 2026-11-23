@@ -43,6 +43,20 @@ describe("AbstractWraplet", () => {
     expect(wraplet.getNodeManager()).toBe(manager);
   });
 
+  it("destroys NodeManager along itself", async () => {
+    const element = document.createElement("div");
+    const wraplet = new ConcreteWraplet(element);
+    await wraplet.wraplet.initialize();
+    const manager = wraplet.getNodeManager();
+    const clickFn = jest.fn();
+    manager.addListener("click", clickFn);
+    element.click();
+    expect(clickFn).toHaveBeenCalledTimes(1);
+    await wraplet.wraplet.destroy();
+    element.click();
+    expect(clickFn).toHaveBeenCalledTimes(1);
+  });
+
   it("handles method overrides when only parent overrides", async () => {
     const funcInit = jest.fn();
     const funcDestroy = jest.fn();
